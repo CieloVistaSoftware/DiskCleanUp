@@ -1,9 +1,9 @@
 ---
 docid: 300.9.unified-grid-migration
 id: diskcleanup-unified-grid-migration-plan
-title: DiskCleanUp — Unified Grid Migration Plan
+title: "DiskCleanUp — Unified Grid Migration Plan"
 project: DiskCleanUp
-description: Start Date: March 3, 2026 Target Completion: TBD (4-6 weeks estimated) Status: Not Started
+description: "Unified grid migration plan. Start: March 3, 2026. Target completion: TBD."
 status: active
 tags: [unified, grid, migration]
 category: 300.9 — Meta

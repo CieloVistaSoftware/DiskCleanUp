@@ -1,9 +1,9 @@
 ---
 docid: 300.9.wb-core-compliance-audit
 id: wb-core-compliance-audit-one-time-one-place
-title: WB-CORE COMPLIANCE AUDIT — One-Time-One-Place
+title: "WB-CORE COMPLIANCE AUDIT — One-Time-One-Place"
 project: DiskCleanUp
-description: Date: 2026-03-03 Scope: Every .js, .css, .html file — full codebase line-by-line Objective: Find every one-off that duplicates wb-core, every share…
+description: "Full codebase audit to find every one-off duplicating wb-core. Scope: all .js, .css, .html files."
 status: active
 tags: [core, compliance, audit]
 category: 300.9 — Meta

@@ -1,9 +1,9 @@
 ---
 docid: 300.9.migration-wb-core
 id: migration-plan-replace-custom-uiutilities-with-wb-
-title: Migration Plan: Replace Custom UI/Utilities with wb-core
+title: "Migration Plan: Replace Custom UI/Utilities with wb-core"
 project: DiskCleanUp
-description: - List all custom UI components/utilities (error logger, event queue, column controls, ui-utils, etc.). - For each, identify the equivalent wb-core…
+description: "Migrate all custom UI/utility components to wb-core equivalents."
 status: active
 tags: [migration, core, plan]
 category: 300.9 — Meta

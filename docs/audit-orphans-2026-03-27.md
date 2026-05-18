@@ -3,7 +3,7 @@ docid: 300.9.audit-orphans-2026-03-27
 id: orphaned-docs-audit
 title: Orphaned Docs Audit
 project: DiskCleanUp
-description: - C:\Users\jwpmi\source\repos\DiskCleanUp\docs\audit-full-2026-03-27.md
+description: "Orphaned docs audit — files not linked from any index"
 status: active
 tags: [audit, orphans, 2026]
 category: 300.9 — Meta

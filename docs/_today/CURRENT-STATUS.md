@@ -3,7 +3,7 @@ docid: 300.9.current-status
 id: parking-lot
 title: 🅿️ PARKING LOT
 project: DiskCleanUp
-description: Last session: 2026-03-24 Active project: DiskCleanUp (C:\Users\jwpmi\source\repos\DiskCleanUp)
+description: "Parking lot and current session status for DiskCleanUp."
 status: active
 tags: [current, status, parking]
 category: 300.9 — Meta
@@ -30,7 +30,7 @@ relativepath: docs/_today/CURRENT-STATUS.md
 **LAST ACTION:** All tests pass; .NET build clean; CieloVistaStandards pushed to GitHub
 **NEXT STEP:** `npm run restart` → verify overlay shows correct failure case → confirm auto-dismiss on reconnect. Then open PR for cielovista-tools branch claude/dreamy-shaw-bde8a6.
 **OPEN QUESTIONS:**
-- DiskCleanUp is not a git repo — changes are local only, not version-controlled
+- DiskCleanUp repo: https://github.com/CieloVistaSoftware/DiskCleanUp (public, main branch)
 - "Add Issue" button in Extension Finder — not started
 
 ---

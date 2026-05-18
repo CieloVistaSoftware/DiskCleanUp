@@ -3,7 +3,7 @@ docid: 300.9.diskcleanup-grid-specs
 id: diskcleanup-dashboard-unified-grid-specification
 title: DiskCleanUp Dashboard — Unified Grid Specification
 project: DiskCleanUp
-description: Compiled March 3, 2026 — Specification for the one-time, one-place unified grid system. Goal: All grids look the same. Reusable controls go into wb…
+description: "Specification for the one-time, one-place unified grid system. All grids look the same; reusable controls go into wb-core."
 status: active
 tags: [diskcleanup, grid, specs]
 category: 300.9 — Meta

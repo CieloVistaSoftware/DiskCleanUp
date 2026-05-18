@@ -25,10 +25,12 @@
     "fix:enrich:apply": "node scripts/js-fix-enrich.js --apply",
     "fix:vscode": "powershell -ExecutionPolicy Bypass -File ./scripts/fix-vscode-insiders-health.ps1",
     "fix:vscode:apply": "powershell -ExecutionPolicy Bypass -File ./scripts/fix-vscode-insiders-health.ps1 -Apply",
-    "fix:vscode:all": "powershell -ExecutionPolicy Bypass -File ./scripts/fix-vscode-insiders-health.ps1 -Apply -UninstallStaleExtensions"
+    "fix:vscode:all": "powershell -ExecutionPolicy Bypass -File ./scripts/fix-vscode-insiders-health.ps1 -Apply -UninstallStaleExtensions",
+    "lint:docs": "node scripts/lint-frontmatter.js"
   },
   "devDependencies": {
-    "@types/markdown-it": "^14.1.2"
+    "@types/markdown-it": "^14.1.2",
+    "js-yaml": "^4.1.1"
   },
   "license": "PROPRIETARY",
   "icon": "icon.png"

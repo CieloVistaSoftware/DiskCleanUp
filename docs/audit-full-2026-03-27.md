@@ -3,7 +3,7 @@ docid: 300.9.audit-full-2026-03-27
 id: cielovista-docs-audit-report
 title: CieloVista Docs Audit Report
 project: DiskCleanUp
-description: - C:\Users\jwpmi\Downloads\CieloVistaStandards\copilot-rules.md (global, 1471 bytes) - C:\Users\jwpmi\Downloads\VSCode\projects\cielovista-tools\co…
+description: "Docs audit — CieloVistaStandards + cielovista-tools copilot rules"
 status: active
 tags: [audit, full, 2026]
 category: 300.9 — Meta
