@@ -230,7 +230,7 @@ export function wsConnect() {
   _startWatchdog(); // ensure watchdog is running
 
   const wsScheme = location.protocol === 'https:' ? 'wss' : 'ws';
-  const wsUrl = `${wsScheme}://${location.hostname}:5100/ws`;
+  const wsUrl = `${wsScheme}://${location.host}/ws`;
   try {
     _ws = new WebSocket(wsUrl);
   } catch (ex) {

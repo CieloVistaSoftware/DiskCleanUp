@@ -212,7 +212,7 @@ export function wsConnect() {
     _lastWsStatusTime = Date.now();
     _startWatchdog();
     const wsScheme = location.protocol === 'https:' ? 'wss' : 'ws';
-    const wsUrl = `${wsScheme}://${location.hostname}:5100/ws`;
+    const wsUrl = `${wsScheme}://${location.host}/ws`;
     try {
         _ws = new WebSocket(wsUrl);
     }
