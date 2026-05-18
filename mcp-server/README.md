@@ -1,7 +1,7 @@
 ---
 docid: 300.7.mcp-server-readme
 id: feature-diskcleanup-mcp-server
-title: feature: DiskCleanUp MCP Server
+title: "feature: DiskCleanUp MCP Server"
 project: DiskCleanUp
 description: Gives Claude Desktop a dotnetcommand and powershellcommand tool scoped to this project.
 status: active
@@ -22,7 +22,8 @@ Gives Claude Desktop a `dotnet_command` and `powershell_command` tool scoped to 
 ```powershell
 cd mcp-server
 npm install
-```text
+```
+
 ## Registration
 
 The `.vscode/mcp.json` file registers the server with Claude Desktop automatically when you open this project.
@@ -47,7 +48,8 @@ _TODO: one paragraph describing the single responsibility of this file._
 ```text
 activate()
   └── TODO: describe call flow
-```text
+```
+
 ---
 
 ## Manual test
