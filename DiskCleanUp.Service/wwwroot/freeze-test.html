@@ -1,3 +1,9 @@
+<!-- ═══════════════════════════════════════════════════════════════════════
+     wwwroot/freeze-test.html
+     UI freeze / jank test page. Pumps large batches of DOM updates to
+     verify that the RAF-based flush in section-vm.js and grid-view.js does
+     not block the main thread. Dev diagnostic tool only.
+     ═══════════════════════════════════════════════════════════════════════ -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
