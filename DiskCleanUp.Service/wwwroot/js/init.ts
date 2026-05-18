@@ -23,7 +23,7 @@ import './savings.js?v=2';
 import './settings.js';
 import './trash-queue.js';
 import './websocket.js';
-import './actions.js?v=2';
+import { startScan, cancelScan } from './actions.js?v=2';
 import './ext-colors.js';
 import './scan-filter.js';
 import './scan-grid.js';
@@ -251,8 +251,8 @@ function _mountScanToolbars() {
   for (const config of SCAN_TOOLBAR_CONFIGS) {
     const vm   = new ScanToolbarVM(config);
     const view = new ScanToolbarView(config, {
-      onScan:            () => window._wsSend?.({ type: 'scan',   section: config.section }),
-      onCancel:          () => window._wsSend?.({ type: 'cancel', section: config.section }),
+      onScan:            () => startScan(config.section),
+      onCancel:          () => cancelScan(config.section),
       onSelectAll:       () => window._selectAll?.(config.tableId),
       onSelectNone:      () => window._selectNone?.(config.tableId),
       onDeleteSelected:  () => window._trashSelected?.(config.tableId),

@@ -86,7 +86,7 @@ window._T = (tag, msg) => {
       <div class="sb-seg"><span class="label">DUPES</span>&nbsp;<span class="value" id="sbv-duplicates-results">—</span></div>
       <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-duplicates-rows">0</span></div>
       <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-duplicates-time">—</span></div>
-      <div class="sb-folder" id="sbf-duplicates">Click Scan to start</div>
+      <div class="sb-folder" id="sbf-duplicates"><span class="sb-scan-hint" data-action="scan" data-section="duplicates">▶ Click to Scan</span></div>
     </div>
     <div id="toolbar-duplicates"></div>
     <div id="dupResult"></div>
@@ -104,7 +104,7 @@ window._T = (tag, msg) => {
       <div class="sb-seg"><span class="label">GROUPS</span>&nbsp;<span class="value" id="sbv-smart-dedup-results">—</span></div>
       <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-smart-dedup-rows">0</span></div>
       <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-smart-dedup-time">—</span></div>
-      <div class="sb-folder" id="sbf-smart-dedup">Click Scan to start</div>
+      <div class="sb-folder" id="sbf-smart-dedup"><span class="sb-scan-hint" data-action="scan" data-section="smart-dedup">▶ Click to Scan</span></div>
     </div>
     <div id="toolbar-smart-dedup"></div>
     <div id="smartResult"></div>
@@ -122,7 +122,7 @@ window._T = (tag, msg) => {
       <div class="sb-seg"><span class="label">STALE</span>&nbsp;<span class="value" id="sbv-stale-results">—</span></div>
       <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-stale-rows">0</span></div>
       <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-stale-time">—</span></div>
-      <div class="sb-folder" id="sbf-stale">Click Scan to start</div>
+      <div class="sb-folder" id="sbf-stale"><span class="sb-scan-hint" data-action="scan" data-section="stale">▶ Click to Scan</span></div>
     </div>
     <div id="toolbar-stale"></div>
     <div id="staleResult"></div>
@@ -140,7 +140,7 @@ window._T = (tag, msg) => {
       <div class="sb-seg"><span class="label">LARGE</span>&nbsp;<span class="value" id="sbv-large-results">—</span></div>
       <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-large-rows">0</span></div>
       <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-large-time">—</span></div>
-      <div class="sb-folder" id="sbf-large">Click Scan to start</div>
+      <div class="sb-folder" id="sbf-large"><span class="sb-scan-hint" data-action="scan" data-section="large">▶ Click to Scan</span></div>
     </div>
     <div id="toolbar-large"></div>
     <div id="largeResult"></div>
@@ -157,7 +157,7 @@ window._T = (tag, msg) => {
       <div class="sb-seg"><span class="label">FOUND</span>&nbsp;<span class="value" id="sbv-node-modules-results">—</span></div>
       <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-node-modules-rows">0</span></div>
       <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-node-modules-time">—</span></div>
-      <div class="sb-folder" id="sbf-node-modules">Click Scan to start</div>
+      <div class="sb-folder" id="sbf-node-modules"><span class="sb-scan-hint" data-action="scan" data-section="node-modules">▶ Click to Scan</span></div>
     </div>
     <div id="toolbar-node-modules"></div>
     <div id="nmResult"></div>
@@ -174,7 +174,7 @@ window._T = (tag, msg) => {
       <div class="sb-seg"><span class="label">VENVS</span>&nbsp;<span class="value" id="sbv-venvs-results">—</span></div>
       <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-venvs-rows">0</span></div>
       <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-venvs-time">—</span></div>
-      <div class="sb-folder" id="sbf-venvs">Click Scan to start</div>
+      <div class="sb-folder" id="sbf-venvs"><span class="sb-scan-hint" data-action="scan" data-section="venvs">▶ Click to Scan</span></div>
     </div>
     <div id="toolbar-venvs"></div>
     <div id="venvResult"></div>
@@ -192,7 +192,7 @@ window._T = (tag, msg) => {
       <div class="sb-seg"><span class="label">EMPTY</span>&nbsp;<span class="value" id="sbv-empty-results">—</span></div>
       <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-empty-rows">0</span></div>
       <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-empty-time">—</span></div>
-      <div class="sb-folder" id="sbf-empty">Click Scan to start</div>
+      <div class="sb-folder" id="sbf-empty"><span class="sb-scan-hint" data-action="scan" data-section="empty">▶ Click to Scan</span></div>
     </div>
     <div id="toolbar-empty"></div>
     <div id="emptyResult"></div>
@@ -209,7 +209,7 @@ window._T = (tag, msg) => {
       <div class="sb-seg"><span class="label">GROUPS</span>&nbsp;<span class="value" id="sbv-images-results">—</span></div>
       <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-images-rows">0</span></div>
       <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-images-time">—</span></div>
-      <div class="sb-folder" id="sbf-images">Click Scan to start</div>
+      <div class="sb-folder" id="sbf-images"><span class="sb-scan-hint" data-action="scan" data-section="images">▶ Click to Scan</span></div>
     </div>
     <div id="toolbar-images"></div>
     <div id="imageResult"></div>
@@ -227,7 +227,7 @@ window._T = (tag, msg) => {
       <div class="sb-seg"><span class="label">FOUND</span>&nbsp;<span class="value" id="sbv-backups-results">&mdash;</span></div>
       <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-backups-rows">0</span></div>
       <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-backups-time">&mdash;</span></div>
-      <div class="sb-folder" id="sbf-backups">Click Scan to start</div>
+      <div class="sb-folder" id="sbf-backups"><span class="sb-scan-hint" data-action="scan" data-section="backups">▶ Click to Scan</span></div>
     </div>
     <div id="toolbar-backups"></div>
     <div id="backupsResult"></div>
@@ -245,7 +245,7 @@ window._T = (tag, msg) => {
       <div class="sb-seg"><span class="label">TINY</span>&nbsp;<span class="value" id="sbv-tiny-files-results">&mdash;</span></div>
       <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-tiny-files-rows">0</span></div>
       <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-tiny-files-time">&mdash;</span></div>
-      <div class="sb-folder" id="sbf-tiny-files">Click Scan to start</div>
+      <div class="sb-folder" id="sbf-tiny-files"><span class="sb-scan-hint" data-action="scan" data-section="tiny-files">▶ Click to Scan</span></div>
     </div>
     <div id="toolbar-tiny-files"></div>
     <div id="tinyResult"></div>
@@ -263,7 +263,7 @@ window._T = (tag, msg) => {
       <div class="sb-seg"><span class="label">HTML</span>&nbsp;<span class="value" id="sbv-html-files-results">&mdash;</span></div>
       <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-html-files-rows">0</span></div>
       <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-html-files-time">&mdash;</span></div>
-      <div class="sb-folder" id="sbf-html-files">Click Scan to start</div>
+      <div class="sb-folder" id="sbf-html-files"><span class="sb-scan-hint" data-action="scan" data-section="html-files">▶ Click to Scan</span></div>
     </div>
     <div id="toolbar-html-files"></div>
     <div id="htmlResult"></div>
@@ -281,7 +281,7 @@ window._T = (tag, msg) => {
       <div class="sb-seg"><span class="label">CSS</span>&nbsp;<span class="value" id="sbv-css-files-results">&mdash;</span></div>
       <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-css-files-rows">0</span></div>
       <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-css-files-time">&mdash;</span></div>
-      <div class="sb-folder" id="sbf-css-files">Click Scan to start</div>
+      <div class="sb-folder" id="sbf-css-files"><span class="sb-scan-hint" data-action="scan" data-section="css-files">▶ Click to Scan</span></div>
     </div>
     <div id="toolbar-css-files"></div>
     <div id="cssResult"></div>

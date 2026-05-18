@@ -139,6 +139,20 @@
   border-right: 1px solid var(--border, #30363d);
 }
 
+/* ─── Scan Hint (clickable "▶ Click to Scan" in idle state) ────────────────── */
+.sb-scan-hint {
+  color: var(--success, #3fb950);
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.sb-scan-hint:hover {
+  color: #58d068;
+  text-decoration: underline;
+}
+
 .sb-folder-text {
   display: block;
   white-space: nowrap;
