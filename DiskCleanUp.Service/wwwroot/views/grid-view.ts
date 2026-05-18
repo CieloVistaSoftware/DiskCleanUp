@@ -148,6 +148,7 @@ export class GridView {
   private _fullRender(data: Map<string, any>, model: any) {
     this._cancelRaf();
     this._domRows.clear();
+    this._rendered = false;  // force _ensureContainer to wipe DOM
     this._renderedCount = 0;
     this._overflowKeys.length = 0;
     this._pendingKeys.length  = 0;
