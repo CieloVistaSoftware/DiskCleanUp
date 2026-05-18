@@ -188,7 +188,7 @@ app.MapPost("/api/restart", () =>
 app.MapFallbackToFile("index.html");
 
 // ── Start ────────────────────────────────────────────────────
-app.Urls.Add($"http://localhost:{port}");
+app.Urls.Add($"http://127.0.0.1:{port}");
 
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
 logger.LogInformation("🧹 DiskCleanUp starting — mode={Mode}, port={Port}, data={DataDir}, CPUs={Cpus}",
