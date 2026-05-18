@@ -1,0 +1,230 @@
+
+═══ DiskCleanUp Frontend Test Suite ═══
+
+
+── 1. Page Load ──
+  ✅ Page loaded (networkidle)
+
+── 2. Zero JS Errors ──
+  ✅ No module load errors
+  ✅ No uncaught page errors
+
+── 3. Core Globals ──
+  ✅ Trace fn exists
+  ✅ ScanGrid exists
+  ✅ PageLoader exists
+  ✅ Breadcrumbs exists
+  ✅ TrashQ exists
+  ✅ openInVSCode exists
+  ✅ wsSend exists
+  ✅ ScanFilter exists
+  ✅ LoadMore updater exists
+
+── 4. Breadcrumb System ──
+  ✅ _crumbs exists
+  ✅ dump() is fn
+  ✅ recent() is fn
+  ✅ crumb() is fn
+  ✅ flush() is fn
+  ✅ drop+retrieve works
+  ✅ 5 init breadcrumbs
+  ✅ dump() returns string
+  ✅ Ring buffer caps at 200
+
+── 5. Trace System ──
+  ✅ _T is fn
+  ✅ 10 INIT trace lines
+  ✅ 325 WF: lines in trace
+  ✅ 24 CACHE trace lines
+
+── 6. Scan Grid API ──
+  ✅ scanGrid.create()
+  ✅ scanGrid.addRow()
+  ✅ scanGrid.clear()
+  ✅ scanGrid.getChecked()
+  ✅ scanGrid.selectAll()
+  ✅ scanGrid.applyFilter()
+  ✅ scanGrid.showSkeleton()
+  ✅ scanGrid.removeSkeleton()
+  ✅ Grid: 3 rows
+  ✅ selectAll+getChecked: 3
+  ✅ clear() removed all
+
+── 7. Page Loader API ──
+  ✅ pageLoader.loadPage()
+  ✅ pageLoader.hasMore()
+  ✅ pageLoader.resetPaging()
+  ✅ pageLoader.loadedCount()
+  ✅ loadPage returns {rows[],loaded}
+  ✅ loadedCount returns number
+
+── 8. API Endpoints ──
+  ✅ GET Config → 200
+  ✅ GET Session → 200
+  ✅ GET Savings → 200
+  ✅ GET Errors → 200
+  ✅ GET Trace → 200
+  ✅ GET Debug → 200
+  ✅ GET Metrics → 200
+  ✅ GET KeepList → 200
+  ✅ GET Fixes → 200
+  ✅ POST /api/trace works
+  ✅ POST /api/debug works
+  ✅ DELETE /api/debug works
+  ✅ Debug reset count=0
+  ✅ GET /api/cache/stale → 200
+
+── 9. Nav Tabs & Sections ──
+  ✅ #section-duplicates
+  ✅ #section-smart-dedup
+  ✅ #section-stale
+  ✅ #section-large
+  ✅ #section-node-modules
+  ✅ #section-empty
+  ✅ #section-venvs
+  ✅ #section-images
+  ✅ #section-backups
+  ✅ #section-tiny-files
+  ✅ #section-html-files
+  ✅ #section-savings
+  ✅ Tab "duplicates" activates
+  ✅ Tab "smart-dedup" activates
+  ✅ Tab "stale" activates
+  ✅ Tab "large" activates
+  ✅ Tab "node-modules" activates
+  ✅ Tab "venvs" activates
+
+── 10. Status Bars ──
+  ✅ #sb-duplicates
+  ✅ #sb-smart-dedup
+  ✅ #sb-stale
+  ✅ #sb-large
+  ✅ #sb-node-modules
+  ✅ #sb-empty
+  ✅ #sb-venvs
+  ✅ #sb-images
+  ✅ #sb-backups
+  ✅ #sb-tiny-files
+  ✅ #sb-html-files
+
+── 11. Scan Buttons ──
+  ✅ 11 scan buttons
+
+── 12. WebSocket ──
+  ✅ WebSocket connected
+  ✅ _wsSend() exists
+
+── 13. Freeze Detector ──
+  ✅ Heartbeat ticking (5 HB lines)
+
+── 14. Event Queue ──
+  ✅ eqDepth accessible
+  ✅ eqDraining accessible
+
+── 15. Actions ──
+  ✅ window.trashGroup()
+  ✅ window.trashImage()
+  ✅ TrashQ.enqueue()
+
+── 16. Scan Filter ──
+  ✅ scanFilter.register()
+  ✅ scanFilter.getMode()
+  ✅ scanFilter.getIncluded()
+  ✅ scanFilter.getExcluded()
+  ✅ scanFilter.trackExt()
+  ✅ scanFilter.rebuild()
+
+── 17. Ext Colors Integration ──
+  ✅ ext-colors works through grid
+
+── 18. Keep List ──
+  ✅ keepPaths()
+
+── 19. Savings ──
+  ✅ Savings section
+
+── 20. Metrics ──
+  ✅ CPU canvas
+  ✅ Mem canvas
+
+── 21. Load More Buttons ──
+  ✅ 11 Load More buttons
+
+── 22. UI Utils ──
+  ✅ Active tab set
+
+── 23. Column Controls ──
+  ✅ Resize handles present
+
+── 24. Recycle Bin ──
+  ✅ recycleBinBtn exists
+  ✅ recycleBinPanel exists
+
+── 25. Settings ──
+  ✅ section-settings exists
+  ✅ Settings tab button exists
+
+── 26. Error Logger ──
+  ✅ Error logger API works
+  ✅ error-logger.js loaded (no page errors)
+
+── 27. Trace Viewer ──
+  ✅ trace-viewer.html loads
+  ✅ #log element
+
+── 28. Grid Sort ──
+  ✅ Sort: 3 rows after click
+
+── 29. Skeleton ──
+  ✅ showSkeleton: 5
+  ✅ removeSkeleton clears
+
+── 30. Breadcrumb→Trace ──
+  ✅ Breadcrumb found in trace
+
+── 31. JS Files Serve ──
+  ✅ breadcrumb.js → 200
+  ✅ error-logger.js → 200
+  ✅ metrics.js → 200
+  ✅ event-queue.js → 200
+  ✅ column-controls.js → 200
+  ✅ status-bar.js → 200
+  ✅ table-utils.js → 200
+  ✅ ui-utils.js → 200
+  ✅ savings.js → 200
+  ✅ settings.js → 200
+  ✅ trash-queue.js → 200
+  ✅ websocket.js → 200
+  ✅ actions.js → 200
+  ✅ ext-colors.js → 200
+  ✅ scan-filter.js → 200
+  ✅ scan-grid.js → 200
+  ✅ section-handlers.js → 200
+  ✅ events.js → 200
+  ✅ keep-list.js → 200
+  ✅ recycle-bin.js → 200
+  ✅ init.js → 200
+  ✅ page-loader.js → 200
+
+── 32. Section Files ──
+  ✅ duplicates.js → 200
+
+── 33. WB-Core ──
+  ✅ /lib/wb-core/utils/pubsub.js → 200
+  ✅ /lib/wb-core/utils/format.js → 200
+
+── 34. Conn Badge ──
+  ✅ Badge shows connected
+
+── 35. Grid Memory ──
+  ✅ 100 rows added
+  ✅ 100 rows cleared
+
+═══════════════════════════════════════
+  PASSED:  148
+  FAILED:  0
+  SKIPPED: 0
+  TOTAL:   148
+  PASS RATE: 100.0%
+═══════════════════════════════════════
+

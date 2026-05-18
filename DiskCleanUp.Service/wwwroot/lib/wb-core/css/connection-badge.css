@@ -1,0 +1,92 @@
+/* ConnectionBadge Styling — WebSocket Connection Status */
+
+.cb-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+}
+
+/* Connected state (green) */
+.cb-badge.cb-connected {
+  background: rgba(76, 175, 80, 0.15);
+  color: #2e7d32;
+  border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.cb-badge.cb-connected .cb-dot {
+  background: #4caf50;
+  box-shadow: 0 0 6px rgba(76, 175, 80, 0.6);
+}
+
+/* Disconnected state (red) */
+.cb-badge.cb-disconnected {
+  background: rgba(244, 67, 54, 0.15);
+  color: #c62828;
+  border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+.cb-badge.cb-disconnected .cb-dot {
+  background: #f44336;
+}
+
+/* Reconnecting state (orange) */
+.cb-badge.cb-reconnecting {
+  background: rgba(255, 152, 0, 0.15);
+  color: #e65100;
+  border: 1px solid rgba(255, 152, 0, 0.3);
+  animation: cb-pulse 1.5s ease-in-out infinite;
+}
+
+.cb-badge.cb-reconnecting .cb-dot {
+  background: #ff9800;
+  animation: cb-dot-spin 1s linear infinite;
+}
+
+/* Dot indicator */
+.cb-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+/* Animations */
+@keyframes cb-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes cb-dot-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .cb-badge {
+    padding: 4px 8px;
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  .cb-dot {
+    width: 5px;
+    height: 5px;
+  }
+}

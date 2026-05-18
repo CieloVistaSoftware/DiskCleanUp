@@ -1,0 +1,55 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+*.ncrunchproject
+
+# NuGet
+*.nupkg
+packages/
+project.lock.json
+
+# Build outputs
+publish/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# TypeScript
+*.js.map
+tsc-out.txt
+
+# Test results
+test-results/
+playwright-report/
+
+# VS Code
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+
+# OS
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Personal files
+resume.docx
+resume-raw.xml
+
+# Retired code
+_retired/
+
+# Local data / runtime files
+%ProgramData%/
+data/
+$null
+500
+qc
+query
+stop

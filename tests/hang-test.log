@@ -1,0 +1,592 @@
+=== hang-test started 2026-02-22T01:31:13.718Z ===
+[2026-02-22T01:31:13.729Z] Launching browser...
+[2026-02-22T01:31:14.702Z] Navigating to http://localhost:5000...
+[2026-02-22T01:31:14.889Z] ✅ SignalR connected
+[2026-02-22T01:31:14.917Z] [page] _drainQueue patched OK
+[2026-02-22T01:31:14.924Z] Clicking Duplicates tab...
+[2026-02-22T01:31:15.252Z] Clicking Scan...
+[2026-02-22T01:31:29.916Z] ❌ FREEZE  ping#2  14811ms  (t+15026ms from start)
+[2026-02-22T01:31:29.918Z] ❌ FREEZE  ping#3  14699ms  (t+15028ms from start)
+[2026-02-22T01:31:30.013Z] ❌ FREEZE  ping#4  14686ms  (t+15123ms from start)
+[2026-02-22T01:31:30.016Z] ❌ FREEZE  ping#5  14579ms  (t+15126ms from start)
+[2026-02-22T01:31:30.028Z] ❌ FREEZE  ping#6  14485ms  (t+15138ms from start)
+[2026-02-22T01:31:30.047Z] ❌ FREEZE  ping#7  14397ms  (t+15157ms from start)
+[2026-02-22T01:31:30.049Z] ❌ FREEZE  ping#8  14291ms  (t+15159ms from start)
+[2026-02-22T01:31:30.082Z] ❌ FREEZE  ping#9  14216ms  (t+15192ms from start)
+[2026-02-22T01:31:30.090Z] ❌ FREEZE  ping#10  14116ms  (t+15200ms from start)
+[2026-02-22T01:31:30.091Z] ❌ FREEZE  ping#11  14009ms  (t+15201ms from start)
+[2026-02-22T01:31:30.091Z] ❌ FREEZE  ping#12  13902ms  (t+15201ms from start)
+[2026-02-22T01:31:30.092Z] ❌ FREEZE  ping#13  13797ms  (t+15202ms from start)
+[2026-02-22T01:31:30.093Z] ❌ FREEZE  ping#14  13691ms  (t+15203ms from start)
+[2026-02-22T01:31:30.096Z] ❌ FREEZE  ping#15  13588ms  (t+15206ms from start)
+[2026-02-22T01:31:30.097Z] ❌ FREEZE  ping#16  13480ms  (t+15207ms from start)
+[2026-02-22T01:31:30.097Z] ❌ FREEZE  ping#17  13373ms  (t+15207ms from start)
+[2026-02-22T01:31:30.098Z] ❌ FREEZE  ping#18  13264ms  (t+15208ms from start)
+[2026-02-22T01:31:30.099Z] ❌ FREEZE  ping#19  13159ms  (t+15209ms from start)
+[2026-02-22T01:31:30.100Z] ❌ FREEZE  ping#20  13053ms  (t+15210ms from start)
+[2026-02-22T01:31:30.106Z] ❌ FREEZE  ping#21  12950ms  (t+15216ms from start)
+[2026-02-22T01:31:30.112Z] ❌ FREEZE  ping#22  12850ms  (t+15222ms from start)
+[2026-02-22T01:31:30.113Z] ❌ FREEZE  ping#23  12742ms  (t+15223ms from start)
+[2026-02-22T01:31:30.118Z] ❌ FREEZE  ping#24  12641ms  (t+15228ms from start)
+[2026-02-22T01:31:30.128Z] ❌ FREEZE  ping#25  12544ms  (t+15238ms from start)
+[2026-02-22T01:31:30.133Z] ❌ FREEZE  ping#26  12442ms  (t+15243ms from start)
+[2026-02-22T01:31:30.140Z] ❌ FREEZE  ping#27  12342ms  (t+15250ms from start)
+[2026-02-22T01:31:30.141Z] ❌ FREEZE  ping#28  12234ms  (t+15251ms from start)
+[2026-02-22T01:31:30.142Z] ❌ FREEZE  ping#29  12128ms  (t+15252ms from start)
+[2026-02-22T01:31:30.143Z] ❌ FREEZE  ping#30  12020ms  (t+15253ms from start)
+[2026-02-22T01:31:30.144Z] ❌ FREEZE  ping#31  11915ms  (t+15254ms from start)
+[2026-02-22T01:31:30.144Z] ❌ FREEZE  ping#32  11808ms  (t+15254ms from start)
+[2026-02-22T01:31:30.145Z] ❌ FREEZE  ping#33  11701ms  (t+15255ms from start)
+[2026-02-22T01:31:30.145Z] ❌ FREEZE  ping#34  11591ms  (t+15255ms from start)
+[2026-02-22T01:31:30.147Z] ❌ FREEZE  ping#35  11485ms  (t+15257ms from start)
+[2026-02-22T01:31:30.148Z] ❌ FREEZE  ping#36  11377ms  (t+15258ms from start)
+[2026-02-22T01:31:30.148Z] ❌ FREEZE  ping#37  11271ms  (t+15258ms from start)
+[2026-02-22T01:31:30.149Z] ❌ FREEZE  ping#38  11164ms  (t+15259ms from start)
+[2026-02-22T01:31:30.151Z] ❌ FREEZE  ping#39  11059ms  (t+15261ms from start)
+[2026-02-22T01:31:30.153Z] ❌ FREEZE  ping#40  10953ms  (t+15263ms from start)
+[2026-02-22T01:31:30.156Z] ❌ FREEZE  ping#41  10850ms  (t+15266ms from start)
+[2026-02-22T01:31:30.160Z] ❌ FREEZE  ping#42  10745ms  (t+15270ms from start)
+[2026-02-22T01:31:30.161Z] ❌ FREEZE  ping#43  10638ms  (t+15271ms from start)
+[2026-02-22T01:31:30.161Z] ❌ FREEZE  ping#44  10532ms  (t+15271ms from start)
+[2026-02-22T01:31:30.162Z] ❌ FREEZE  ping#45  10423ms  (t+15272ms from start)
+[2026-02-22T01:31:30.163Z] ❌ FREEZE  ping#46  10319ms  (t+15273ms from start)
+[2026-02-22T01:31:30.164Z] ❌ FREEZE  ping#47  10211ms  (t+15274ms from start)
+[2026-02-22T01:31:30.165Z] ❌ FREEZE  ping#48  10104ms  (t+15275ms from start)
+[2026-02-22T01:31:30.165Z] ❌ FREEZE  ping#49  9994ms  (t+15275ms from start)
+[2026-02-22T01:31:30.166Z] ❌ FREEZE  ping#50  9889ms  (t+15276ms from start)
+[2026-02-22T01:31:30.167Z] ❌ FREEZE  ping#51  9781ms  (t+15277ms from start)
+[2026-02-22T01:31:30.172Z] ❌ FREEZE  ping#52  9679ms  (t+15282ms from start)
+[2026-02-22T01:31:30.175Z] ❌ FREEZE  ping#53  9573ms  (t+15285ms from start)
+[2026-02-22T01:31:30.180Z] ❌ FREEZE  ping#54  9471ms  (t+15290ms from start)
+[2026-02-22T01:31:30.181Z] ❌ FREEZE  ping#55  9363ms  (t+15291ms from start)
+[2026-02-22T01:31:30.182Z] ❌ FREEZE  ping#56  9256ms  (t+15292ms from start)
+[2026-02-22T01:31:30.183Z] ❌ FREEZE  ping#57  9150ms  (t+15293ms from start)
+[2026-02-22T01:31:30.187Z] ❌ FREEZE  ping#58  9040ms  (t+15297ms from start)
+[2026-02-22T01:31:30.188Z] ❌ FREEZE  ping#59  8932ms  (t+15298ms from start)
+[2026-02-22T01:31:30.189Z] ❌ FREEZE  ping#60  8827ms  (t+15299ms from start)
+[2026-02-22T01:31:30.190Z] ❌ FREEZE  ping#61  8721ms  (t+15300ms from start)
+[2026-02-22T01:31:30.193Z] ❌ FREEZE  ping#62  8618ms  (t+15303ms from start)
+[2026-02-22T01:31:30.194Z] ❌ FREEZE  ping#63  8506ms  (t+15304ms from start)
+[2026-02-22T01:31:30.195Z] ❌ FREEZE  ping#64  8403ms  (t+15305ms from start)
+[2026-02-22T01:31:30.196Z] ❌ FREEZE  ping#65  8296ms  (t+15306ms from start)
+[2026-02-22T01:31:30.197Z] ❌ FREEZE  ping#66  8190ms  (t+15307ms from start)
+[2026-02-22T01:31:30.198Z] ❌ FREEZE  ping#67  8085ms  (t+15308ms from start)
+[2026-02-22T01:31:30.200Z] ❌ FREEZE  ping#68  7979ms  (t+15310ms from start)
+[2026-02-22T01:31:30.202Z] ❌ FREEZE  ping#69  7875ms  (t+15312ms from start)
+[2026-02-22T01:31:30.204Z] ❌ FREEZE  ping#70  7769ms  (t+15314ms from start)
+[2026-02-22T01:31:30.206Z] ❌ FREEZE  ping#71  7665ms  (t+15316ms from start)
+[2026-02-22T01:31:30.210Z] ❌ FREEZE  ping#72  7560ms  (t+15320ms from start)
+[2026-02-22T01:31:30.211Z] ❌ FREEZE  ping#73  7453ms  (t+15321ms from start)
+[2026-02-22T01:31:30.212Z] ❌ FREEZE  ping#74  7343ms  (t+15322ms from start)
+[2026-02-22T01:31:30.213Z] ❌ FREEZE  ping#75  7241ms  (t+15323ms from start)
+[2026-02-22T01:31:30.214Z] ❌ FREEZE  ping#76  7134ms  (t+15324ms from start)
+[2026-02-22T01:31:30.215Z] ❌ FREEZE  ping#77  7029ms  (t+15325ms from start)
+[2026-02-22T01:31:30.215Z] ❌ FREEZE  ping#78  6921ms  (t+15325ms from start)
+[2026-02-22T01:31:30.216Z] ❌ FREEZE  ping#79  6814ms  (t+15326ms from start)
+[2026-02-22T01:31:30.217Z] ❌ FREEZE  ping#80  6709ms  (t+15327ms from start)
+[2026-02-22T01:31:30.220Z] ❌ FREEZE  ping#81  6605ms  (t+15330ms from start)
+[2026-02-22T01:31:30.222Z] ❌ FREEZE  ping#82  6498ms  (t+15332ms from start)
+[2026-02-22T01:31:30.223Z] ❌ FREEZE  ping#83  6391ms  (t+15333ms from start)
+[2026-02-22T01:31:30.227Z] ❌ FREEZE  ping#84  6288ms  (t+15337ms from start)
+[2026-02-22T01:31:30.228Z] ❌ FREEZE  ping#85  6181ms  (t+15338ms from start)
+[2026-02-22T01:31:30.229Z] ❌ FREEZE  ping#86  6074ms  (t+15339ms from start)
+[2026-02-22T01:31:30.230Z] ❌ FREEZE  ping#87  5967ms  (t+15340ms from start)
+[2026-02-22T01:31:30.231Z] ❌ FREEZE  ping#88  5860ms  (t+15341ms from start)
+[2026-02-22T01:31:30.231Z] ❌ FREEZE  ping#89  5754ms  (t+15341ms from start)
+[2026-02-22T01:31:30.232Z] ❌ FREEZE  ping#90  5646ms  (t+15342ms from start)
+[2026-02-22T01:31:30.233Z] ❌ FREEZE  ping#91  5540ms  (t+15343ms from start)
+[2026-02-22T01:31:30.236Z] ❌ FREEZE  ping#92  5432ms  (t+15346ms from start)
+[2026-02-22T01:31:30.696Z] ❌ FREEZE  ping#93  5784ms  (t+15806ms from start)
+[2026-02-22T01:31:30.698Z] ❌ FREEZE  ping#94  5677ms  (t+15808ms from start)
+[2026-02-22T01:31:30.699Z] ❌ FREEZE  ping#95  5572ms  (t+15809ms from start)
+[2026-02-22T01:31:30.703Z] ❌ FREEZE  ping#96  5468ms  (t+15813ms from start)
+[2026-02-22T01:31:30.710Z] ❌ FREEZE  ping#97  5369ms  (t+15820ms from start)
+[2026-02-22T01:31:30.714Z] ❌ FREEZE  ping#98  5265ms  (t+15824ms from start)
+[2026-02-22T01:31:30.719Z] ❌ FREEZE  ping#99  5162ms  (t+15829ms from start)
+[2026-02-22T01:31:30.721Z] ❌ FREEZE  ping#100  5057ms  (t+15831ms from start)
+[2026-02-22T01:31:30.722Z] ❌ FREEZE  ping#101  4951ms  (t+15832ms from start)
+[2026-02-22T01:31:30.723Z] ❌ FREEZE  ping#102  4844ms  (t+15833ms from start)
+[2026-02-22T01:31:30.728Z] ❌ FREEZE  ping#103  4742ms  (t+15838ms from start)
+[2026-02-22T01:31:30.729Z] ❌ FREEZE  ping#104  4635ms  (t+15839ms from start)
+[2026-02-22T01:31:30.731Z] ❌ FREEZE  ping#105  4531ms  (t+15841ms from start)
+[2026-02-22T01:31:30.733Z] ❌ FREEZE  ping#106  4427ms  (t+15843ms from start)
+[2026-02-22T01:31:30.738Z] ❌ FREEZE  ping#107  4323ms  (t+15848ms from start)
+[2026-02-22T01:31:30.740Z] ❌ FREEZE  ping#108  4218ms  (t+15850ms from start)
+[2026-02-22T01:31:30.742Z] ❌ FREEZE  ping#109  4115ms  (t+15852ms from start)
+[2026-02-22T01:31:30.745Z] ❌ FREEZE  ping#110  4017ms  (t+15855ms from start)
+[2026-02-22T01:31:30.748Z] ❌ FREEZE  ping#111  3909ms  (t+15858ms from start)
+[2026-02-22T01:31:30.753Z] ❌ FREEZE  ping#112  3805ms  (t+15863ms from start)
+[2026-02-22T01:31:30.764Z] ❌ FREEZE  ping#113  3714ms  (t+15874ms from start)
+[2026-02-22T01:31:30.771Z] ❌ FREEZE  ping#114  3614ms  (t+15881ms from start)
+[2026-02-22T01:31:30.776Z] ❌ FREEZE  ping#115  3511ms  (t+15886ms from start)
+[2026-02-22T01:31:30.777Z] ❌ FREEZE  ping#116  3404ms  (t+15887ms from start)
+[2026-02-22T01:31:30.813Z] ❌ FREEZE  ping#117  3319ms  (t+15923ms from start)
+[2026-02-22T01:31:30.814Z] ❌ FREEZE  ping#118  3201ms  (t+15924ms from start)
+[2026-02-22T01:31:30.815Z] ❌ FREEZE  ping#119  3100ms  (t+15925ms from start)
+[2026-02-22T01:31:30.816Z] ❌ FREEZE  ping#120  2994ms  (t+15926ms from start)
+[2026-02-22T01:31:30.817Z] ❌ FREEZE  ping#121  2888ms  (t+15927ms from start)
+[2026-02-22T01:31:30.821Z] ❌ FREEZE  ping#122  2782ms  (t+15931ms from start)
+[2026-02-22T01:31:30.823Z] ❌ FREEZE  ping#123  2677ms  (t+15933ms from start)
+[2026-02-22T01:31:30.824Z] ❌ FREEZE  ping#124  2566ms  (t+15934ms from start)
+[2026-02-22T01:31:30.825Z] ❌ FREEZE  ping#125  2462ms  (t+15935ms from start)
+[2026-02-22T01:31:30.825Z] ❌ FREEZE  ping#126  2354ms  (t+15935ms from start)
+[2026-02-22T01:31:30.826Z] ❌ FREEZE  ping#127  2248ms  (t+15936ms from start)
+[2026-02-22T01:31:30.830Z] ❌ FREEZE  ping#128  2144ms  (t+15940ms from start)
+[2026-02-22T01:31:30.832Z] ❌ FREEZE  ping#129  2036ms  (t+15942ms from start)
+[2026-02-22T01:31:30.833Z] ❌ FREEZE  ping#130  1927ms  (t+15943ms from start)
+[2026-02-22T01:31:30.835Z] ❌ FREEZE  ping#131  1821ms  (t+15945ms from start)
+[2026-02-22T01:31:30.841Z] ❌ FREEZE  ping#132  1717ms  (t+15951ms from start)
+[2026-02-22T01:31:30.844Z] ❌ FREEZE  ping#133  1609ms  (t+15954ms from start)
+[2026-02-22T01:31:30.847Z] ❌ FREEZE  ping#134  1503ms  (t+15957ms from start)
+[2026-02-22T01:31:30.850Z] ❌ FREEZE  ping#135  1398ms  (t+15960ms from start)
+[2026-02-22T01:31:30.857Z] ❌ FREEZE  ping#136  1298ms  (t+15967ms from start)
+[2026-02-22T01:31:30.863Z] ❌ FREEZE  ping#137  1197ms  (t+15973ms from start)
+[2026-02-22T01:31:30.875Z] ❌ FREEZE  ping#138  1100ms  (t+15985ms from start)
+[2026-02-22T01:31:30.887Z] ❌ FREEZE  ping#139  1001ms  (t+15997ms from start)
+[2026-02-22T01:31:30.893Z] ❌ FREEZE  ping#140  903ms  (t+16003ms from start)
+[2026-02-22T01:31:30.896Z] ❌ FREEZE  ping#141  658ms  (t+16006ms from start)
+[2026-02-22T01:31:30.900Z] ❌ FREEZE  ping#142  550ms  (t+16010ms from start)
+[2026-02-22T01:31:30.905Z] ❌ FREEZE  ping#143  448ms  (t+16015ms from start)
+[2026-02-22T01:31:30.907Z] ❌ FREEZE  ping#144  338ms  (t+16017ms from start)
+[2026-02-22T01:31:30.908Z] ❌ FREEZE  ping#145  230ms  (t+16018ms from start)
+[2026-02-22T01:31:31.723Z] ❌ FREEZE  ping#146  938ms  (t+16833ms from start)
+[2026-02-22T01:31:31.728Z] ❌ FREEZE  ping#147  815ms  (t+16838ms from start)
+[2026-02-22T01:31:31.731Z] ❌ FREEZE  ping#148  700ms  (t+16841ms from start)
+[2026-02-22T01:31:31.733Z] ❌ FREEZE  ping#149  583ms  (t+16843ms from start)
+[2026-02-22T01:31:31.737Z] ❌ FREEZE  ping#150  475ms  (t+16847ms from start)
+[2026-02-22T01:31:31.739Z] ❌ FREEZE  ping#151  366ms  (t+16849ms from start)
+[2026-02-22T01:31:31.740Z] ❌ FREEZE  ping#152  259ms  (t+16850ms from start)
+[2026-02-22T01:31:31.743Z] ❌ FREEZE  ping#153  156ms  (t+16853ms from start)
+[2026-02-22T01:31:32.478Z] ❌ FREEZE  ping#154  781ms  (t+17588ms from start)
+[2026-02-22T01:31:32.496Z] ❌ FREEZE  ping#155  689ms  (t+17606ms from start)
+[2026-02-22T01:31:32.511Z] ❌ FREEZE  ping#156  596ms  (t+17621ms from start)
+[2026-02-22T01:31:32.514Z] ❌ FREEZE  ping#157  491ms  (t+17624ms from start)
+[2026-02-22T01:31:32.519Z] ❌ FREEZE  ping#158  386ms  (t+17629ms from start)
+[2026-02-22T01:31:32.522Z] ❌ FREEZE  ping#159  280ms  (t+17632ms from start)
+[2026-02-22T01:31:32.523Z] ❌ FREEZE  ping#160  169ms  (t+17633ms from start)
+[2026-02-22T01:31:32.523Z] ⚠️  SLOW   ping#161  59ms
+[2026-02-22T01:31:33.142Z] ❌ FREEZE  ping#162  570ms  (t+18252ms from start)
+[2026-02-22T01:31:33.143Z] ❌ FREEZE  ping#163  462ms  (t+18253ms from start)
+[2026-02-22T01:31:33.145Z] ❌ FREEZE  ping#164  316ms  (t+18255ms from start)
+[2026-02-22T01:31:33.147Z] ❌ FREEZE  ping#165  218ms  (t+18257ms from start)
+[2026-02-22T01:31:33.157Z] ❌ FREEZE  ping#166  118ms  (t+18267ms from start)
+[2026-02-22T01:31:33.699Z] ❌ FREEZE  ping#167  558ms  (t+18809ms from start)
+[2026-02-22T01:31:33.704Z] ❌ FREEZE  ping#168  450ms  (t+18814ms from start)
+[2026-02-22T01:31:33.713Z] ❌ FREEZE  ping#169  353ms  (t+18823ms from start)
+[2026-02-22T01:31:33.716Z] ❌ FREEZE  ping#170  246ms  (t+18826ms from start)
+[2026-02-22T01:31:33.729Z] ❌ FREEZE  ping#171  148ms  (t+18839ms from start)
+[2026-02-22T01:31:34.325Z] ❌ FREEZE  ping#172  629ms  (t+19435ms from start)
+[2026-02-22T01:31:34.327Z] ❌ FREEZE  ping#173  525ms  (t+19437ms from start)
+[2026-02-22T01:31:34.328Z] ❌ FREEZE  ping#174  415ms  (t+19438ms from start)
+[2026-02-22T01:31:34.331Z] ❌ FREEZE  ping#175  308ms  (t+19441ms from start)
+[2026-02-22T01:31:34.336Z] ❌ FREEZE  ping#176  157ms  (t+19446ms from start)
+[2026-02-22T01:31:34.343Z] ⚠️  SLOW   ping#177  54ms
+[2026-02-22T01:31:34.876Z] ❌ FREEZE  ping#178  476ms  (t+19986ms from start)
+[2026-02-22T01:31:34.888Z] ❌ FREEZE  ping#179  378ms  (t+19998ms from start)
+[2026-02-22T01:31:34.896Z] ❌ FREEZE  ping#180  273ms  (t+20006ms from start)
+[2026-02-22T01:31:34.899Z] ❌ FREEZE  ping#181  166ms  (t+20009ms from start)
+[2026-02-22T01:31:34.903Z] ⚠️  SLOW   ping#182  58ms
+[2026-02-22T01:31:35.654Z] ❌ FREEZE  ping#183  698ms  (t+20764ms from start)
+[2026-02-22T01:31:35.657Z] ❌ FREEZE  ping#184  602ms  (t+20767ms from start)
+[2026-02-22T01:31:35.660Z] ❌ FREEZE  ping#185  498ms  (t+20770ms from start)
+[2026-02-22T01:31:35.678Z] ❌ FREEZE  ping#186  406ms  (t+20788ms from start)
+[2026-02-22T01:31:35.682Z] ❌ FREEZE  ping#187  300ms  (t+20792ms from start)
+[2026-02-22T01:31:35.683Z] ❌ FREEZE  ping#188  190ms  (t+20793ms from start)
+[2026-02-22T01:31:35.685Z] ⚠️  SLOW   ping#189  88ms
+[2026-02-22T01:31:35.719Z] Scan clicked — monitoring for 60 seconds...
+[2026-02-22T01:31:35.855Z] ❌ FREEZE  ping#190  146ms  (t+20965ms from start)
+[2026-02-22T01:31:35.941Z] ⚠️  SLOW   ping#191  88ms
+[2026-02-22T01:31:36.026Z] ⚠️  SLOW   ping#192  71ms
+[2026-02-22T01:31:37.026Z] ⚠️  SLOW   ping#201  87ms
+[2026-02-22T01:31:37.193Z] ❌ FREEZE  ping#202  145ms  (t+22303ms from start)
+[2026-02-22T01:31:37.395Z] ❌ FREEZE  ping#204  126ms  (t+22505ms from start)
+[2026-02-22T01:31:37.526Z] ❌ FREEZE  ping#205  144ms  (t+22636ms from start)
+[2026-02-22T01:31:47.944Z] ❌ FREEZE  ping#221  8757ms  (t+33054ms from start)
+[2026-02-22T01:31:48.013Z] ❌ FREEZE  ping#222  8720ms  (t+33123ms from start)
+[2026-02-22T01:31:48.029Z] ❌ FREEZE  ping#223  8635ms  (t+33139ms from start)
+[2026-02-22T01:31:48.032Z] ❌ FREEZE  ping#224  8529ms  (t+33142ms from start)
+[2026-02-22T01:31:48.032Z] ❌ FREEZE  ping#225  8427ms  (t+33142ms from start)
+[2026-02-22T01:31:48.041Z] ❌ FREEZE  ping#226  8323ms  (t+33151ms from start)
+[2026-02-22T01:31:48.043Z] ❌ FREEZE  ping#227  8224ms  (t+33153ms from start)
+[2026-02-22T01:31:48.045Z] ❌ FREEZE  ping#228  8110ms  (t+33155ms from start)
+[2026-02-22T01:31:48.046Z] ❌ FREEZE  ping#229  8004ms  (t+33156ms from start)
+[2026-02-22T01:31:48.047Z] ❌ FREEZE  ping#230  7898ms  (t+33157ms from start)
+[2026-02-22T01:31:48.048Z] ❌ FREEZE  ping#231  7797ms  (t+33158ms from start)
+[2026-02-22T01:31:48.057Z] ❌ FREEZE  ping#232  7705ms  (t+33167ms from start)
+[2026-02-22T01:31:48.059Z] ❌ FREEZE  ping#233  7588ms  (t+33169ms from start)
+[2026-02-22T01:31:48.060Z] ❌ FREEZE  ping#234  7484ms  (t+33170ms from start)
+[2026-02-22T01:31:48.060Z] ❌ FREEZE  ping#235  7377ms  (t+33170ms from start)
+[2026-02-22T01:31:48.061Z] heartbeat  status="Scanning…"  rows=845  queued=N/A  raf=N/A  maxPing=14811ms
+[2026-02-22T01:31:48.063Z] ❌ FREEZE  ping#236  7279ms  (t+33173ms from start)
+[2026-02-22T01:31:48.064Z] ❌ FREEZE  ping#237  7175ms  (t+33174ms from start)
+[2026-02-22T01:31:48.065Z] ❌ FREEZE  ping#238  7066ms  (t+33175ms from start)
+[2026-02-22T01:31:48.066Z] ❌ FREEZE  ping#239  6964ms  (t+33176ms from start)
+[2026-02-22T01:31:48.072Z] ❌ FREEZE  ping#240  6850ms  (t+33182ms from start)
+[2026-02-22T01:31:48.074Z] ❌ FREEZE  ping#241  6739ms  (t+33184ms from start)
+[2026-02-22T01:31:48.075Z] ❌ FREEZE  ping#242  6633ms  (t+33185ms from start)
+[2026-02-22T01:31:48.075Z] ❌ FREEZE  ping#243  6521ms  (t+33185ms from start)
+[2026-02-22T01:31:48.076Z] ❌ FREEZE  ping#244  6413ms  (t+33186ms from start)
+[2026-02-22T01:31:48.077Z] ❌ FREEZE  ping#245  6306ms  (t+33187ms from start)
+[2026-02-22T01:31:48.077Z] ❌ FREEZE  ping#246  6185ms  (t+33187ms from start)
+[2026-02-22T01:31:48.078Z] ❌ FREEZE  ping#247  6074ms  (t+33188ms from start)
+[2026-02-22T01:31:48.079Z] ❌ FREEZE  ping#248  5966ms  (t+33189ms from start)
+[2026-02-22T01:31:48.080Z] ❌ FREEZE  ping#249  5853ms  (t+33190ms from start)
+[2026-02-22T01:31:48.081Z] ❌ FREEZE  ping#250  5739ms  (t+33191ms from start)
+[2026-02-22T01:31:48.082Z] ❌ FREEZE  ping#251  5629ms  (t+33192ms from start)
+[2026-02-22T01:31:48.088Z] ❌ FREEZE  ping#252  5526ms  (t+33198ms from start)
+[2026-02-22T01:31:48.090Z] ❌ FREEZE  ping#253  5417ms  (t+33200ms from start)
+[2026-02-22T01:31:48.108Z] ❌ FREEZE  ping#254  5326ms  (t+33218ms from start)
+[2026-02-22T01:31:48.112Z] ❌ FREEZE  ping#255  5222ms  (t+33222ms from start)
+[2026-02-22T01:31:48.122Z] ❌ FREEZE  ping#256  5120ms  (t+33232ms from start)
+[2026-02-22T01:31:48.126Z] ❌ FREEZE  ping#257  5015ms  (t+33236ms from start)
+[2026-02-22T01:31:48.130Z] ❌ FREEZE  ping#258  4908ms  (t+33240ms from start)
+[2026-02-22T01:31:48.139Z] ❌ FREEZE  ping#259  4808ms  (t+33249ms from start)
+[2026-02-22T01:31:48.143Z] ❌ FREEZE  ping#260  4701ms  (t+33253ms from start)
+[2026-02-22T01:31:48.146Z] ❌ FREEZE  ping#261  4593ms  (t+33256ms from start)
+[2026-02-22T01:31:48.149Z] ❌ FREEZE  ping#262  4473ms  (t+33259ms from start)
+[2026-02-22T01:31:48.155Z] ❌ FREEZE  ping#263  4362ms  (t+33265ms from start)
+[2026-02-22T01:31:48.159Z] ❌ FREEZE  ping#264  4266ms  (t+33269ms from start)
+[2026-02-22T01:31:48.161Z] ❌ FREEZE  ping#265  4160ms  (t+33271ms from start)
+[2026-02-22T01:31:48.164Z] ❌ FREEZE  ping#266  4052ms  (t+33274ms from start)
+[2026-02-22T01:31:48.166Z] ❌ FREEZE  ping#267  3944ms  (t+33276ms from start)
+[2026-02-22T01:31:48.171Z] ❌ FREEZE  ping#268  3843ms  (t+33281ms from start)
+[2026-02-22T01:31:48.175Z] ❌ FREEZE  ping#269  3739ms  (t+33285ms from start)
+[2026-02-22T01:31:48.181Z] ❌ FREEZE  ping#270  3636ms  (t+33291ms from start)
+[2026-02-22T01:31:48.191Z] ❌ FREEZE  ping#271  3539ms  (t+33301ms from start)
+[2026-02-22T01:31:48.196Z] ❌ FREEZE  ping#272  3434ms  (t+33306ms from start)
+[2026-02-22T01:31:48.205Z] ❌ FREEZE  ping#273  3335ms  (t+33315ms from start)
+[2026-02-22T01:31:48.208Z] ❌ FREEZE  ping#274  3230ms  (t+33318ms from start)
+[2026-02-22T01:31:48.210Z] ❌ FREEZE  ping#275  3122ms  (t+33320ms from start)
+[2026-02-22T01:31:48.211Z] ❌ FREEZE  ping#276  3015ms  (t+33321ms from start)
+[2026-02-22T01:31:48.212Z] ❌ FREEZE  ping#277  2908ms  (t+33322ms from start)
+[2026-02-22T01:31:48.213Z] ❌ FREEZE  ping#278  2801ms  (t+33323ms from start)
+[2026-02-22T01:31:48.223Z] ❌ FREEZE  ping#279  2701ms  (t+33333ms from start)
+[2026-02-22T01:31:48.231Z] ❌ FREEZE  ping#280  2600ms  (t+33341ms from start)
+[2026-02-22T01:31:48.235Z] ❌ FREEZE  ping#281  2496ms  (t+33345ms from start)
+[2026-02-22T01:31:48.238Z] heartbeat  status="Scanning…"  rows=845  queued=N/A  raf=N/A  maxPing=14811ms
+[2026-02-22T01:31:48.240Z] ❌ FREEZE  ping#282  2393ms  (t+33350ms from start)
+[2026-02-22T01:31:48.241Z] ❌ FREEZE  ping#283  2284ms  (t+33351ms from start)
+[2026-02-22T01:31:48.242Z] ❌ FREEZE  ping#284  2170ms  (t+33352ms from start)
+[2026-02-22T01:31:48.242Z] ❌ FREEZE  ping#285  2070ms  (t+33352ms from start)
+[2026-02-22T01:31:48.243Z] ❌ FREEZE  ping#286  1961ms  (t+33353ms from start)
+[2026-02-22T01:31:48.244Z] ❌ FREEZE  ping#287  1859ms  (t+33354ms from start)
+[2026-02-22T01:31:48.246Z] ❌ FREEZE  ping#288  1753ms  (t+33356ms from start)
+[2026-02-22T01:31:48.246Z] ❌ FREEZE  ping#289  1643ms  (t+33356ms from start)
+[2026-02-22T01:31:48.247Z] ❌ FREEZE  ping#290  1538ms  (t+33357ms from start)
+[2026-02-22T01:31:48.248Z] ❌ FREEZE  ping#291  1425ms  (t+33358ms from start)
+[2026-02-22T01:31:48.254Z] ❌ FREEZE  ping#292  1294ms  (t+33364ms from start)
+[2026-02-22T01:31:48.255Z] ❌ FREEZE  ping#293  1143ms  (t+33365ms from start)
+[2026-02-22T01:31:48.256Z] ❌ FREEZE  ping#294  932ms  (t+33366ms from start)
+[2026-02-22T01:31:48.258Z] ❌ FREEZE  ping#295  337ms  (t+33368ms from start)
+[2026-02-22T01:31:48.330Z] ⚠️  SLOW   ping#296  77ms
+[2026-02-22T01:31:48.846Z] ⚠️  SLOW   ping#301  61ms
+[2026-02-22T01:31:49.068Z] ⚠️  SLOW   ping#303  66ms
+[2026-02-22T01:31:49.191Z] ⚠️  SLOW   ping#304  76ms
+[2026-02-22T01:31:49.320Z] ⚠️  SLOW   ping#305  100ms
+[2026-02-22T01:31:49.430Z] ❌ FREEZE  ping#306  111ms  (t+34540ms from start)
+[2026-02-22T01:31:49.713Z] ⚠️  SLOW   ping#309  70ms
+[2026-02-22T01:31:50.752Z] heartbeat  status="Scanning…"  rows=1270  queued=N/A  raf=N/A  maxPing=14811ms
+[2026-02-22T01:31:51.352Z] ❌ FREEZE  ping#324  113ms  (t+36462ms from start)
+[2026-02-22T01:31:51.436Z] ⚠️  SLOW   ping#325  88ms
+[2026-02-22T01:31:51.559Z] ❌ FREEZE  ping#326  107ms  (t+36669ms from start)
+[2026-02-22T01:31:51.609Z] ⚠️  SLOW   ping#327  51ms
+[2026-02-22T01:31:51.974Z] ⚠️  SLOW   ping#330  96ms
+[2026-02-22T01:31:52.076Z] ⚠️  SLOW   ping#331  97ms
+[2026-02-22T01:31:52.280Z] ❌ FREEZE  ping#332  202ms  (t+37390ms from start)
+[2026-02-22T01:31:52.281Z] ⚠️  SLOW   ping#333  94ms
+[2026-02-22T01:31:52.472Z] ❌ FREEZE  ping#334  172ms  (t+37582ms from start)
+[2026-02-22T01:31:52.473Z] ⚠️  SLOW   ping#335  64ms
+[2026-02-22T01:31:52.677Z] ❌ FREEZE  ping#336  165ms  (t+37787ms from start)
+[2026-02-22T01:31:52.679Z] ⚠️  SLOW   ping#337  57ms
+[2026-02-22T01:31:52.788Z] ⚠️  SLOW   ping#338  56ms
+[2026-02-22T01:31:52.938Z] ❌ FREEZE  ping#339  104ms  (t+38048ms from start)
+[2026-02-22T01:31:53.049Z] ❌ FREEZE  ping#340  113ms  (t+38159ms from start)
+[2026-02-22T01:31:53.227Z] ⚠️  SLOW   ping#342  72ms
+[2026-02-22T01:31:53.348Z] ⚠️  SLOW   ping#343  92ms
+[2026-02-22T01:31:53.868Z] ⚠️  SLOW   ping#348  65ms
+[2026-02-22T01:31:54.834Z] ⚠️  SLOW   ping#357  51ms
+[2026-02-22T01:31:55.618Z] ⚠️  SLOW   ping#364  63ms
+[2026-02-22T01:31:55.778Z] heartbeat  status="Scanning…"  rows=1448  queued=N/A  raf=N/A  maxPing=14811ms
+[2026-02-22T01:31:56.061Z] ⚠️  SLOW   ping#368  65ms
+[2026-02-22T01:31:56.320Z] ❌ FREEZE  ping#370  102ms  (t+41430ms from start)
+[2026-02-22T01:31:56.381Z] ⚠️  SLOW   ping#371  63ms
+[2026-02-22T01:31:57.909Z] ⚠️  SLOW   ping#385  54ms
+[2026-02-22T01:31:58.643Z] ⚠️  SLOW   ping#392  51ms
+[2026-02-22T01:31:58.859Z] ⚠️  SLOW   ping#394  55ms
+[2026-02-22T01:31:59.096Z] ⚠️  SLOW   ping#396  78ms
+[2026-02-22T01:31:59.203Z] ⚠️  SLOW   ping#397  81ms
+[2026-02-22T01:31:59.364Z] ❌ FREEZE  ping#398  137ms  (t+44474ms from start)
+[2026-02-22T01:31:59.488Z] ❌ FREEZE  ping#399  148ms  (t+44598ms from start)
+[2026-02-22T01:31:59.646Z] ⚠️  SLOW   ping#401  93ms
+[2026-02-22T01:31:59.795Z] ❌ FREEZE  ping#402  140ms  (t+44905ms from start)
+[2026-02-22T01:32:00.090Z] ⚠️  SLOW   ping#405  87ms
+[2026-02-22T01:32:00.230Z] ❌ FREEZE  ping#406  124ms  (t+45340ms from start)
+[2026-02-22T01:32:00.535Z] ❌ FREEZE  ping#409  107ms  (t+45645ms from start)
+[2026-02-22T01:32:00.675Z] ❌ FREEZE  ping#410  142ms  (t+45785ms from start)
+[2026-02-22T01:32:00.791Z] heartbeat  status="Scanning…"  rows=1512  queued=N/A  raf=N/A  maxPing=14811ms
+[2026-02-22T01:32:00.928Z] ⚠️  SLOW   ping#413  65ms
+[2026-02-22T01:32:01.139Z] ⚠️  SLOW   ping#415  59ms
+[2026-02-22T01:32:01.522Z] ❌ FREEZE  ping#418  117ms  (t+46632ms from start)
+[2026-02-22T01:32:02.162Z] ⚠️  SLOW   ping#424  87ms
+[2026-02-22T01:32:02.322Z] ❌ FREEZE  ping#425  139ms  (t+47432ms from start)
+[2026-02-22T01:32:02.503Z] ❌ FREEZE  ping#427  107ms  (t+47613ms from start)
+[2026-02-22T01:32:02.811Z] ❌ FREEZE  ping#428  313ms  (t+47921ms from start)
+[2026-02-22T01:32:02.812Z] ❌ FREEZE  ping#429  211ms  (t+47922ms from start)
+[2026-02-22T01:32:02.813Z] ❌ FREEZE  ping#430  103ms  (t+47923ms from start)
+[2026-02-22T01:32:03.102Z] ❌ FREEZE  ping#431  292ms  (t+48212ms from start)
+[2026-02-22T01:32:03.104Z] ❌ FREEZE  ping#432  190ms  (t+48214ms from start)
+[2026-02-22T01:32:03.105Z] ⚠️  SLOW   ping#433  81ms
+[2026-02-22T01:32:03.489Z] ❌ FREEZE  ping#434  352ms  (t+48599ms from start)
+[2026-02-22T01:32:03.491Z] ❌ FREEZE  ping#435  248ms  (t+48601ms from start)
+[2026-02-22T01:32:03.493Z] ❌ FREEZE  ping#436  139ms  (t+48603ms from start)
+[2026-02-22T01:32:03.686Z] ❌ FREEZE  ping#438  115ms  (t+48796ms from start)
+[2026-02-22T01:32:03.873Z] ⚠️  SLOW   ping#440  83ms
+[2026-02-22T01:32:03.957Z] ⚠️  SLOW   ping#441  55ms
+[2026-02-22T01:32:04.147Z] ❌ FREEZE  ping#442  140ms  (t+49257ms from start)
+[2026-02-22T01:32:04.306Z] ⚠️  SLOW   ping#444  80ms
+[2026-02-22T01:32:04.390Z] ⚠️  SLOW   ping#445  55ms
+[2026-02-22T01:32:04.520Z] ⚠️  SLOW   ping#446  78ms
+[2026-02-22T01:32:04.645Z] ⚠️  SLOW   ping#447  92ms
+[2026-02-22T01:32:04.812Z] ❌ FREEZE  ping#448  150ms  (t+49922ms from start)
+[2026-02-22T01:32:04.972Z] ⚠️  SLOW   ping#450  91ms
+[2026-02-22T01:32:05.169Z] ❌ FREEZE  ping#451  180ms  (t+50279ms from start)
+[2026-02-22T01:32:05.172Z] ⚠️  SLOW   ping#452  74ms
+[2026-02-22T01:32:05.346Z] ❌ FREEZE  ping#453  140ms  (t+50456ms from start)
+[2026-02-22T01:32:05.521Z] ⚠️  SLOW   ping#455  97ms
+[2026-02-22T01:32:05.779Z] ❌ FREEZE  ping#456  247ms  (t+50889ms from start)
+[2026-02-22T01:32:05.781Z] ❌ FREEZE  ping#457  140ms  (t+50891ms from start)
+[2026-02-22T01:32:06.075Z] heartbeat  status="Scanning…"  rows=1889  queued=N/A  raf=N/A  maxPing=14811ms
+[2026-02-22T01:32:06.346Z] ❌ FREEZE  ping#459  483ms  (t+51456ms from start)
+[2026-02-22T01:32:06.354Z] ❌ FREEZE  ping#460  383ms  (t+51464ms from start)
+[2026-02-22T01:32:06.356Z] ❌ FREEZE  ping#461  282ms  (t+51466ms from start)
+[2026-02-22T01:32:06.357Z] ❌ FREEZE  ping#462  169ms  (t+51467ms from start)
+[2026-02-22T01:32:06.459Z] ❌ FREEZE  ping#463  115ms  (t+51569ms from start)
+[2026-02-22T01:32:06.623Z] ⚠️  SLOW   ping#465  75ms
+[2026-02-22T01:32:06.826Z] ⚠️  SLOW   ping#467  55ms
+[2026-02-22T01:32:07.271Z] ❌ FREEZE  ping#470  169ms  (t+52381ms from start)
+[2026-02-22T01:32:07.275Z] ⚠️  SLOW   ping#471  66ms
+[2026-02-22T01:32:07.557Z] ❌ FREEZE  ping#473  132ms  (t+52667ms from start)
+[2026-02-22T01:32:07.990Z] ❌ FREEZE  ping#477  143ms  (t+53100ms from start)
+[2026-02-22T01:32:08.140Z] ⚠️  SLOW   ping#479  79ms
+[2026-02-22T01:32:08.314Z] ❌ FREEZE  ping#480  139ms  (t+53424ms from start)
+[2026-02-22T01:32:08.391Z] ⚠️  SLOW   ping#481  79ms
+[2026-02-22T01:32:08.476Z] ⚠️  SLOW   ping#482  64ms
+[2026-02-22T01:32:08.625Z] ❌ FREEZE  ping#483  102ms  (t+53735ms from start)
+[2026-02-22T01:32:08.755Z] ❌ FREEZE  ping#484  132ms  (t+53865ms from start)
+[2026-02-22T01:32:09.124Z] ⚠️  SLOW   ping#488  69ms
+[2026-02-22T01:32:09.443Z] ❌ FREEZE  ping#490  172ms  (t+54553ms from start)
+[2026-02-22T01:32:09.444Z] ⚠️  SLOW   ping#491  58ms
+[2026-02-22T01:32:09.922Z] ❌ FREEZE  ping#494  221ms  (t+55032ms from start)
+[2026-02-22T01:32:09.924Z] ❌ FREEZE  ping#495  113ms  (t+55034ms from start)
+[2026-02-22T01:32:10.054Z] ❌ FREEZE  ping#496  133ms  (t+55164ms from start)
+[2026-02-22T01:32:10.196Z] ⚠️  SLOW   ping#498  57ms
+[2026-02-22T01:32:10.336Z] ⚠️  SLOW   ping#499  87ms
+[2026-02-22T01:32:10.486Z] ❌ FREEZE  ping#500  127ms  (t+55596ms from start)
+[2026-02-22T01:32:10.649Z] ⚠️  SLOW   ping#502  67ms
+[2026-02-22T01:32:10.802Z] ❌ FREEZE  ping#503  110ms  (t+55912ms from start)
+[2026-02-22T01:32:10.805Z] heartbeat  status="Scanning…"  rows=1916  queued=N/A  raf=N/A  maxPing=14811ms
+[2026-02-22T01:32:10.989Z] ❌ FREEZE  ping#504  188ms  (t+56099ms from start)
+[2026-02-22T01:32:10.992Z] ⚠️  SLOW   ping#505  78ms
+[2026-02-22T01:32:11.171Z] ❌ FREEZE  ping#506  148ms  (t+56281ms from start)
+[2026-02-22T01:32:11.342Z] ⚠️  SLOW   ping#508  100ms
+[2026-02-22T01:32:11.511Z] ❌ FREEZE  ping#509  169ms  (t+56621ms from start)
+[2026-02-22T01:32:11.514Z] ⚠️  SLOW   ping#510  67ms
+[2026-02-22T01:32:11.690Z] ❌ FREEZE  ping#511  132ms  (t+56800ms from start)
+[2026-02-22T01:32:11.838Z] ⚠️  SLOW   ping#513  64ms
+[2026-02-22T01:32:11.978Z] ⚠️  SLOW   ping#514  97ms
+[2026-02-22T01:32:12.119Z] ❌ FREEZE  ping#515  137ms  (t+57229ms from start)
+[2026-02-22T01:32:12.352Z] ⚠️  SLOW   ping#518  67ms
+[2026-02-22T01:32:12.495Z] ⚠️  SLOW   ping#519  97ms
+[2026-02-22T01:32:12.592Z] ⚠️  SLOW   ping#520  83ms
+[2026-02-22T01:32:12.681Z] ⚠️  SLOW   ping#521  68ms
+[2026-02-22T01:32:12.862Z] ❌ FREEZE  ping#522  140ms  (t+57972ms from start)
+[2026-02-22T01:32:13.010Z] ⚠️  SLOW   ping#524  60ms
+[2026-02-22T01:32:13.240Z] ⚠️  SLOW   ping#526  78ms
+[2026-02-22T01:32:13.391Z] ❌ FREEZE  ping#527  118ms  (t+58501ms from start)
+[2026-02-22T01:32:13.463Z] ⚠️  SLOW   ping#528  75ms
+[2026-02-22T01:32:13.754Z] ❌ FREEZE  ping#530  148ms  (t+58864ms from start)
+[2026-02-22T01:32:13.897Z] ⚠️  SLOW   ping#532  67ms
+[2026-02-22T01:32:14.040Z] ❌ FREEZE  ping#533  101ms  (t+59150ms from start)
+[2026-02-22T01:32:14.223Z] ❌ FREEZE  ping#534  184ms  (t+59333ms from start)
+[2026-02-22T01:32:14.226Z] ⚠️  SLOW   ping#535  84ms
+[2026-02-22T01:32:14.378Z] ❌ FREEZE  ping#536  126ms  (t+59488ms from start)
+[2026-02-22T01:32:14.527Z] ⚠️  SLOW   ping#538  56ms
+[2026-02-22T01:32:14.665Z] ⚠️  SLOW   ping#539  79ms
+[2026-02-22T01:32:14.823Z] ❌ FREEZE  ping#540  128ms  (t+59933ms from start)
+[2026-02-22T01:32:15.108Z] ⚠️  SLOW   ping#543  85ms
+[2026-02-22T01:32:15.253Z] ❌ FREEZE  ping#544  119ms  (t+60363ms from start)
+[2026-02-22T01:32:15.398Z] ⚠️  SLOW   ping#546  52ms
+[2026-02-22T01:32:15.625Z] ⚠️  SLOW   ping#548  63ms
+[2026-02-22T01:32:15.772Z] ❌ FREEZE  ping#549  103ms  (t+60882ms from start)
+[2026-02-22T01:32:15.930Z] ❌ FREEZE  ping#550  160ms  (t+61040ms from start)
+[2026-02-22T01:32:15.934Z] heartbeat  status="Scanning…"  rows=1978  queued=N/A  raf=N/A  maxPing=14811ms
+[2026-02-22T01:32:15.936Z] ⚠️  SLOW   ping#551  61ms
+[2026-02-22T01:32:16.088Z] ❌ FREEZE  ping#552  102ms  (t+61198ms from start)
+[2026-02-22T01:32:16.255Z] ❌ FREEZE  ping#553  167ms  (t+61365ms from start)
+[2026-02-22T01:32:16.257Z] ⚠️  SLOW   ping#554  54ms
+[2026-02-22T01:32:16.546Z] ❌ FREEZE  ping#555  236ms  (t+61656ms from start)
+[2026-02-22T01:32:16.548Z] ❌ FREEZE  ping#556  130ms  (t+61658ms from start)
+[2026-02-22T01:32:16.792Z] ❌ FREEZE  ping#558  167ms  (t+61902ms from start)
+[2026-02-22T01:32:16.793Z] ⚠️  SLOW   ping#559  53ms
+[2026-02-22T01:32:16.994Z] ❌ FREEZE  ping#560  154ms  (t+62104ms from start)
+[2026-02-22T01:32:16.995Z] ⚠️  SLOW   ping#561  51ms
+[2026-02-22T01:32:17.164Z] ❌ FREEZE  ping#562  108ms  (t+62274ms from start)
+[2026-02-22T01:32:17.327Z] ❌ FREEZE  ping#563  165ms  (t+62437ms from start)
+[2026-02-22T01:32:17.328Z] ⚠️  SLOW   ping#564  53ms
+[2026-02-22T01:32:17.496Z] ❌ FREEZE  ping#565  115ms  (t+62606ms from start)
+[2026-02-22T01:32:17.578Z] ⚠️  SLOW   ping#566  84ms
+[2026-02-22T01:32:17.729Z] ❌ FREEZE  ping#567  127ms  (t+62839ms from start)
+[2026-02-22T01:32:17.987Z] ❌ FREEZE  ping#569  167ms  (t+63097ms from start)
+[2026-02-22T01:32:17.989Z] ⚠️  SLOW   ping#570  61ms
+[2026-02-22T01:32:18.337Z] ❌ FREEZE  ping#572  197ms  (t+63447ms from start)
+[2026-02-22T01:32:18.338Z] ⚠️  SLOW   ping#573  81ms
+[2026-02-22T01:32:18.504Z] ❌ FREEZE  ping#574  147ms  (t+63614ms from start)
+[2026-02-22T01:32:18.509Z] ⚠️  SLOW   ping#575  51ms
+[2026-02-22T01:32:18.663Z] ⚠️  SLOW   ping#576  99ms
+[2026-02-22T01:32:18.876Z] ❌ FREEZE  ping#577  211ms  (t+63986ms from start)
+[2026-02-22T01:32:18.878Z] ⚠️  SLOW   ping#578  76ms
+[2026-02-22T01:32:18.960Z] ⚠️  SLOW   ping#579  57ms
+[2026-02-22T01:32:19.125Z] ❌ FREEZE  ping#580  121ms  (t+64235ms from start)
+[2026-02-22T01:32:19.374Z] ❌ FREEZE  ping#582  152ms  (t+64484ms from start)
+[2026-02-22T01:32:19.691Z] ❌ FREEZE  ping#584  248ms  (t+64801ms from start)
+[2026-02-22T01:32:19.693Z] ❌ FREEZE  ping#585  143ms  (t+64803ms from start)
+[2026-02-22T01:32:20.029Z] ❌ FREEZE  ping#587  251ms  (t+65139ms from start)
+[2026-02-22T01:32:20.038Z] ❌ FREEZE  ping#588  144ms  (t+65148ms from start)
+[2026-02-22T01:32:20.383Z] ❌ FREEZE  ping#590  277ms  (t+65493ms from start)
+[2026-02-22T01:32:20.391Z] ❌ FREEZE  ping#591  170ms  (t+65501ms from start)
+[2026-02-22T01:32:20.401Z] ⚠️  SLOW   ping#592  65ms
+[2026-02-22T01:32:20.556Z] ❌ FREEZE  ping#593  109ms  (t+65666ms from start)
+[2026-02-22T01:32:21.243Z] ❌ FREEZE  ping#594  689ms  (t+66353ms from start)
+[2026-02-22T01:32:21.258Z] ❌ FREEZE  ping#595  597ms  (t+66368ms from start)
+[2026-02-22T01:32:21.260Z] ❌ FREEZE  ping#596  486ms  (t+66370ms from start)
+[2026-02-22T01:32:21.262Z] heartbeat  status="Scanning…"  rows=2387  queued=N/A  raf=N/A  maxPing=14811ms
+[2026-02-22T01:32:21.265Z] ❌ FREEZE  ping#597  387ms  (t+66375ms from start)
+[2026-02-22T01:32:21.514Z] ❌ FREEZE  ping#598  406ms  (t+66624ms from start)
+[2026-02-22T01:32:21.561Z] ❌ FREEZE  ping#599  346ms  (t+66671ms from start)
+[2026-02-22T01:32:21.563Z] ❌ FREEZE  ping#600  240ms  (t+66673ms from start)
+[2026-02-22T01:32:21.574Z] ❌ FREEZE  ping#601  140ms  (t+66684ms from start)
+[2026-02-22T01:32:21.841Z] ❌ FREEZE  ping#602  281ms  (t+66951ms from start)
+[2026-02-22T01:32:21.845Z] ❌ FREEZE  ping#603  164ms  (t+66955ms from start)
+[2026-02-22T01:32:21.853Z] ⚠️  SLOW   ping#604  56ms
+[2026-02-22T01:32:22.251Z] ❌ FREEZE  ping#605  341ms  (t+67361ms from start)
+[2026-02-22T01:32:22.260Z] ❌ FREEZE  ping#606  235ms  (t+67370ms from start)
+[2026-02-22T01:32:22.261Z] ❌ FREEZE  ping#607  134ms  (t+67371ms from start)
+[2026-02-22T01:32:22.741Z] ❌ FREEZE  ping#608  514ms  (t+67851ms from start)
+[2026-02-22T01:32:22.745Z] ❌ FREEZE  ping#609  415ms  (t+67855ms from start)
+[2026-02-22T01:32:22.747Z] ❌ FREEZE  ping#610  237ms  (t+67857ms from start)
+[2026-02-22T01:32:22.751Z] ❌ FREEZE  ping#611  126ms  (t+67861ms from start)
+[2026-02-22T01:32:22.991Z] ❌ FREEZE  ping#612  252ms  (t+68101ms from start)
+[2026-02-22T01:32:22.996Z] ❌ FREEZE  ping#613  158ms  (t+68106ms from start)
+[2026-02-22T01:32:22.997Z] ⚠️  SLOW   ping#614  51ms
+[2026-02-22T01:32:23.287Z] ❌ FREEZE  ping#615  231ms  (t+68397ms from start)
+[2026-02-22T01:32:23.288Z] ❌ FREEZE  ping#616  123ms  (t+68398ms from start)
+[2026-02-22T01:32:23.598Z] ❌ FREEZE  ping#619  104ms  (t+68708ms from start)
+[2026-02-22T01:32:23.840Z] ❌ FREEZE  ping#620  243ms  (t+68950ms from start)
+[2026-02-22T01:32:23.841Z] ❌ FREEZE  ping#621  141ms  (t+68951ms from start)
+[2026-02-22T01:32:24.044Z] ❌ FREEZE  ping#623  130ms  (t+69154ms from start)
+[2026-02-22T01:32:24.355Z] ❌ FREEZE  ping#625  225ms  (t+69465ms from start)
+[2026-02-22T01:32:24.360Z] ❌ FREEZE  ping#626  116ms  (t+69470ms from start)
+[2026-02-22T01:32:24.629Z] ❌ FREEZE  ping#627  276ms  (t+69739ms from start)
+[2026-02-22T01:32:24.630Z] ❌ FREEZE  ping#628  168ms  (t+69740ms from start)
+[2026-02-22T01:32:24.636Z] ⚠️  SLOW   ping#629  64ms
+[2026-02-22T01:32:24.822Z] ❌ FREEZE  ping#630  151ms  (t+69932ms from start)
+[2026-02-22T01:32:25.072Z] ❌ FREEZE  ping#632  184ms  (t+70182ms from start)
+[2026-02-22T01:32:25.073Z] ⚠️  SLOW   ping#633  77ms
+[2026-02-22T01:32:25.321Z] ❌ FREEZE  ping#634  219ms  (t+70431ms from start)
+[2026-02-22T01:32:25.323Z] ❌ FREEZE  ping#635  111ms  (t+70433ms from start)
+[2026-02-22T01:32:25.549Z] ❌ FREEZE  ping#636  235ms  (t+70659ms from start)
+[2026-02-22T01:32:25.554Z] ❌ FREEZE  ping#637  139ms  (t+70664ms from start)
+[2026-02-22T01:32:25.747Z] ❌ FREEZE  ping#639  112ms  (t+70857ms from start)
+[2026-02-22T01:32:25.931Z] ❌ FREEZE  ping#640  185ms  (t+71041ms from start)
+[2026-02-22T01:32:25.937Z] heartbeat  status="Scanning…"  rows=2479  queued=N/A  raf=N/A  maxPing=14811ms
+[2026-02-22T01:32:25.939Z] ⚠️  SLOW   ping#641  84ms
+[2026-02-22T01:32:26.056Z] ⚠️  SLOW   ping#642  86ms
+[2026-02-22T01:32:26.180Z] ⚠️  SLOW   ping#643  97ms
+[2026-02-22T01:32:26.272Z] ⚠️  SLOW   ping#644  88ms
+[2026-02-22T01:32:26.387Z] ⚠️  SLOW   ping#645  95ms
+[2026-02-22T01:32:26.477Z] ⚠️  SLOW   ping#646  73ms
+[2026-02-22T01:32:26.586Z] ⚠️  SLOW   ping#647  73ms
+[2026-02-22T01:32:26.690Z] ⚠️  SLOW   ping#648  72ms
+[2026-02-22T01:32:26.785Z] ⚠️  SLOW   ping#649  57ms
+[2026-02-22T01:32:27.019Z] ❌ FREEZE  ping#650  188ms  (t+72129ms from start)
+[2026-02-22T01:32:27.021Z] ⚠️  SLOW   ping#651  80ms
+[2026-02-22T01:32:27.134Z] ⚠️  SLOW   ping#652  81ms
+[2026-02-22T01:32:27.325Z] ❌ FREEZE  ping#653  163ms  (t+72435ms from start)
+[2026-02-22T01:32:27.328Z] ⚠️  SLOW   ping#654  58ms
+[2026-02-22T01:32:27.556Z] ❌ FREEZE  ping#655  176ms  (t+72666ms from start)
+[2026-02-22T01:32:27.557Z] ⚠️  SLOW   ping#656  67ms
+[2026-02-22T01:32:27.831Z] ❌ FREEZE  ping#657  229ms  (t+72941ms from start)
+[2026-02-22T01:32:27.842Z] ❌ FREEZE  ping#658  131ms  (t+72952ms from start)
+[2026-02-22T01:32:28.103Z] ❌ FREEZE  ping#659  281ms  (t+73213ms from start)
+[2026-02-22T01:32:28.108Z] ❌ FREEZE  ping#660  181ms  (t+73218ms from start)
+[2026-02-22T01:32:28.109Z] ⚠️  SLOW   ping#661  73ms
+[2026-02-22T01:32:28.343Z] ❌ FREEZE  ping#662  198ms  (t+73453ms from start)
+[2026-02-22T01:32:28.345Z] ⚠️  SLOW   ping#663  91ms
+[2026-02-22T01:32:28.576Z] ❌ FREEZE  ping#664  212ms  (t+73686ms from start)
+[2026-02-22T01:32:28.579Z] ❌ FREEZE  ping#665  105ms  (t+73689ms from start)
+[2026-02-22T01:32:28.872Z] ❌ FREEZE  ping#666  297ms  (t+73982ms from start)
+[2026-02-22T01:32:28.875Z] ❌ FREEZE  ping#667  197ms  (t+73985ms from start)
+[2026-02-22T01:32:28.879Z] ⚠️  SLOW   ping#668  93ms
+[2026-02-22T01:32:29.058Z] ❌ FREEZE  ping#669  163ms  (t+74168ms from start)
+[2026-02-22T01:32:29.060Z] ⚠️  SLOW   ping#670  54ms
+[2026-02-22T01:32:29.373Z] ❌ FREEZE  ping#671  258ms  (t+74483ms from start)
+[2026-02-22T01:32:29.377Z] ❌ FREEZE  ping#672  155ms  (t+74487ms from start)
+[2026-02-22T01:32:29.385Z] ⚠️  SLOW   ping#673  56ms
+[2026-02-22T01:32:29.637Z] ❌ FREEZE  ping#674  208ms  (t+74747ms from start)
+[2026-02-22T01:32:29.639Z] ❌ FREEZE  ping#675  101ms  (t+74749ms from start)
+[2026-02-22T01:32:29.753Z] ❌ FREEZE  ping#676  113ms  (t+74863ms from start)
+[2026-02-22T01:32:29.958Z] ❌ FREEZE  ping#677  207ms  (t+75068ms from start)
+[2026-02-22T01:32:29.959Z] ⚠️  SLOW   ping#678  96ms
+[2026-02-22T01:32:30.159Z] ❌ FREEZE  ping#679  185ms  (t+75269ms from start)
+[2026-02-22T01:32:30.160Z] ⚠️  SLOW   ping#680  76ms
+[2026-02-22T01:32:30.502Z] ❌ FREEZE  ping#681  310ms  (t+75612ms from start)
+[2026-02-22T01:32:30.504Z] ❌ FREEZE  ping#682  200ms  (t+75614ms from start)
+[2026-02-22T01:32:30.505Z] ⚠️  SLOW   ping#683  92ms
+[2026-02-22T01:32:30.813Z] ❌ FREEZE  ping#684  295ms  (t+75923ms from start)
+[2026-02-22T01:32:30.818Z] ❌ FREEZE  ping#685  190ms  (t+75928ms from start)
+[2026-02-22T01:32:30.820Z] ⚠️  SLOW   ping#686  84ms
+[2026-02-22T01:32:31.013Z] heartbeat  status="Scanning…"  rows=2535  queued=N/A  raf=N/A  maxPing=14811ms
+[2026-02-22T01:32:31.021Z] ❌ FREEZE  ping#687  177ms  (t+76131ms from start)
+[2026-02-22T01:32:31.021Z] ⚠️  SLOW   ping#688  68ms
+[2026-02-22T01:32:31.240Z] ❌ FREEZE  ping#689  176ms  (t+76350ms from start)
+[2026-02-22T01:32:31.241Z] ⚠️  SLOW   ping#690  69ms
+[2026-02-22T01:32:31.369Z] ⚠️  SLOW   ping#691  65ms
+[2026-02-22T01:32:31.553Z] ❌ FREEZE  ping#692  141ms  (t+76663ms from start)
+[2026-02-22T01:32:32.063Z] ❌ FREEZE  ping#697  101ms  (t+77173ms from start)
+[2026-02-22T01:32:32.158Z] ⚠️  SLOW   ping#698  96ms
+[2026-02-22T01:32:32.430Z] ❌ FREEZE  ping#699  255ms  (t+77540ms from start)
+[2026-02-22T01:32:32.432Z] ❌ FREEZE  ping#700  148ms  (t+77542ms from start)
+[2026-02-22T01:32:32.723Z] ❌ FREEZE  ping#702  230ms  (t+77833ms from start)
+[2026-02-22T01:32:32.725Z] ❌ FREEZE  ping#703  123ms  (t+77835ms from start)
+[2026-02-22T01:32:33.054Z] ❌ FREEZE  ping#704  343ms  (t+78164ms from start)
+[2026-02-22T01:32:33.057Z] ❌ FREEZE  ping#705  232ms  (t+78167ms from start)
+[2026-02-22T01:32:33.059Z] ❌ FREEZE  ping#706  126ms  (t+78169ms from start)
+[2026-02-22T01:32:33.385Z] ❌ FREEZE  ping#709  116ms  (t+78495ms from start)
+[2026-02-22T01:32:33.491Z] ❌ FREEZE  ping#710  114ms  (t+78601ms from start)
+[2026-02-22T01:32:34.009Z] ❌ FREEZE  ping#714  200ms  (t+79119ms from start)
+[2026-02-22T01:32:34.012Z] ⚠️  SLOW   ping#715  94ms
+[2026-02-22T01:32:34.211Z] ❌ FREEZE  ping#716  193ms  (t+79321ms from start)
+[2026-02-22T01:32:34.213Z] ⚠️  SLOW   ping#717  92ms
+[2026-02-22T01:32:34.647Z] ❌ FREEZE  ping#718  419ms  (t+79757ms from start)
+[2026-02-22T01:32:34.648Z] ❌ FREEZE  ping#719  309ms  (t+79758ms from start)
+[2026-02-22T01:32:34.650Z] ❌ FREEZE  ping#720  201ms  (t+79760ms from start)
+[2026-02-22T01:32:34.652Z] ⚠️  SLOW   ping#721  96ms
+[2026-02-22T01:32:34.907Z] ❌ FREEZE  ping#722  243ms  (t+80017ms from start)
+[2026-02-22T01:32:34.909Z] ❌ FREEZE  ping#723  136ms  (t+80019ms from start)
+[2026-02-22T01:32:35.167Z] ❌ FREEZE  ping#725  179ms  (t+80277ms from start)
+[2026-02-22T01:32:35.170Z] ⚠️  SLOW   ping#726  74ms
+[2026-02-22T01:32:35.428Z] ❌ FREEZE  ping#727  224ms  (t+80538ms from start)
+[2026-02-22T01:32:35.429Z] ❌ FREEZE  ping#728  115ms  (t+80539ms from start)
+[2026-02-22T01:32:35.697Z] ❌ FREEZE  ping#729  276ms  (t+80807ms from start)
+[2026-02-22T01:32:35.700Z] ❌ FREEZE  ping#730  169ms  (t+80810ms from start)
+[2026-02-22T01:32:35.702Z] ⚠️  SLOW   ping#731  64ms
+[2026-02-22T01:32:35.986Z] 
+[2026-02-22T01:32:35.996Z] ═══ RESULTS ═══
+[2026-02-22T01:32:36.001Z]   Total pings : 731
+[2026-02-22T01:32:36.010Z]   Max ping    : 14811ms
+[2026-02-22T01:32:36.024Z]   Freeze      : YES — first at ping#2 (14811ms)
+[2026-02-22T01:32:36.030Z]   Final rows  : 2815
+[2026-02-22T01:32:36.038Z]   Queue left  : N/A
+[2026-02-22T01:32:36.041Z]   Status      : Scanning…
+[2026-02-22T01:32:36.043Z]   Log file    : tests/hang-test.log
+[2026-02-22T01:32:36.044Z] ═══════════════

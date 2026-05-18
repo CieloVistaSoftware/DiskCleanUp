@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>DiskCleanup.Tray</RootNamespace>
+    <AssemblyName>DiskCleanUp.Tray</AssemblyName>
+    <NoWarn>CA1416</NoWarn>
+    <ApplicationIcon>Resources\icon-running.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Drawing.Common" Version="10.0.3" />
+    <ProjectReference Include="..\DiskCleanUp.Shared\DiskCleanUp.Shared.csproj" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="8.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Resources\*.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

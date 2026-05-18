@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Tiny Files — Full View</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #e0e0e0; padding: 16px; }
+  a { color: #58a6ff; }
+
+  h1 { font-size: 1.3rem; margin-bottom: 12px; color: #58a6ff; display: flex; align-items: center; gap: 10px; }
+  h1 .back { font-size: .85rem; text-decoration: none; opacity: .7; }
+  h1 .back:hover { opacity: 1; }
+
+  /* ── Stats Bar ─────────────────────────────────── */
+  .stats-bar {
+    display: flex; gap: 16px; flex-wrap: wrap;
+    margin-bottom: 14px; padding: 10px 14px;
+    background: #16213e; border: 1px solid #333; border-radius: 6px;
+  }
+  .stat { font-size: .85rem; }
+  .stat .val { color: #ffd700; font-weight: 600; }
+
+  /* ── Breakdown Panel ───────────────────────────── */
+  .breakdown {
+    margin-bottom: 14px; padding: 12px 14px;
+    background: #0d1117; border: 1px solid #333; border-radius: 6px;
+  }
+  .breakdown h3 { font-size: .85rem; margin-bottom: 8px; color: #888; }
+  .ext-grid {
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .ext-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 12px; font-size: .78rem;
+    cursor: pointer; border: 1px solid transparent;
+    transition: border-color .15s;
+  }
+  .ext-chip:hover { border-color: #58a6ff; }
+  .ext-chip.active { border-color: #ffd700; background: rgba(255,215,0,.12); }
+  .ext-chip .cnt { color: #888; font-size: .72rem; }
+
+  /* ── Toolbar ───────────────────────────────────── */
+  .toolbar {
+    display: flex; gap: 8px; margin-bottom: 12px; align-items: center; flex-wrap: wrap;
+  }
+  .toolbar input[type=text] {
+    padding: 6px 10px; border: 1px solid #444; border-radius: 4px;
+    background: #2a2a3e; color: #e0e0e0; width: 220px; font-size: .85rem;
+  }
+  .toolbar select {
+    padding: 6px 10px; border: 1px solid #444; border-radius: 4px;
+    background: #2a2a3e; color: #e0e0e0; font-size: .85rem;
+  }
+  .toolbar button {
+    padding: 6px 14px; border: 1px solid #444; border-radius: 4px;
+    background: #2a2a3e; color: #e0e0e0; cursor: pointer; font-size: .85rem;
+  }
+  .toolbar button:hover { background: #3a3a5e; }
+  .toolbar .status { font-size: .8rem; color: #888; margin-left: auto; }
+
+  /* ── Table ─────────────────────────────────────── */
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+  thead { position: sticky; top: 0; z-index: 2; }
+  th {
+    text-align: left; padding: 8px 10px; background: #16213e;
+    border-bottom: 2px solid #333; cursor: pointer; user-select: none;
+    white-space: nowrap;
+  }
+  th:hover { background: #1f2f4e; }
+  th .sort-arrow { margin-left: 4px; font-size: .7rem; opacity: .5; }
+  th.sorted .sort-arrow { opacity: 1; color: #ffd700; }
+  td { padding: 6px 10px; border-bottom: 1px solid #222; word-break: break-all; }
+  tr:hover td { background: #1c2333; }
+  .ext-dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    margin-right: 6px; vertical-align: middle;
+  }
+  .sz { text-align: right; white-space: nowrap; }
+  .dt { white-space: nowrap; color: #888; }
+  .empty { color: #555; font-style: italic; padding: 40px; text-align: center; }
+
+  /* ── Loading ───────────────────────────────────── */
+  .loading-msg { text-align: center; padding: 60px; color: #666; font-size: .95rem; }
+  .spin { display: inline-block; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<h1>
+  <a href="/" class="back">← Dashboard</a>
+  🔬 Tiny Files (≤1 KB) — Full View
+</h1>
+
+<div class="stats-bar" id="statsBar">
+  <span class="stat">Total: <span class="val" id="statTotal">—</span></span>
+  <span class="stat">Total Size: <span class="val" id="statSize">—</span></span>
+  <span class="stat">Extensions: <span class="val" id="statExts">—</span></span>
+  <span class="stat">Showing: <span class="val" id="statShowing">—</span></span>
+</div>
+
+<div class="breakdown" id="breakdownPanel">
+  <h3>📊 File Type Breakdown (click to filter)</h3>
+  <div class="ext-grid" id="extGrid"></div>
+</div>
+
+<div class="toolbar">
+  <input type="text" id="filterText" placeholder="Filter by path…" oninput="applyFilters()">
+  <select id="sortBy" onchange="applySort()">
+    <option value="path-asc">Name A→Z</option>
+    <option value="path-desc">Name Z→A</option>
+    <option value="size-desc">Size ↓</option>
+    <option value="size-asc">Size ↑</option>
+    <option value="modified-desc">Newest first</option>
+    <option value="modified-asc">Oldest first</option>
+    <option value="ext-asc">Extension A→Z</option>
+  </select>
+  <button onclick="clearFilters()">✕ Clear Filters</button>
+  <span class="status" id="loadStatus">Loading…</span>
+</div>
+
+<div class="tbl-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th onclick="sortCol('path')" id="th-path">File <span class="sort-arrow">▲</span></th>
+        <th onclick="sortCol('size')" id="th-size" style="width:90px">Size <span class="sort-arrow">▲</span></th>
+        <th onclick="sortCol('modified')" id="th-modified" style="width:110px">Modified <span class="sort-arrow">▲</span></th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<script>
+// ── Extension colors (mirroring ext-colors.js) ──────────────────────────
+const EXT_COLORS = {
+  '.js':'.js','.ts':'.ts','.json':'.json','.html':'.html','.css':'.css',
+  '.py':'.py','.md':'.md','.txt':'.txt','.log':'.log','.xml':'.xml',
+  '.yml':'.yml','.yaml':'.yml','.toml':'.toml','.cfg':'.cfg','.ini':'.ini',
+  '.bat':'.bat','.ps1':'.ps1','.sh':'.sh','.csv':'.csv','.svg':'.svg',
+  '.png':'.png','.jpg':'.jpg','.jpeg':'.jpg','.gif':'.gif','.ico':'.ico',
+  '.map':'.map','.lock':'.lock','.env':'.env','.gitignore':'.gitignore',
+};
+const PALETTE = {
+  '.js':'#f7df1e','.ts':'#3178c6','.json':'#a8d08d','.html':'#e44d26','.css':'#264de4',
+  '.py':'#3776ab','.md':'#4a86c8','.txt':'#999','.log':'#777','.xml':'#e77f24',
+  '.yml':'#cb171e','.toml':'#9c4121','.cfg':'#8b7355','.ini':'#8b7355',
+  '.bat':'#c1f12e','.ps1':'#012456','.sh':'#89e051','.csv':'#237346','.svg':'#ffb13b',
+  '.png':'#a366ff','.jpg':'#e06c9f','.gif':'#ff6f91','.ico':'#888',
+  '.map':'#555','.lock':'#555','.env':'#ecd53f','.gitignore':'#f54d27',
+};
+function extColor(ext) { return PALETTE[ext] || '#58a6ff'; }
+function extOf(path) {
+  const d = path.lastIndexOf('.'); const s = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
+  if (d < 0 || d < s) return ''; return path.substring(d).toLowerCase();
+}
+
+// ── State ────────────────────────────────────────────────────────────────
+let allRows = [];
+let filteredRows = [];
+let activeExt = '';        // clicked extension chip
+let currentSort = { col: 'path', dir: 1 };
+
+// ── Load all pages from cache API ────────────────────────────────────────
+async function loadAll() {
+  let offset = 0;
+  let total = [];
+  while (true) {
+    const url = offset ? `/api/cache/tiny-files?offset=${offset}` : '/api/cache/tiny-files';
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) break;
+    const data = await res.json();
+    const rows = (data.rows || []).filter(r => r.type === 'result');
+    for (const r of rows) {
+      const d = r.data || {};
+      total.push({ path: d.path || '', size: d.size || 0, modified: d.modified || '', ext: extOf(d.path || '') });
+    }
+    if (!data.nextOffset) break;
+    offset = data.nextOffset;
+    document.getElementById('loadStatus').textContent = `Loaded ${total.length} rows…`;
+  }
+  return total;
+}
+
+async function init() {
+  allRows = await loadAll();
+  if (!allRows.length) {
+    document.getElementById('tbody').innerHTML = '<tr><td colspan="3" class="empty">No tiny files in cache. Run a scan from the dashboard first.</td></tr>';
+    document.getElementById('loadStatus').textContent = 'No data';
+    return;
+  }
+  buildBreakdown();
+  applyFilters();
+  document.getElementById('loadStatus').textContent = `${allRows.length.toLocaleString()} files loaded`;
+}
+
+// ── Breakdown chips ──────────────────────────────────────────────────────
+function buildBreakdown() {
+  const counts = {};
+  const sizes = {};
+  for (const r of allRows) {
+    const e = r.ext || '(none)';
+    counts[e] = (counts[e] || 0) + 1;
+    sizes[e] = (sizes[e] || 0) + r.size;
+  }
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+
+  document.getElementById('statTotal').textContent = allRows.length.toLocaleString();
+  document.getElementById('statSize').textContent = fmtBytes(allRows.reduce((s, r) => s + r.size, 0));
+  document.getElementById('statExts').textContent = sorted.length.toLocaleString();
+
+  const grid = document.getElementById('extGrid');
+  grid.innerHTML = sorted.map(([ext, count]) => {
+    const color = extColor(ext);
+    const size = fmtBytes(sizes[ext] || 0);
+    return `<span class="ext-chip" data-ext="${esc(ext)}" onclick="toggleExt('${esc(ext)}')"
+                  style="background:${color}22; color:${color}">
+              <span class="ext-dot" style="background:${color}"></span>
+              ${esc(ext)} <span class="cnt">${count} · ${size}</span>
+            </span>`;
+  }).join('');
+}
+
+function toggleExt(ext) {
+  activeExt = activeExt === ext ? '' : ext;
+  document.querySelectorAll('.ext-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.ext === activeExt);
+  });
+  applyFilters();
+}
+
+// ── Filter + Sort ────────────────────────────────────────────────────────
+function applyFilters() {
+  const text = document.getElementById('filterText').value.toLowerCase();
+  filteredRows = allRows.filter(r => {
+    if (text && !r.path.toLowerCase().includes(text)) return false;
+    if (activeExt && r.ext !== activeExt) return false;
+    return true;
+  });
+  applySort();
+}
+
+function applySort() {
+  const val = document.getElementById('sortBy').value;
+  const [col, dir] = val.split('-');
+  currentSort = { col, dir: dir === 'asc' ? 1 : -1 };
+
+  filteredRows.sort((a, b) => {
+    let va = a[col], vb = b[col];
+    if (col === 'size') return (va - vb) * currentSort.dir;
+    if (col === 'ext') { va = a.ext; vb = b.ext; }
+    if (typeof va === 'string') return va.localeCompare(vb) * currentSort.dir;
+    return 0;
+  });
+
+  render();
+}
+
+function sortCol(col) {
+  const dirMap = { 'path': 'asc', 'size': 'desc', 'modified': 'desc', 'ext': 'asc' };
+  if (currentSort.col === col) {
+    currentSort.dir *= -1;
+  } else {
+    currentSort = { col, dir: dirMap[col] === 'desc' ? -1 : 1 };
+  }
+  const dd = document.getElementById('sortBy');
+  const dirStr = currentSort.dir === 1 ? 'asc' : 'desc';
+  const opt = dd.querySelector(`option[value="${col}-${dirStr}"]`);
+  if (opt) dd.value = opt.value;
+
+  filteredRows.sort((a, b) => {
+    let va = a[col], vb = b[col];
+    if (col === 'size') return (va - vb) * currentSort.dir;
+    if (typeof va === 'string') return va.localeCompare(vb) * currentSort.dir;
+    return 0;
+  });
+  render();
+}
+
+function clearFilters() {
+  document.getElementById('filterText').value = '';
+  activeExt = '';
+  document.querySelectorAll('.ext-chip').forEach(c => c.classList.remove('active'));
+  applyFilters();
+}
+
+// ── Render ───────────────────────────────────────────────────────────────
+const BATCH = 500;  // render in chunks to avoid blocking
+function render() {
+  document.getElementById('statShowing').textContent = filteredRows.length.toLocaleString();
+
+  // Update sort arrows
+  document.querySelectorAll('th').forEach(th => th.classList.remove('sorted'));
+  const activeTh = document.getElementById(`th-${currentSort.col}`);
+  if (activeTh) {
+    activeTh.classList.add('sorted');
+    const arrow = activeTh.querySelector('.sort-arrow');
+    if (arrow) arrow.textContent = currentSort.dir === 1 ? '▲' : '▼';
+  }
+
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+
+  if (!filteredRows.length) {
+    tbody.innerHTML = '<tr><td colspan="3" class="empty">No files match current filters</td></tr>';
+    return;
+  }
+
+  // Render first batch immediately, rest via rAF
+  let idx = 0;
+  function batch() {
+    const frag = document.createDocumentFragment();
+    const end = Math.min(idx + BATCH, filteredRows.length);
+    for (; idx < end; idx++) {
+      const r = filteredRows[idx];
+      const tr = document.createElement('tr');
+      const color = extColor(r.ext);
+      tr.innerHTML =
+        `<td><span class="ext-dot" style="background:${color}"></span><span style="color:${color}">${esc(r.path)}</span></td>` +
+        `<td class="sz">${fmtBytes(r.size)}</td>` +
+        `<td class="dt">${esc(r.modified)}</td>`;
+      frag.appendChild(tr);
+    }
+    tbody.appendChild(frag);
+    if (idx < filteredRows.length) requestAnimationFrame(batch);
+  }
+  batch();
+}
+
+// ── Util ─────────────────────────────────────────────────────────────────
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtBytes(b) {
+  if (b === 0) return '0 B';
+  const u = ['B','KB','MB','GB'];
+  const i = Math.min(Math.floor(Math.log(b)/Math.log(1024)), u.length-1);
+  return (b / Math.pow(1024, i)).toFixed(i ? 1 : 0) + ' ' + u[i];
+}
+
+init();
+</script>
+</body>
+</html>

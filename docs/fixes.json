@@ -1,0 +1,65 @@
+[
+  {
+    "id": "STARTUP-001",
+    "date": "2026-03-05",
+    "status": "fixed",
+    "title": "Windows Service holding port 5100 blocks all console starts",
+    "symptom": "Every attempt to run the app via npm start or dotnet run crashed with 'address already in use' on port 5100. Browser opened but could not connect.",
+    "root_cause": "The DiskCleanUp Windows Service was installed with auto-start and was already listening on 5100. Any new console instance tried to bind the same port and immediately died. The MCP runner does not have admin rights to stop the service, so sc.exe stop failed silently.",
+    "fix": "Must run 'sc.exe stop DiskCleanUp' from an admin terminal before starting console mode. Service is set to Manual start so it won't auto-restart after a reboot.",
+    "files_changed": [],
+    "notes": "This was the primary reason the app appeared broken for two hours. The server itself was healthy — the wrong instance was running."
+  },
+  {
+    "id": "STARTUP-002",
+    "date": "2026-03-05",
+    "status": "fixed",
+    "title": "stale-unified.js / large-unified.js / node-modules-unified.js crash entire JS module graph on load",
+    "symptom": "Console errors: 'Cannot create property className on string stale-status-container' and 'headerCells.forEach is not a function'. Page loaded but was completely non-functional — no WS connect, no scan grid, nothing worked.",
+    "root_cause": "Three 'Phase 6 pilot' section files (stale-unified.js, large-unified.js, node-modules-unified.js) were calling GridShell.create() and StatusBar.create() at module top level — outside any function, before the DOM existed. ES module imports are hoisted and execute before DOMContentLoaded. Passing a string container ID to StatusBar.create() when document.getElementById() returned null meant the code tried to set .className on null/string, throwing immediately. Because init.js imported all three, the entire module graph failed to load.",
+    "fix": "Commented out the three broken imports in init.js. section-handlers.js already handles stale, large, and node-modules correctly using the established scan-grid.js pattern. The unified files remain on disk for future completion but must not be imported until their top-level calls are moved inside an onShow() or DOMContentLoaded callback.",
+    "files_changed": [
+      "DiskCleanUp.Service/wwwroot/js/init.js"
+    ],
+    "notes": "The unified files themselves are not deleted. They are a work-in-progress Phase 6 migration. The bug is architectural: component initialization must happen inside a function called after DOM ready, never at module scope."
+  },
+  {
+    "id": "STARTUP-003",
+    "date": "2026-03-05",
+    "status": "fixed",
+    "title": "ai-panel.js imported in init.js but file does not exist",
+    "symptom": "Browser console: 'Failed to load resource: 404 /js/ai-panel.js'. Because ES module imports are static, this 404 prevented the entire init.js module from executing.",
+    "root_cause": "init.js had both an import statement and a call to initAiPanel() referencing a file that was never created. Likely added in anticipation of a future AI panel feature that was never built.",
+    "fix": "Commented out the import and the initAiPanel() call in init.js.",
+    "files_changed": [
+      "DiskCleanUp.Service/wwwroot/js/init.js"
+    ],
+    "notes": "When ai-panel.js is eventually created, uncomment both lines."
+  },
+  {
+    "id": "STARTUP-004",
+    "date": "2026-03-05",
+    "status": "fixed",
+    "title": "No automated test to verify the app is actually up and connected",
+    "symptom": "Bugs were being declared fixed without any verification that the page actually loaded, connected to WS, and received live data. Resulted in multiple rounds of 'it should work now' that didn't.",
+    "root_cause": "The existing test-startup.js checked build and static endpoints but did not verify WebSocket handshake or live message receipt.",
+    "fix": "Created scripts/test-connected.js with 7 assertions: HTTP health, index.html 200, connStatus element present, no ai-panel reference in index.html, no active ai-panel import in init.js, WebSocket connects (onopen), WebSocket receives a valid JSON metrics message within 5 seconds. All 7 pass.",
+    "files_changed": [
+      "scripts/test-connected.js"
+    ],
+    "notes": "This test must be run before declaring any startup fix complete. Run with: node scripts/test-connected.js"
+  },
+  {
+    "id": "RESOURCE-SCAN-001",
+    "date": "2026-03-05",
+    "status": "fixed",
+    "title": "No test to verify all JS resources return 200",
+    "symptom": "Broken imports (ai-panel, stale-unified etc.) were invisible until the browser tried to load them.",
+    "root_cause": "No pre-flight check existed to confirm every file referenced by init.js was actually served by the backend.",
+    "fix": "Created scripts/test-resources.js which probes 37 JS/HTML/API paths against the running server and fails if any return non-200. All 37 pass.",
+    "files_changed": [
+      "scripts/test-resources.js"
+    ],
+    "notes": "Run with: node scripts/test-resources.js. Should be added to the standard pre-deploy checklist."
+  }
+]

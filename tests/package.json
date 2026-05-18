@@ -1,0 +1,16 @@
+{
+  "name": "diskcleaup-tests",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "node signalr-smoke-test.mjs",
+    "test:ui": "node ui-response-test.mjs",
+    "test:nav": "node nav-dropdown-tests.mjs",
+    "test:all": "node signalr-smoke-test.mjs && node ui-response-test.mjs && node nav-dropdown-tests.mjs"
+  },
+  "dependencies": {
+    "@microsoft/signalr": "^8.0.0",
+    "playwright": "^1.44.0",
+    "wb-starter": "file:../../../../Downloads/AI/wb-starter"
+  }
+}

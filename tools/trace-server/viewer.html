@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>📜 Trace Viewer — Standalone</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #e0e0e0; padding: 16px; }
+  h1 { font-size: 1.3rem; margin-bottom: 12px; color: #58a6ff; }
+  h1 small { font-size: .7rem; color: #555; font-weight: 400; }
+  .toolbar { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; flex-wrap: wrap; }
+  .toolbar button {
+    padding: 6px 14px; border: 1px solid #444; border-radius: 4px;
+    background: #2a2a3e; color: #e0e0e0; cursor: pointer; font-size: .85rem;
+  }
+  .toolbar button:hover { background: #3a3a5e; }
+  .toolbar .status { font-size: .8rem; color: #888; margin-left: auto; }
+  #filter { padding: 6px 10px; border: 1px solid #444; border-radius: 4px; background: #2a2a3e; color: #e0e0e0; width: 200px; font-size: .85rem; }
+  #log {
+    background: #0d1117; border: 1px solid #333; border-radius: 6px;
+    padding: 12px; font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: .8rem; line-height: 1.6; overflow-y: auto;
+    max-height: calc(100vh - 120px); white-space: pre-wrap; word-break: break-all;
+  }
+  .line { padding: 1px 0; }
+  .line:hover { background: #1c2333; }
+  .tag-PAGE { color: #58a6ff; }
+  .tag-INIT { color: #7ee787; }
+  .tag-CACHE { color: #d2a8ff; }
+  .tag-WS { color: #ffa657; }
+  .tag-DUP { color: #ff7b72; }
+  .tag-TRASH { color: #f778ba; }
+  .tag-HB { color: #555; }
+  .tag-FREEZE { color: #ff0000; font-weight: bold; background: #3d0000; padding: 2px 4px; border-radius: 3px; }
+  .tag-ERR { color: #ff4444; }
+  .ms { color: #666; }
+  .empty { color: #555; font-style: italic; padding: 40px; text-align: center; }
+  #autoScroll { accent-color: #58a6ff; }
+  .live-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #3fb950; margin-right: 6px; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+</style>
+</head>
+<body>
+<h1><span class="live-dot"></span>📜 Trace Viewer <small>standalone :5555</small></h1>
+<div class="toolbar">
+  <button onclick="loadTrace()">🔄 Refresh</button>
+  <button onclick="copyTrace()">📋 Copy</button>
+  <button onclick="clearTrace()">🗑 Clear</button>
+  <input type="text" id="filter" placeholder="Filter (e.g. FREEZE, WS, DUP)" oninput="applyFilter()">
+  <label><input type="checkbox" id="autoRefresh" checked> Auto-refresh</label>
+  <label><input type="checkbox" id="autoScroll" checked> Auto-scroll</label>
+  <span class="status" id="status">Loading...</span>
+</div>
+<div id="log"><div class="empty">Loading trace...</div></div>
+
+<script>
+let allLines = [];
+let refreshTimer = null;
+
+function formatLine(line) {
+  const m = line.match(/^(\+\d+ms)\s+\[(\w+)\]\s+(.*)$/);
+  if (!m) return `<div class="line">${esc(line)}</div>`;
+  const [, ms, tag, msg] = m;
+  return `<div class="line"><span class="ms">${esc(ms)}</span> <span class="tag-${tag}">[${tag}]</span> ${esc(msg)}</div>`;
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function loadTrace() {
+  try {
+    const r = await fetch('/api/trace');
+    const data = await r.json();
+    allLines = data.lines || [];
+    applyFilter();
+    document.getElementById('status').textContent = `${allLines.length} entries — ${new Date().toLocaleTimeString()}`;
+  } catch (e) {
+    document.getElementById('status').textContent = `Error: ${e.message}`;
+  }
+}
+
+function applyFilter() {
+  const filter = document.getElementById('filter').value.toLowerCase();
+  const filtered = filter ? allLines.filter(l => l.toLowerCase().includes(filter)) : allLines;
+  const el = document.getElementById('log');
+  if (!filtered.length) {
+    el.innerHTML = '<div class="empty">No trace entries' + (filter ? ' matching filter' : '') + '</div>';
+    return;
+  }
+  el.innerHTML = filtered.map(formatLine).join('');
+  if (document.getElementById('autoScroll').checked) {
+    el.scrollTop = el.scrollHeight;
+  }
+}
+
+async function copyTrace() {
+  const filter = document.getElementById('filter').value.toLowerCase();
+  const lines = filter ? allLines.filter(l => l.toLowerCase().includes(filter)) : allLines;
+  try {
+    await navigator.clipboard.writeText(lines.join('\n'));
+    document.getElementById('status').textContent = `Copied ${lines.length} lines`;
+  } catch {
+    document.getElementById('status').textContent = 'Copy failed';
+  }
+}
+
+async function clearTrace() {
+  await fetch('/api/trace', { method: 'DELETE' });
+  allLines = [];
+  applyFilter();
+  document.getElementById('status').textContent = 'Cleared';
+}
+
+function startAutoRefresh() {
+  if (refreshTimer) clearInterval(refreshTimer);
+  refreshTimer = setInterval(() => {
+    if (document.getElementById('autoRefresh').checked) loadTrace();
+  }, 2000);
+}
+
+document.getElementById('autoRefresh').addEventListener('change', (e) => {
+  if (e.target.checked) startAutoRefresh();
+  else if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+});
+
+loadTrace();
+startAutoRefresh();
+</script>
+</body>
+</html>
