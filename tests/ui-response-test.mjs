@@ -98,29 +98,31 @@ try {
   process.exit(1);
 }
 
-// ── Test 2: Scan button click → skeleton appears within 100ms ────────────
-console.log('\n── Test 2: Scan button click → skeleton rows appear ──');
+// ── Test 2: Scan button click → status changes within 100ms ─────────────
+console.log('\n── Test 2: Scan command → status indicator changes ──');
 try {
-  // Click Duplicates tab first (it's the default but be explicit)
-  await page.click('nav button:first-child');
+  // Navigate to Duplicates section
+  await page.selectOption('#sectionMenu', 'duplicates');
+  await page.waitForTimeout(200);
 
   const ms = await measureResponseMs(
-    // Click action
-    () => page.click('button.btn:has-text("Scan")', { timeout: 3000 }),
-    // Condition: skeleton or real rows appear in dupResult
+    // Trigger scan via the unified command menu
+    () => page.selectOption('#commandMenu-duplicates', 'scan'),
+    // Condition: status badge shows scanning/done OR a .dup-sep appears
     async () => {
-      const rowCount = await page.evaluate(() =>
-        document.querySelector('#dupTable tbody')?.querySelectorAll('tr').length ?? 0
-      );
-      return rowCount > 0;
+      return await page.evaluate(() => {
+        const statusEl = document.getElementById('sbv-duplicates-status');
+        const hasSep   = document.querySelector('#dupResult_list .dup-sep') !== null;
+        return hasSep || (statusEl && statusEl.textContent !== 'Idle');
+      });
     },
     2000
   );
 
   assert(
     ms <= RESPONSE_LIMIT_MS,
-    `Skeleton rows appeared in ${ms}ms`,
-    `Skeleton rows too slow`,
+    `Status changed within ${ms}ms of scan command`,
+    `Scan status response too slow`,
     ms
   );
 } catch (e) {
@@ -132,12 +134,12 @@ console.log('\n── Test 3: Wait for duplicate scan results ──');
 let hasResults = false;
 try {
   await page.waitForFunction(
-    () => document.querySelectorAll('#dupTable tr.group-sep').length > 0,
+    () => document.querySelectorAll('#dupResult_list .dup-sep').length > 0,
     { timeout: SCAN_TIMEOUT_MS }
   );
   hasResults = true;
   const groupCount = await page.evaluate(
-    () => document.querySelectorAll('#dupTable tr.group-sep').length
+    () => document.querySelectorAll('#dupResult_list .dup-sep').length
   );
   pass(`Duplicate scan found ${groupCount} group(s)`);
 } catch (e) {
@@ -145,54 +147,65 @@ try {
   console.log('  ⚠️  SKIP: No duplicate groups found (drive may have no dupes) — skipping trash click test');
 }
 
-// ── Test 4: "Trash Copies" click → rows disappear within 100ms ───────────
-console.log('\n── Test 4: Trash Copies click → DOM update within 100ms ──');
+// ── Test 4: Delete Copies click → group removed and no stuck buttons ──────
+// Regression for: github.com/CieloVistaSoftware/DiskCleanUp/issues/2
+console.log('\n── Test 4: Delete Copies click → DOM cleaned up (no stuck buttons) ──');
 if (hasResults) {
   try {
-    // Get the hash of the first group so we can track its rows
+    // Get the hash of the first group so we can track its removal
     const firstHash = await page.evaluate(() =>
-      document.querySelector('#dupTable tr.group-sep')?.dataset?.hash
+      document.querySelector('#dupResult_list .dup-sep')?.dataset?.hash
     );
 
     if (!firstHash) {
-      fail('Could not find group hash on first group-sep row');
+      fail('Could not find data-hash on first .dup-sep');
     } else {
-      // Count rows in that group before clicking
+      // Count file rows in that group before clicking
       const rowsBefore = await page.evaluate(hash =>
-        document.querySelectorAll(`#dupTable tr[data-hash="${hash}"]`).length,
+        document.querySelectorAll(`[data-group="${hash}"]`).length,
         firstHash
       );
 
       const ms = await measureResponseMs(
-        // Click the Trash Copies button in the first group
-        () => page.click('#dupTable tr.group-sep button', { timeout: 3000 }),
-        // Condition: rows for this hash are gone from DOM
+        // Click the Delete Copies button on the first group header
+        () => page.click('#dupResult_list .dup-sep .dup-trash-btn', { timeout: 3000 }),
+        // Condition: separator for this hash is gone (group was removed + re-render fired)
         async () => {
-          const remaining = await page.evaluate(hash =>
-            document.querySelectorAll(`#dupTable tr[data-hash="${hash}"]:not(.group-sep)`).length,
+          const sepGone = await page.evaluate(hash =>
+            document.querySelector(`#dupResult_list .dup-sep[data-hash="${hash}"]`) === null,
             firstHash
           );
-          return remaining === 0;
+          return sepGone;
         },
-        2000
+        5000
       );
 
       assert(
-        ms !== Infinity && ms <= RESPONSE_LIMIT_MS,
-        `Copy rows removed from DOM in ${ms}ms`,
-        ms === Infinity ? 'Copy rows never removed from DOM' : `DOM update too slow`,
+        ms !== Infinity && ms <= RESPONSE_LIMIT_MS * 20, // allow up to 2s for API round-trip
+        `Group separator removed from DOM in ${ms}ms`,
+        ms === Infinity ? 'Group separator never removed — re-render did not fire' : `DOM update too slow`,
         ms === Infinity ? undefined : ms
       );
 
+      // Regression check: no disabled dup-trash-btn should remain (stuck button bug)
+      const stuckBtns = await page.evaluate(() =>
+        document.querySelectorAll('.dup-trash-btn[disabled]').length
+      );
+      assert(
+        stuckBtns === 0,
+        'No disabled \'deleting…\' buttons remain in DOM',
+        `${stuckBtns} disabled .dup-trash-btn still in DOM — stuck button regression!`
+      );
+
       if (ms !== Infinity) {
-        console.log(`     (${rowsBefore} rows tracked, hash: ${firstHash.slice(0,8)}…)`);
+        console.log(`     (${rowsBefore} file rows tracked, hash: ${firstHash.slice(0, 8)}…)`);
       }
     }
   } catch (e) {
-    fail(`Trash copies click test failed: ${e.message}`);
+    fail(`Delete copies click test failed: ${e.message}`);
   }
 } else {
-  console.log('  ⚠️  SKIP: No results to test trash click against');
+  console.log('  ⚠️  SKIP: No results to test delete against');
 }
 
 // ── Test 5: MetricsUpdate → canvas redraws within 100ms ──────────────────
