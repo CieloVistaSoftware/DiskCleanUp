@@ -1,5 +1,5 @@
 import { fmtBytes, escHtml as esc } from '/lib/wb-core/utils/format.js';
-import { ErrLog } from '/js/error-logger.js';
+import { ErrLog } from './error-logger.js';
 /**
  * task-manager.js — Running Tasks view with safety classification
  *
@@ -304,6 +304,35 @@ function render() {
     }
     html += '</tbody></table>';
     container.innerHTML = html;
+    // Row click → focus that process's window (skip clicks on checkboxes)
+    container.querySelectorAll('tr.task-row[data-pid]').forEach(row => {
+        const pid = +(row.dataset.pid ?? 0);
+        const proc = _displayed.find(p => p.pid === pid);
+        if (!proc?.title)
+            return;
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', (e) => {
+            if (e.target.tagName === 'INPUT')
+                return;
+            void focusWindow(pid);
+        });
+    });
+}
+async function focusWindow(pid) {
+    try {
+        const r = await fetch('/api/tasks/focus', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pid }),
+        });
+        const d = await r.json();
+        if (!d.ok && d.reason !== 'no-window') {
+            ErrLog.log('[TASK_MANAGER]', d.error || 'focus failed', '', 'CAUGHT_ERROR');
+        }
+    }
+    catch (e) {
+        ErrLog.log('[TASK_MANAGER]', e.message, e.stack, 'CAUGHT_ERROR');
+    }
 }
 // esc is now imported from wb-core as escHtml
 function filter() { render(); }
