@@ -20,53 +20,16 @@ const DOTNET = 'dotnet';
 
 const args = new Set(process.argv.slice(2).map((a) => String(a || '').toLowerCase()));
 const wantsHelp = args.has('--help') || args.has('-h');
-const mode = args.has('--both') ? 'both' : args.has('--console') ? 'console' : 'service';
+const mode = args.has('--service') ? 'service' : 'console';
 
 if (wantsHelp) {
   console.log('DiskCleanUp startup modes:');
-  console.log('  node scripts/start.js           -> service mode only (default)');
-  console.log('  node scripts/start.js --console -> console mode only (:5000)');
-  console.log('  node scripts/start.js --both    -> service + console');
+  console.log('  node scripts/start.js            -> console mode (default, port 5000)');
+  console.log('  node scripts/start.js --service  -> tray + trace viewer only (no console app)');
   process.exit(0);
 }
 
 console.log(`Startup mode: ${mode}`);
-
-// == Step 0: Stop Windows Service first (releases DLL lock) ===========
-console.log('=== Step 0: Stop Windows Service (releases DLL lock) ===');
-{
-  let wasSvcRunning = false;
-  try {
-    const out = execSync('sc.exe query DiskCleanUp', { encoding: 'utf8', stdio: 'pipe', timeout: 5000 });
-    wasSvcRunning = out.includes('RUNNING') || out.includes('STOP_PENDING');
-  } catch { /* not installed */ }
-
-  if (wasSvcRunning) {
-    console.log('  Windows Service is running — stopping it first...');
-    try {
-      execSync('sc.exe stop DiskCleanUp', { encoding: 'utf8', stdio: 'pipe', timeout: 10000 });
-    } catch { /* may already be stopping */ }
-
-    // Poll until SERVICE_STOPPED (max 20s)
-    const deadline = Date.now() + 20000;
-    let stopped = false;
-    while (Date.now() < deadline) {
-      try {
-        execSync('ping -n 2 127.0.0.1', { stdio: 'ignore' }); // ~1s sleep
-        const q = execSync('sc.exe query DiskCleanUp', { encoding: 'utf8', stdio: 'pipe', timeout: 5000 });
-        if (!q.includes('RUNNING') && !q.includes('STOP_PENDING')) { stopped = true; break; }
-      } catch { stopped = true; break; }
-    }
-
-    if (stopped) {
-      console.log('  \u2705 Windows Service stopped — DLL lock released');
-    } else {
-      console.warn('  \u26a0\ufe0f  Service did not stop within 20s — build may still encounter locks');
-    }
-  } else {
-    console.log('  Windows Service not running — no action needed');
-  }
-}
 
 // == Step 1: Kill ===================================================
 console.log('\n=== Step 1: Stop running instances ===');
@@ -80,13 +43,13 @@ try {
   killExitCode = e.status ?? 1;
 }
 
+// Service is stopped — never treat it as still running
 // Kill the Tray BEFORE the build so its exe is not locked during compilation
 try {
   execSync('taskkill /F /IM DiskCleanUp.Tray.exe', { stdio: 'ignore' });
   console.log('  Tray stopped (unlocked for rebuild)');
 } catch { /* not running — fine */ }
 
-// Service is stopped — never treat it as still running
 const serviceStillRunning = false;
 
 // == Step 2: Build ==================================================
@@ -123,7 +86,7 @@ console.log('\n=== Step 3: TypeScript compile ===');
   // Dev ergonomics: allow startup even when legacy frontend TS files still
   // have type errors. Set STRICT_TSC=1 to restore fail-fast behavior.
   const strictTsc = process.env.STRICT_TSC === '1';
-  const tscBin = path.join(ROOT, 'node_modules', '.bin', 'tsc');
+  const tscBin = path.join(ROOT, 'node_modules', '.bin', process.platform === 'win32' ? 'tsc.cmd' : 'tsc');
   try {
     execSync(`"${tscBin}"`, { cwd: ROOT, stdio: 'inherit' });
     console.log('  \u2705 TypeScript compile: clean');
@@ -136,42 +99,9 @@ console.log('\n=== Step 3: TypeScript compile ===');
   }
 }
 
-// == Step 4: Start Windows Service (port 5100) =======================
-// No elevation needed after one-time setup:
-//   powershell -ExecutionPolicy Bypass -File scripts\setup-service.ps1
-if (mode === 'service' || mode === 'both') {
-console.log('\n=== Step 4: Start Windows Service (port 5100) ===');
-{
-  let svcRunning = false;
-  try {
-    const out = execSync('sc.exe query DiskCleanUp', { encoding: 'utf8', stdio: 'pipe', timeout: 5000 });
-    svcRunning = out.includes('RUNNING');
-  } catch { /* service not installed */ }
-
-  if (svcRunning) {
-    console.log('  \u2705 Windows Service already running \u2192 http://localhost:5100');
-  } else {
-    // Not running (we just shut it down in Step 1, or it crashed).
-    // sc.exe start works without elevation after setup-service.ps1.
-    try {
-      execSync('sc.exe start DiskCleanUp', { encoding: 'utf8', stdio: 'pipe', timeout: 15000 });
-      console.log('  \u2705 Windows Service started \u2192 http://localhost:5100');
-    } catch (e) {
-      const msg = (e.stdout?.toString() || e.stderr?.toString() || e.message || '').toLowerCase();
-      if (msg.includes('1056') || msg.includes('already')) {
-        console.log('  \u2705 Windows Service already running \u2192 http://localhost:5100');
-      } else {
-        console.warn('  \u26a0\ufe0f  Could not start Windows Service (run setup-service.ps1 once elevated if this persists).');
-      }
-    }
-  }
-}
-}
-
-// == Step 4: Launch tray icon + register auto-start =================
+// == Step 4: Launch tray icon =======================================
+console.log('\n=== Step 4: Launch tray icon ===');
 const TRAY_EXE = path.join(ROOT, 'DiskCleanUp.Tray', 'bin', 'Debug', 'net8.0-windows', 'DiskCleanUp.Tray.exe');
-if (mode === 'service' || mode === 'both') {
-console.log('\n=== Step 5: Launch tray icon ===');
 try {
   const { existsSync } = await import('fs');
   if (existsSync(TRAY_EXE)) {
@@ -185,13 +115,10 @@ try {
 } catch (e) {
   console.warn('  Tray launch warning:', e.message);
 }
-}
 
-// == Step 4: Launch trace viewer on port 5001 =======================
-if (mode === 'service' || mode === 'both') {
-console.log('\n=== Step 6: Launch trace viewer (port 5001) ===');
+// == Step 5: Launch trace viewer on port 5001 =======================
+console.log('\n=== Step 5: Launch trace viewer (port 5001) ===');
 try {
-  // Kill anything already on 5001
   try { execSync('taskkill /F /IM node.exe /FI "WINDOWTITLE eq trace-server*"', { stdio: 'ignore' }); } catch { }
   const traceServer = spawn(
     process.execPath,
@@ -199,19 +126,13 @@ try {
     { detached: true, stdio: 'ignore' }
   );
   traceServer.unref();
-  console.log('  Trace viewer launched → http://localhost:5001/trace-viewer.html');
+  console.log('  Trace viewer launched \u2192 http://localhost:5001/trace-viewer.html');
 } catch (e) {
   console.warn('  Trace viewer launch warning:', e.message);
 }
-}
 
-if (mode === 'service') {
-  console.log('\nService mode startup complete. Dashboard: http://localhost:5100');
-  process.exit(0);
-}
-
-// == Step 7: Run backend =============================================
-console.log('\n=== Step 7: Start console mode (port 5000) ===');
+// == Step 6: Run backend =============================================
+console.log('\n=== Step 6: Start console mode (port 5000) ===');
 
 let proc;
 if (useFresh) {
