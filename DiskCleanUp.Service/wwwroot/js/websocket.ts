@@ -538,7 +538,7 @@ async function runDiagnostics() {
   const alertText = [
     '🔍 DiskCleanUp Diagnostics Results',
     '',
-    ...results.checks.map(c => \`\${c.name}: \${c.status}\`),
+    ...results.checks.map(c => `${c.name}: ${c.status}`),
     '',
     results.summary,
     '',

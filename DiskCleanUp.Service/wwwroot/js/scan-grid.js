@@ -23,7 +23,7 @@ import { colorFor, bgFor, extOf, dot } from './ext-colors.js';
 import { fmtBytes, escHtml as _esc } from '/lib/wb-core/utils/format.js';
 import * as SF from './scan-filter.js';
 import { crumb } from './breadcrumb.js';
-import { ErrLog } from '/js/error-logger.js';
+import { ErrLog } from './error-logger.js';
 const _grids = {};
 // ── Media preview — lazy-loaded thumbnails via IntersectionObserver ──────
 // Only these extensions get a thumbnail. Video gets a poster-style thumb
@@ -199,10 +199,11 @@ export function create(section, containerId, columns, opts = {}) {
     _grids[section] = {
         containerId, columns: cols, gridTemplate, body, header, legend,
         rows: [], sortCol: -1, sortDir: 0,
-        _frag: null, _flushScheduled: false, _legendExts: new Set()
+        _frag: null, _flushScheduled: false, _legendExts: new Set(),
+        lastClickRow: null,
+        // Filter registration moved to top of create() — runs even when grid
+        // already exists from skeleton (FEAT-021 fix)
     };
-    // Filter registration moved to top of create() — runs even when grid
-    // already exists from skeleton (FEAT-021 fix)
 }
 /**
  * Add a data row.
@@ -815,6 +816,133 @@ function _parseExtShorthand(text) {
     }
     return '';
 }
+// ── Drag-select + context menu ────────────────────────────────────────────
+let _dragState = null;
+let _ctxMenuEl = null;
+let _ctxMenuSection = null;
+function _visibleRows(body) {
+    return [...body.querySelectorAll('.sg-row')].filter(r => r.style.display !== 'none');
+}
+function _rowsBetween(body, a, b) {
+    const rows = _visibleRows(body);
+    const ai = rows.indexOf(a), bi = rows.indexOf(b);
+    if (ai < 0 || bi < 0)
+        return [];
+    const lo = Math.min(ai, bi), hi = Math.max(ai, bi);
+    return rows.slice(lo, hi + 1);
+}
+function _ensureCtxMenu() {
+    if (_ctxMenuEl)
+        return _ctxMenuEl;
+    const menu = document.createElement('div');
+    menu.className = 'sg-ctx-menu';
+    menu.innerHTML =
+        '<button data-action="select-all">&#9745; Select All</button>' +
+            '<button data-action="deselect-all">&#9744; Deselect All</button>' +
+            '<button data-action="invert">&#8597; Invert Selection</button>';
+    document.body.appendChild(menu);
+    menu.addEventListener('click', (e) => {
+        const btn = e.target.closest('button');
+        if (!btn || !_ctxMenuSection) {
+            menu.style.display = 'none';
+            return;
+        }
+        const g = _grids[_ctxMenuSection];
+        menu.style.display = 'none';
+        if (!g)
+            return;
+        const action = btn.dataset.action;
+        const cbs = _visibleRows(g.body)
+            .map(r => r.querySelector('input[type=checkbox]'))
+            .filter(Boolean);
+        if (action === 'select-all') {
+            cbs.forEach(cb => { if (!cb.checked) {
+                cb.checked = true;
+                cb.dispatchEvent(new Event('change', { bubbles: true }));
+            } });
+        }
+        else if (action === 'deselect-all') {
+            cbs.forEach(cb => { if (cb.checked) {
+                cb.checked = false;
+                cb.dispatchEvent(new Event('change', { bubbles: true }));
+            } });
+        }
+        else if (action === 'invert') {
+            cbs.forEach(cb => { cb.checked = !cb.checked; cb.dispatchEvent(new Event('change', { bubbles: true })); });
+        }
+    });
+    document.addEventListener('click', () => { if (_ctxMenuEl)
+        _ctxMenuEl.style.display = 'none'; });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && _ctxMenuEl)
+        _ctxMenuEl.style.display = 'none'; });
+    _ctxMenuEl = menu;
+    return menu;
+}
+function _initInteractions(section, body) {
+    // Drag-to-select + Shift+click range + Ctrl+click toggle
+    body.addEventListener('mousedown', (e) => {
+        if (e.button !== 0)
+            return;
+        const target = e.target;
+        if (target.closest('button') || target.closest('input') || target.closest('.sg-resize-handle'))
+            return;
+        const row = target.closest('.sg-row');
+        if (!row)
+            return;
+        const cb = row.querySelector('input[type=checkbox]');
+        if (!cb)
+            return;
+        e.preventDefault();
+        const g = _grids[section];
+        if (e.shiftKey && g?.lastClickRow) {
+            // Shift+click: check all rows in range (always selects)
+            _rowsBetween(body, g.lastClickRow, row).forEach(r => {
+                const rcb = r.querySelector('input[type=checkbox]');
+                if (rcb && !rcb.checked) {
+                    rcb.checked = true;
+                    rcb.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+            return; // no drag, keep lastClickRow as shift anchor
+        }
+        const newChecked = !cb.checked;
+        cb.checked = newChecked;
+        cb.dispatchEvent(new Event('change', { bubbles: true }));
+        if (g)
+            g.lastClickRow = row;
+        if (e.ctrlKey || e.metaKey)
+            return; // Ctrl+click: toggle only, no drag
+        _dragState = { body, startRow: row, lastRow: row, checked: newChecked };
+    });
+    // Right-click context menu
+    body.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        _ctxMenuSection = section;
+        const menu = _ensureCtxMenu();
+        menu.style.left = `${Math.min(e.clientX, window.innerWidth - 180)}px`;
+        menu.style.top = `${Math.min(e.clientY, window.innerHeight - 115)}px`;
+        menu.style.display = 'block';
+    });
+}
+// Module-level handlers — attached once, shared across all grid instances
+document.addEventListener('mousemove', (e) => {
+    if (!_dragState)
+        return;
+    const row = e.target.closest?.('.sg-row');
+    if (!row || !_dragState.body.contains(row))
+        return;
+    if (row === _dragState.lastRow)
+        return;
+    _dragState.lastRow = row;
+    _rowsBetween(_dragState.body, _dragState.startRow, row).forEach(r => {
+        const cb = r.querySelector('input[type=checkbox]');
+        if (cb && cb.checked !== _dragState.checked) {
+            cb.checked = _dragState.checked;
+            cb.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    });
+});
+document.addEventListener('mouseup', () => { _dragState = null; });
 // ── Expose for window-level access ───────────────────────────────────────
 window._scanGrid = {
     create, addRow, showSkeleton, removeSkeleton, clear,

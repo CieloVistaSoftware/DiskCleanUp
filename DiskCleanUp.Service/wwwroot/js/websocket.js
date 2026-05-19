@@ -11,7 +11,7 @@
 //    { section, type: 'error', data }     — scan failed
 //    { section: 'metrics', type: 'update', data } — CPU/memory gauge
 // ═══════════════════════════════════════════════════════════════════════════
-import { ErrLog } from '/js/error-logger.js';
+import { ErrLog } from './error-logger.js';
 import { Metrics } from './metrics.js';
 import { pushEvent } from './event-queue.js';
 import { loadPage, resetPaging, resumeFromEof } from './page-loader.js';
@@ -29,7 +29,7 @@ window._wsSend = (raw) => { if (_ws && _ws.readyState === WebSocket.OPEN)
 let _connectTimer = null;
 let _fatalShown = false; // only show the fatal error panel once
 const WS_CONNECT_TIMEOUT = 15000; // 15 seconds
-let _lastWsStatusTime = Date.now(); // track when we last started a connect attempt
+let _lastWsStatusTime = Date.now(); // track when we last got a status update
 let _watchdogTimer = null; // watchdog to force reconnect if stalled
 // ── Fatal connection error — shown in the page, not just a log entry ──────
 //
@@ -80,9 +80,9 @@ async function _showFatalError() {
         catch { /* alternate port also unreachable */ }
     }
     // ── Classify the failure ───────────────────────────────────────────────
-    const isWsBroken = httpOk;                    // Case A: HTTP up, WS failed
-    const isPortMismatch = !httpOk && altPortOk;  // Case B: wrong port, alt alive
-    const isServiceDown = !httpOk && !altPortOk;  // Case C: nothing responds
+    const isWsBroken = httpOk; // Case A: HTTP up, WS failed
+    const isPortMismatch = !httpOk && altPortOk; // Case B: wrong port, alt alive
+    const isServiceDown = !httpOk && !altPortOk; // Case C: nothing responds
     let title;
     let reason;
     if (isWsBroken) {
@@ -150,25 +150,27 @@ async function _showFatalError() {
         wsConnect();
     };
     const restartEl = document.getElementById('ws-fatal-restart');
-    if (restartEl) restartEl.onclick = async () => {
-        restartEl.disabled = true;
-        restartEl.textContent = '⟳ Restarting…';
-        try {
-            await fetch('/api/restart', { method: 'POST', signal: AbortSignal.timeout(5000) });
-        }
-        catch { /* service restarts — fetch will fail, that's expected */ }
-        // Give the service 3s to come back, then reset and let the reconnect loop take over
-        setTimeout(() => {
-            overlay.remove();
-            _fatalShown = false;
-            _wsReconnectDelay = 0;
-            wsConnect();
-        }, 3000);
-    };
+    if (restartEl)
+        restartEl.onclick = async () => {
+            restartEl.disabled = true;
+            restartEl.textContent = '⟳ Restarting…';
+            try {
+                await fetch('/api/restart', { method: 'POST', signal: AbortSignal.timeout(5000) });
+            }
+            catch { /* service restarts — fetch will fail, that's expected */ }
+            // Give the service 3s to come back, then reset and let the reconnect loop take over
+            setTimeout(() => {
+                overlay.remove();
+                _fatalShown = false;
+                _wsReconnectDelay = 0;
+                wsConnect();
+            }, 3000);
+        };
     const switchEl = document.getElementById('ws-fatal-switch');
-    if (switchEl) switchEl.onclick = () => {
-        window.location.href = `http://localhost:${altPort}`;
-    };
+    if (switchEl)
+        switchEl.onclick = () => {
+            window.location.href = `http://localhost:${altPort}`;
+        };
     document.getElementById('ws-fatal-dismiss').onclick = () => {
         overlay.remove();
         _fatalShown = false; // reset so the next failure can show the panel again
@@ -181,14 +183,17 @@ async function _showFatalError() {
 // Scan timers removed — the WebSocket itself is the liveness signal.
 // If the server dies, onclose fires and reconnect handles it.
 // Scans end via 'done' or 'error' events only. No artificial timeouts.
-//
-// Watchdog: if reconnect flow stalls, force a new attempt.
+// ── Watchdog timer: force reconnect if stalled ──────────────────────────────
+// If we're not "Live" and more than 45 seconds have passed since the last
+// connection attempt was initiated, force a reconnect. This handles the case
+// where onclose() doesn't fire (race condition in some browser versions).
 function _startWatchdog() {
     clearInterval(_watchdogTimer);
     _watchdogTimer = setInterval(() => {
         const el = document.getElementById('connStatus');
         const isLive = el?.className === 'connected';
         const timeSinceLastAttempt = Date.now() - _lastWsStatusTime;
+        // If not connected and it's been 45+ seconds since last attempt, force reconnect
         if (!isLive && timeSinceLastAttempt > 45000) {
             window._T?.('WS', `watchdog triggered: forcing reconnect (${timeSinceLastAttempt}ms since last attempt)`);
             clearTimeout(_connectTimer);
@@ -199,18 +204,17 @@ function _startWatchdog() {
                 catch { }
                 _ws = null;
             }
-            _wsReconnectDelay = 0;
+            _wsReconnectDelay = 0; // reset backoff
             wsConnect();
         }
-    }, 30000);
+    }, 30000); // check every 30 seconds
 }
-
 export function wsConnect() {
     // Show "Connecting…" immediately so the status bar is accurate
     // during both the initial connect and every reconnect attempt.
     setConnStatus('⚡ Connecting…', false);
-    _lastWsStatusTime = Date.now();
-    _startWatchdog();
+    _lastWsStatusTime = Date.now(); // mark this connection attempt
+    _startWatchdog(); // ensure watchdog is running
     const wsScheme = location.protocol === 'https:' ? 'wss' : 'ws';
     const wsUrl = `${wsScheme}://${location.host}/ws`;
     try {
@@ -236,7 +240,9 @@ export function wsConnect() {
             ErrLog.log('[WEBSOCKET]', ex.message, ex.stack, 'CAUGHT_ERROR');
         }
         _showFatalError();
-        setTimeout(() => {
+        // FALLBACK: If onclose doesn't fire within 2 seconds, force reconnect
+        // This handles edge cases where onclose event doesn't trigger (browser quirk)
+        const fallbackTimer = setTimeout(() => {
             if (!_oncloseWasCalled) {
                 window._T?.('WS', 'WARNING: onclose not fired after close(), forcing reconnect');
                 _ws = null;
@@ -256,11 +262,12 @@ export function wsConnect() {
         if (overlay)
             overlay.remove();
         _fatalShown = false; // allow future failures to show the panel again
+        // Clear watchdog since we're now connected
         clearInterval(_watchdogTimer);
         _watchdogTimer = null;
     };
     _ws.onclose = (ev) => {
-        _oncloseWasCalled = true;
+        _oncloseWasCalled = true; // mark that onclose was called
         clearTimeout(_connectTimer);
         setConnStatus('⚡ Reconnecting…', false);
         ErrLog.log('[ws]', ev.wasClean ? 'WebSocket closed cleanly' : `WebSocket dropped (code ${ev.code})`, null, ev.wasClean ? 'WS_CLOSED' : 'WS_RECONNECTING');
@@ -423,7 +430,8 @@ async function runDiagnostics() {
             detail: `${httpStatus} | Uptime: ${json.uptime}`
         });
         console.log('✅ HTTP Service Endpoint: PASS\n   Detail:', json);
-    } catch (e) {
+    }
+    catch (e) {
         httpStatus = String(e.message);
         results.checks.push({
             name: 'HTTP Service Endpoint',
@@ -445,8 +453,7 @@ async function runDiagnostics() {
     const altPort = currentPort === 5100 ? 5000 : 5100;
     let altPortOk = false;
     try {
-        const r = await fetch(`http://localhost:${altPort}/api/service/info`, 
-                              { signal: AbortSignal.timeout(3000) });
+        const r = await fetch(`http://localhost:${altPort}/api/service/info`, { signal: AbortSignal.timeout(3000) });
         altPortOk = r.ok;
         results.checks.push({
             name: `Alternate Port (${altPort})`,
@@ -454,7 +461,8 @@ async function runDiagnostics() {
             detail: `Service running on wrong port? Try http://localhost:${altPort}`
         });
         console.log(`⚠️  Alternate Port ${altPort}: REACHABLE (possible port mismatch)\n`);
-    } catch (e) {
+    }
+    catch (e) {
         results.checks.push({
             name: `Alternate Port (${altPort})`,
             status: 'UNREACHABLE',
@@ -463,11 +471,11 @@ async function runDiagnostics() {
         console.log(`✅ Alternate Port ${altPort}: UNREACHABLE (correct)\n`);
     }
     // Check 4: Event queue
-    const eventQueueInfo = window._eventQueue ? 
-        { 
+    const eventQueueInfo = window._eventQueue ?
+        {
             size: window._eventQueue.length || 0,
-            isProcessing: window._processingQueue ? true : false 
-        } : 
+            isProcessing: window._processingQueue ? true : false
+        } :
         { size: 'unknown', isProcessing: 'unknown' };
     results.checks.push({
         name: 'Event Queue',
@@ -488,15 +496,16 @@ async function runDiagnostics() {
     const failCount = results.checks.filter(c => c.status === 'FAIL' || c.status === 'OFFLINE').length;
     if (passCount === results.checks.length) {
         results.summary = '✅ All checks passed!';
-    } else if (failCount > 0) {
+    }
+    else if (failCount > 0) {
         results.summary = `❌ ${failCount} check(s) failed`;
-    } else {
+    }
+    else {
         results.summary = '⏳ Connection in progress (auto-reconnecting)';
     }
     console.log('════════════════════════════════════════');
     console.log(results.summary);
     console.log('════════════════════════════════════════\n');
-    
     // Show results in alert
     const alertText = [
         '🔍 DiskCleanUp Diagnostics Results',
@@ -507,7 +516,6 @@ async function runDiagnostics() {
         '',
         'Full details in browser console (F12)'
     ].join('\n');
-    
     alert(alertText);
     return results;
 }
