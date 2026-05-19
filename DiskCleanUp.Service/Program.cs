@@ -1,31 +1,30 @@
 // Program.cs — DiskCleanUp.Service
 // Slim entry point: hosting, DI, middleware, endpoint mapping.
-// All endpoint logic lives in Api/*.cs extension classes.
-// All business logic lives in Services/*.cs.
 //
-// Phase 2: Windows Service support.
-//   --console     Run as console app (dev mode, opens browser)
-//   --install     Register + start as Windows Service
-//   --uninstall   Stop + remove Windows Service
-//   (no args)     Run as service if launched by SCM, else console mode
+// Modes:
+//   --scan      Run scan engine only, no HTTP (headless, scheduled via Task Scheduler)
+//   --serve     Run HTTP dashboard only, no background scan (on-demand, ephemeral)
+//   --console   Run both (dev mode, opens browser)
+//   (no args)   Console mode
 
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.ServiceProcess;
 using System.Text.Json;
 using DiskCleanup;
 using DiskCleanup.Api;
+using DiskCleanup.Scanning;
+using DiskCleanup.Scanning.Rules;
 using DiskCleanup.Services;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 
 // ── CLI args ─────────────────────────────────────────────────
 var cliMode = args.Length > 0 ? args[0].ToLowerInvariant().TrimStart('-') : null;
 
-if (cliMode == "install")  { InstallService(); return; }
-if (cliMode == "uninstall") { UninstallService(); return; }
-
-// Detect if launched by Service Control Manager (no console window)
-bool isServiceMode = !Environment.UserInteractive && cliMode != "console";
-bool isConsoleMode = !isServiceMode;
+// Detect mode
+bool isScanMode    = cliMode == "scan";
+bool isServeMode   = cliMode == "serve";
+bool isConsoleMode = !isScanMode && !isServeMode;
 
 // ── Process tuning ───────────────────────────────────────────
 Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.BelowNormal;
@@ -34,75 +33,125 @@ ThreadPool.SetMinThreads(
     completionPortThreads: Environment.ProcessorCount * 2);
 
 // ── Data directory ───────────────────────────────────────────
-// Always %ProgramData%\DiskCleanUp\ — one folder, one place.
 var dataDir = Constants.DataDir;
-
 EnsureDataDirectory(dataDir);
 
-// ── Port ─────────────────────────────────────────────────────────────────
-// Console mode (dev): always 5000 — predictable, never fights the service.
-// Service mode (prod): reads from dashboard_config.json, falls back to 5100.
-int port = isConsoleMode ? Constants.DevPort : ReadPortFromConfig(dataDir);
+// ── Logging helpers ──────────────────────────────────────────
+var logDir  = Path.Combine(dataDir, Constants.LogDir);
+Directory.CreateDirectory(logDir);
 
-// ── Builder ──────────────────────────────────────────────────
-var builder = WebApplication.CreateBuilder(args);
-
-// Windows Service integration — when launched by SCM, hooks into
-// service lifecycle (OnStart/OnStop). No-op when running as console.
-builder.Host.UseWindowsService(options =>
+void ConfigureLogging(ILoggingBuilder logging)
 {
-    options.ServiceName = Constants.ServiceName;
+    logging.ClearProviders();
+    if (isConsoleMode) logging.AddConsole();
+    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+    {
+        logging.AddEventLog(s => { s.SourceName = Constants.ServiceName; s.LogName = "Application"; });
+    }
+    logging.SetMinimumLevel(isScanMode ? LogLevel.Information : LogLevel.Warning);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SCAN MODE — engine only, no HTTP (headless, e.g. Task Scheduler)
+// ═══════════════════════════════════════════════════════════════
+if (isScanMode)
+{
+    var scanHost = Host.CreateDefaultBuilder(args)
+        .ConfigureLogging(ConfigureLogging)
+        .ConfigureServices(services =>
+        {
+            services.AddSingleton<ConfigService>(_ => new ConfigService(dataDir));
+            services.AddSingleton<WsManager>();          // no-op — zero clients in scan mode
+            services.AddSingleton<ScanPipeline>();
+            services.AddSingleton<IScanRule, DuplicatesRule>();
+            services.AddSingleton<IScanRule, SmartDedupRule>();
+            services.AddSingleton<IScanRule, StaleRule>();
+            services.AddSingleton<IScanRule, LargeRule>();
+            services.AddSingleton<IScanRule, TinyFilesRule>();
+            services.AddSingleton<IScanRule, HtmlFilesRule>();
+            services.AddSingleton<IScanRule, CssFilesRule>();
+            services.AddSingleton<IScanRule, EmptyRule>();
+            services.AddSingleton<IScanRule, NodeModulesRule>();
+            services.AddSingleton<IScanRule, VenvsRule>();
+            services.AddSingleton<IScanRule, ImagesRule>();
+            services.AddSingleton<IScanRule, BackupsRule>();
+            services.AddSingleton<IScanRule, ExtSearchRule>();
+            services.AddSingleton<ScanOrchestrator>();
+            services.AddSingleton<AnswerArtifactService>();
+            services.AddHostedService<MetricsService>();
+            services.AddHostedService<BackgroundScanService>();
+            services.AddHostedService(sp => sp.GetRequiredService<AnswerArtifactService>());
+            services.AddSingleton<RollingFileLogger>(_ =>
+                new RollingFileLogger(Path.Combine(logDir, "service.log")));
+        })
+        .Build();
+
+    var fileLogger = scanHost.Services.GetRequiredService<RollingFileLogger>();
+    AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+        fileLogger.Log($"FATAL: {e.ExceptionObject}");
+
+    var log = scanHost.Services.GetRequiredService<ILogger<Program>>();
+    log.LogInformation("🧹 DiskCleanUp scan engine starting — data={DataDir}, CPUs={Cpus}",
+        dataDir, Environment.ProcessorCount);
+
+    await scanHost.RunAsync();
+    return;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SERVE / CONSOLE MODE — HTTP dashboard (+ background scan in console)
+// ═══════════════════════════════════════════════════════════════
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args            = args,
+    ContentRootPath = AppContext.BaseDirectory,
+    WebRootPath     = Path.Combine(AppContext.BaseDirectory, "wwwroot"),
 });
+
+builder.Logging.ClearProviders();
+ConfigureLogging(builder.Logging);
 
 builder.Services.ConfigureHttpJsonOptions(o =>
     o.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase);
 
-// Services
+// Core services — always registered in serve/console
 builder.Services.AddSingleton<ConfigService>(_ => new ConfigService(dataDir));
 builder.Services.AddSingleton<WsManager>();
+builder.Services.AddSingleton<ScanPipeline>();
+builder.Services.AddSingleton<IScanRule, DuplicatesRule>();
+builder.Services.AddSingleton<IScanRule, SmartDedupRule>();
+builder.Services.AddSingleton<IScanRule, StaleRule>();
+builder.Services.AddSingleton<IScanRule, LargeRule>();
+builder.Services.AddSingleton<IScanRule, TinyFilesRule>();
+builder.Services.AddSingleton<IScanRule, HtmlFilesRule>();
+builder.Services.AddSingleton<IScanRule, CssFilesRule>();
+builder.Services.AddSingleton<IScanRule, EmptyRule>();
+builder.Services.AddSingleton<IScanRule, NodeModulesRule>();
+builder.Services.AddSingleton<IScanRule, VenvsRule>();
+builder.Services.AddSingleton<IScanRule, ImagesRule>();
+builder.Services.AddSingleton<IScanRule, BackupsRule>();
+builder.Services.AddSingleton<IScanRule, ExtSearchRule>();
 builder.Services.AddSingleton<ScanOrchestrator>();
 builder.Services.AddSingleton<DiagService>(_ => new DiagService(dataDir));
 builder.Services.AddSingleton<AnswerArtifactService>();
-builder.Services.AddHostedService<MetricsService>();
-builder.Services.AddHostedService<BackgroundScanService>();
-builder.Services.AddHostedService(sp => sp.GetRequiredService<AnswerArtifactService>());
-
-// ── Logging ──────────────────────────────────────────────────
-builder.Logging.ClearProviders();
-
-if (isConsoleMode)
-{
-    builder.Logging.AddConsole();
-}
-
-if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-{
-    builder.Logging.AddEventLog(settings =>
-    {
-        settings.SourceName = Constants.ServiceName;
-        settings.LogName = "Application";
-    });
-}
-
-builder.Logging.SetMinimumLevel(isServiceMode ? LogLevel.Information : LogLevel.Warning);
-
-// Rolling file log → %DataDir%\logs\service.log
-var logDir = Path.Combine(dataDir, Constants.LogDir);
-Directory.CreateDirectory(logDir);
 builder.Services.AddSingleton<RollingFileLogger>(_ =>
     new RollingFileLogger(Path.Combine(logDir, "service.log")));
 
+// Background scan services — only in console (dev) mode
+if (isConsoleMode)
+{
+    builder.Services.AddHostedService<MetricsService>();
+    builder.Services.AddHostedService<BackgroundScanService>();
+    builder.Services.AddHostedService(sp => sp.GetRequiredService<AnswerArtifactService>());
+}
+
 var app = builder.Build();
 
-// Wire up rolling file logger for unhandled exceptions
-var fileLogger = app.Services.GetRequiredService<RollingFileLogger>();
+var fileLog = app.Services.GetRequiredService<RollingFileLogger>();
 AppDomain.CurrentDomain.UnhandledException += (_, e) =>
-    fileLogger.Log($"FATAL: {e.ExceptionObject}");
+    fileLog.Log($"FATAL: {e.ExceptionObject}");
 
-// ── WebSocket middleware ─────────────────────────────────────
-// 30-second TCP keep-alives let the server detect silently-dropped connections
-// (VPN reconnect, laptop sleep/wake, router idle timeout) without waiting
-// for the next send to fail. TimeSpan.Zero disables them entirely — don't use it.
+// ── WebSocket middleware ──────────────────────────────────────
 app.UseWebSockets(new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(30) });
 
 var wsManager    = app.Services.GetRequiredService<WsManager>();
@@ -135,7 +184,7 @@ app.UseStaticFiles(new StaticFileOptions
     }
 });
 
-// ── API Endpoints (each is a static extension method) ────────
+// ── API Endpoints ─────────────────────────────────────────────
 app.MapCacheEndpoints(dataDir);
 app.MapConfigEndpoints();
 app.MapAiEndpoints();
@@ -150,87 +199,82 @@ app.MapHtmlUtilityEndpoints();
 app.MapTaskEndpoints();
 app.MapScanLogEndpoints();
 
-// Service info endpoint
 app.MapGet("/api/service/info", () => Results.Ok(new
 {
-    mode = isServiceMode ? "service" : "console",
-    port,
+    mode    = isScanMode ? "scan" : isServeMode ? "serve" : "console",
     dataDir,
     version = typeof(Program).Assembly.GetName().Version?.ToString() ?? "0.0.0",
-    uptime = (DateTime.UtcNow - Process.GetCurrentProcess().StartTime.ToUniversalTime()).ToString(@"d\.hh\:mm\:ss"),
+    uptime  = (DateTime.UtcNow - Process.GetCurrentProcess().StartTime.ToUniversalTime()).ToString(@"d\.hh\:mm\:ss"),
 }));
 
-// Graceful shutdown endpoint — used by kill-port.js to stop the service
-// before rebuilding, without needing admin privileges for sc stop.
 app.MapPost("/api/shutdown", (IHostApplicationLifetime lifetime) =>
 {
-    _ = Task.Run(async () =>
-    {
-        await Task.Delay(500);   // let the 200 response flush
-        lifetime.StopApplication();
-    });
+    _ = Task.Run(async () => { await Task.Delay(500); lifetime.StopApplication(); });
     return Results.Ok(new { message = "Shutting down..." });
 });
 
-// Restart endpoint — no elevation needed.
-// Exits with code 1 so the SCM recovery policy (restart/5s set during install)
-// automatically brings the service back up. Works from any HTTP client.
 app.MapPost("/api/restart", () =>
 {
-    _ = Task.Run(async () =>
-    {
-        await Task.Delay(500);   // let the 200 response flush
-        Environment.Exit(1);     // non-zero → SCM sees failure → auto-restarts
-    });
+    _ = Task.Run(async () => { await Task.Delay(500); Environment.Exit(1); });
     return Results.Ok(new { message = "Restarting..." });
 });
 
 app.MapFallbackToFile("index.html");
 
-// ── Start ────────────────────────────────────────────────────
-app.Urls.Add($"http://127.0.0.1:{port}");
-
-var logger = app.Services.GetRequiredService<ILogger<Program>>();
-logger.LogInformation("🧹 DiskCleanUp starting — mode={Mode}, port={Port}, data={DataDir}, CPUs={Cpus}",
-    isServiceMode ? "service" : "console", port, dataDir, Environment.ProcessorCount);
-
-if (isConsoleMode)
+// ── Bind + start ─────────────────────────────────────────────
+// Serve mode: port 0 → OS picks a free port → write to port.txt → open browser
+// Console mode: fixed dev port for predictability
+if (isServeMode)
 {
-    Console.WriteLine($"🧹 DiskCleanUp → http://localhost:{port}  |  WS: /ws  |  data: {dataDir}  |  {Environment.ProcessorCount} CPUs");
+    app.Urls.Add("http://127.0.0.1:0");
+    await app.StartAsync();
+
+    var address = app.Services.GetRequiredService<IServer>()
+        .Features.Get<IServerAddressesFeature>()!
+        .Addresses.First();
+    var actualPort = new Uri(address).Port;
+
+    // Write port so CVT extension (or any launcher) can find it
+    var portFile = Path.Combine(dataDir, "dashboard-port.txt");
+    await File.WriteAllTextAsync(portFile, actualPort.ToString());
+
+    Console.WriteLine($"🧹 DiskCleanUp dashboard → http://127.0.0.1:{actualPort}  |  data: {dataDir}");
+
+    Process.Start(new ProcessStartInfo
+    {
+        FileName = $"http://127.0.0.1:{actualPort}",
+        UseShellExecute = true
+    });
+
+    await app.WaitForShutdownAsync();
+
+    // Clean up port file on exit
+    File.Delete(portFile);
+}
+else
+{
+    // Console (dev) mode — fixed port, opens browser after brief delay
+    app.Urls.Add($"http://127.0.0.1:{Constants.DevPort}");
+
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogInformation("🧹 DiskCleanUp starting — mode=console, port={Port}, data={DataDir}, CPUs={Cpus}",
+        Constants.DevPort, dataDir, Environment.ProcessorCount);
+
+    Console.WriteLine($"🧹 DiskCleanUp → http://127.0.0.1:{Constants.DevPort}  |  WS: /ws  |  data: {dataDir}  |  {Environment.ProcessorCount} CPUs");
 
     _ = Task.Run(async () =>
     {
         await Task.Delay(1200);
         Process.Start(new ProcessStartInfo
         {
-            FileName = $"http://localhost:{port}", UseShellExecute = true
+            FileName = $"http://127.0.0.1:{Constants.DevPort}",
+            UseShellExecute = true
         });
     });
+
+    await app.RunAsync();
 }
 
-await app.RunAsync();
-
-
-// ═══════════════════════════════════════════════════════════════
-// Port reader — synchronous, runs before the host builds.
-// Reads dashboard_config.json and returns DashConfig.Port.
-// Falls back to Constants.ServicePort if file is missing or corrupt.
-// This is the ONLY place the port decision is made.
-// ═══════════════════════════════════════════════════════════════
-static int ReadPortFromConfig(string dataDir)
-{
-    try
-    {
-        var configFile = Path.Combine(dataDir, "dashboard_config.json");
-        if (!File.Exists(configFile)) return Constants.ServicePort;
-        var json = File.ReadAllText(configFile);
-        using var doc  = JsonDocument.Parse(json);
-        if (doc.RootElement.TryGetProperty("port", out var el) && el.TryGetInt32(out var p) && p > 0)
-            return p;
-    }
-    catch { /* corrupt config — use fallback */ }
-    return Constants.ServicePort;
-}
 
 // ═══════════════════════════════════════════════════════════════
 // Helper: Ensure data directory structure exists
@@ -244,151 +288,18 @@ static void EnsureDataDirectory(string dataDir)
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Service install / uninstall via sc.exe
-// ═══════════════════════════════════════════════════════════════
-static void InstallService()
-{
-    var exePath = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName;
-    if (exePath == null) { Console.Error.WriteLine("❌ Cannot determine executable path."); return; }
-
-    Console.WriteLine($"📦 Installing {Constants.ServiceName}...");
-
-    // Ensure data directory exists before first run
-    EnsureDataDirectory(Constants.DataDir);
-
-    // Migrate data from old location if needed
-    MigrateData(Constants.DataDir);
-
-    // Create the service
-    RunSc($"create {Constants.ServiceName} binPath= \"{exePath}\" start= auto DisplayName= \"{Constants.ServiceDisplayName}\"");
-
-    // Set description
-    RunSc($"description {Constants.ServiceName} \"Background disk scanner and cleanup service. Dashboard at http://localhost:{Constants.ServicePort}\"");
-
-    // Recovery policy: restart after 5s, 30s, 60s
-    RunSc($"failure {Constants.ServiceName} reset= 86400 actions= restart/5000/restart/30000/restart/60000");
-
-    // Start it
-    RunSc($"start {Constants.ServiceName}");
-
-    Console.WriteLine($"✅ Service installed and started. Dashboard: http://localhost:{Constants.ServicePort}");
-}
-
-static void UninstallService()
-{
-    Console.WriteLine($"🗑️ Uninstalling {Constants.ServiceName}...");
-
-    RunSc($"stop {Constants.ServiceName}");
-    Thread.Sleep(2000); // Give it time to stop
-    RunSc($"delete {Constants.ServiceName}");
-
-    Console.WriteLine("✅ Service removed. Data in %ProgramData%\\DiskCleanUp\\ preserved.");
-}
-
-static void RunSc(string arguments)
-{
-    Console.WriteLine($"  sc.exe {arguments}");
-    var p = Process.Start(new ProcessStartInfo
-    {
-        FileName = "sc.exe",
-        Arguments = arguments,
-        UseShellExecute = false,
-        RedirectStandardOutput = true,
-        RedirectStandardError = true,
-    });
-    p?.WaitForExit(15_000);
-    var stdout = p?.StandardOutput.ReadToEnd();
-    var stderr = p?.StandardError.ReadToEnd();
-    if (!string.IsNullOrWhiteSpace(stdout)) Console.WriteLine($"    {stdout.Trim()}");
-    if (!string.IsNullOrWhiteSpace(stderr)) Console.Error.WriteLine($"    {stderr.Trim()}");
-}
-
-// ═══════════════════════════════════════════════════════════════
-// Data migration: copy config/cache from old bin/ location
-// ═══════════════════════════════════════════════════════════════
-static void MigrateData(string targetDir)
-{
-    if (File.Exists(Path.Combine(targetDir, "dashboard_config.json"))) return; // Already migrated
-
-    // Search for old data in likely locations:
-    // 1. AppContext.BaseDirectory (same project rebuilt)
-    // 2. Sibling old project output (DiskCleanupDashboard)
-    // 3. Parent repo's bin output
-    string? oldDir = null;
-    string[] candidates = [
-        AppContext.BaseDirectory,
-        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "bin", "Debug", "net8.0")),
-        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "bin", "Release", "net8.0")),
-    ];
-
-    foreach (var candidate in candidates)
-    {
-        if (File.Exists(Path.Combine(candidate, "dashboard_config.json")))
-        {
-            oldDir = candidate;
-            break;
-        }
-    }
-
-    if (oldDir == null) return; // Nothing to migrate
-
-    Console.WriteLine("📋 Migrating data from old location...");
-
-    string[] filesToCopy = [
-        "dashboard_config.json",
-        "keep-list.json",
-        "savings_log.jsonl",
-        "current_session.json",
-        "errors.jsonl",
-        "debug.json",
-        "trace.jsonl",
-    ];
-
-    foreach (var file in filesToCopy)
-    {
-        var src = Path.Combine(oldDir, file);
-        var dst = Path.Combine(targetDir, file);
-        if (File.Exists(src) && !File.Exists(dst))
-        {
-            File.Copy(src, dst);
-            Console.WriteLine($"  ✅ {file}");
-        }
-    }
-
-    // Copy scan-cache directory
-    var oldCache = Path.Combine(oldDir, "scan-cache");
-    var newCache = Path.Combine(targetDir, "scan-cache");
-    if (Directory.Exists(oldCache))
-    {
-        Directory.CreateDirectory(newCache);
-        foreach (var file in Directory.GetFiles(oldCache))
-        {
-            var dst = Path.Combine(newCache, Path.GetFileName(file));
-            if (!File.Exists(dst))
-            {
-                File.Copy(file, dst);
-                Console.WriteLine($"  ✅ scan-cache/{Path.GetFileName(file)}");
-            }
-        }
-    }
-
-    Console.WriteLine("📋 Migration complete.");
-}
-
-
-// ═══════════════════════════════════════════════════════════════
 // Simple rolling file logger (10MB × 3 files)
 // ═══════════════════════════════════════════════════════════════
 public class RollingFileLogger
 {
     private readonly string _path;
-    private readonly long _maxBytes;
-    private readonly int _maxFiles;
+    private readonly long   _maxBytes;
+    private readonly int    _maxFiles;
     private readonly object _lock = new();
 
     public RollingFileLogger(string path, long maxBytes = 10 * 1024 * 1024, int maxFiles = 3)
     {
-        _path = path;
+        _path     = path;
         _maxBytes = maxBytes;
         _maxFiles = maxFiles;
     }
@@ -401,10 +312,8 @@ public class RollingFileLogger
             {
                 var line = $"[{DateTime.UtcNow:O}] {message}{Environment.NewLine}";
                 File.AppendAllText(_path, line);
-
                 var fi = new FileInfo(_path);
-                if (fi.Exists && fi.Length > _maxBytes)
-                    Rotate();
+                if (fi.Exists && fi.Length > _maxBytes) Rotate();
             }
             catch { /* logging must never crash the service */ }
         }
@@ -412,17 +321,13 @@ public class RollingFileLogger
 
     private void Rotate()
     {
-        // Delete oldest
         var oldest = $"{_path}.{_maxFiles}";
         if (File.Exists(oldest)) File.Delete(oldest);
-
-        // Shift existing: .2 → .3, .1 → .2
         for (int i = _maxFiles - 1; i >= 1; i--)
         {
             var src = i == 1 ? _path : $"{_path}.{i}";
             var dst = $"{_path}.{i + 1}";
-            if (File.Exists(src))
-                File.Move(src, dst, overwrite: true);
+            if (File.Exists(src)) File.Move(src, dst, overwrite: true);
         }
     }
 }
