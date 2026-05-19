@@ -1,8 +1,10 @@
 // Api/TaskEndpoints.cs
 // GET /api/tasks — list system processes
 // POST /api/tasks/kill — kill a process by PID
+// POST /api/tasks/focus — bring a process window to the foreground
 
 using System.Management;
+using System.Runtime.InteropServices;
 using DiskCleanup.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -65,6 +67,23 @@ public static class TaskEndpoints
             catch (Exception ex) { return Results.Ok(new { processes = Array.Empty<object>(), count = 0, error = ex.Message }); }
         });
 
+        app.MapPost("/api/tasks/focus", ([FromBody] FocusTaskRequest req) =>
+        {
+            if (req.Pid <= 0) return Results.BadRequest(new { error = "Invalid PID" });
+            try
+            {
+                var proc = System.Diagnostics.Process.GetProcessById(req.Pid);
+                var handle = proc.MainWindowHandle;
+                if (handle == IntPtr.Zero)
+                    return Results.Ok(new { ok = false, reason = "no-window" });
+                Win32.ShowWindow(handle, 9); // SW_RESTORE — unminimize if needed
+                Win32.SetForegroundWindow(handle);
+                return Results.Ok(new { ok = true, name = proc.ProcessName });
+            }
+            catch (ArgumentException) { return Results.NotFound(new { error = $"PID {req.Pid} not found" }); }
+            catch (Exception ex)      { return Results.Ok(new { ok = false, error = ex.Message }); }
+        });
+
         app.MapPost("/api/tasks/kill", ([FromBody] KillTaskRequest req) =>
         {
             if (req.Pid <= 0) return Results.BadRequest(new { error = "Invalid PID" });
@@ -81,4 +100,10 @@ public static class TaskEndpoints
             catch (Exception ex) { return Results.Ok(new { ok = false, error = ex.Message }); }
         });
     }
+}
+
+file static class Win32
+{
+    [DllImport("user32.dll")] internal static extern bool SetForegroundWindow(IntPtr hWnd);
+    [DllImport("user32.dll")] internal static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 }

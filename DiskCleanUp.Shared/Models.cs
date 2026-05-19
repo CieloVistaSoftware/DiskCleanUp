@@ -173,6 +173,10 @@ public record KillTaskRequest(
     [property: JsonPropertyName("pid")] int Pid
 );
 
+public record FocusTaskRequest(
+    [property: JsonPropertyName("pid")] int Pid
+);
+
 // ── AI Chat ─────────────────────────────────────────────────
 public record AiMessage(
     [property: JsonPropertyName("role")]    string Role,
