@@ -371,6 +371,28 @@
   .sg-subpath-actions { display: flex; gap: 2px; flex-shrink: 0; }
   .sg-subpath:hover .btn-xxs { opacity: 1; }
 
+  /* Checked-row highlight */
+  .sg-row:has(input[type=checkbox]:checked) { background: rgba(88,166,255,.10) !important; }
+  .sg-row:has(input[type=checkbox]:checked):hover { background: rgba(88,166,255,.18) !important; }
+
+  /* Drag-select: suppress text selection while dragging */
+  .sg-body.sg-selecting { user-select: none; }
+
+  /* Right-click context menu */
+  .sg-ctx-menu {
+    display: none; position: fixed; z-index: 9999;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 6px; box-shadow: 0 4px 20px rgba(0,0,0,.55);
+    min-width: 165px; overflow: hidden;
+  }
+  .sg-ctx-menu button {
+    display: block; width: 100%; padding: 9px 16px;
+    background: none; border: none; color: var(--text);
+    font: inherit; font-size: 13px; text-align: left;
+    cursor: pointer; white-space: nowrap;
+  }
+  .sg-ctx-menu button:hover { background: var(--hover); color: var(--accent); }
+
   /* Color legend */
   .sg-legend {
     display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center;
@@ -382,7 +404,22 @@
   .sg-legend-chip {
     display: inline-flex; align-items: center; gap: 2px;
     white-space: nowrap;
+    padding: 2px 6px; border-radius: 10px;
+    border: 1px solid transparent;
+    transition: border-color .15s, background .15s;
   }
+  .sg-legend-chip:hover { border-color: var(--accent, #58a6ff); }
+  .sg-legend-chip.active {
+    border-color: #ffd700;
+    background: rgba(255,215,0,.13);
+  }
+  .sg-legend-clear {
+    margin-left: 6px; padding: 2px 8px; border-radius: 10px;
+    background: rgba(248,81,73,.15); color: #f85149;
+    border: 1px solid rgba(248,81,73,.4);
+    font-size: 11px; cursor: pointer;
+  }
+  .sg-legend-clear:hover { background: rgba(248,81,73,.28); }
   .sg-skel-row .sg-cell .skel-bar { display: block; height: 10px; border-radius: 4px;
     background: var(--border); animation: skelPulse 1.4s ease-in-out infinite; }
 
@@ -697,6 +734,9 @@
 .task-th-desc   { width: 180px; }
 .task-th-path   { width: auto; }
 .task-mem, .task-threads { text-align: right; font-variant-numeric: tabular-nums; }
+.task-th-sortable { cursor: pointer; user-select: none; }
+.task-th-sortable:hover { color: var(--fg, #e6edf3); }
+.task-th-sorted { color: var(--fg, #e6edf3); }
 .task-pid { color: var(--muted); font-variant-numeric: tabular-nums; }
 .task-name { font-weight: 500; }
 .task-title { color: var(--muted); font-size: 11px; }

@@ -213,6 +213,57 @@ function _getParentAppTitle(proc) {
 let _allProcs = [];
 let _displayed = [];
 
+// ── Column sort state ──────────────────────────────────────────
+// Persisted via localStorage so sort survives auto-refresh.
+const _SORT_KEY = 'dcu_task_sort';
+let _sortCol: string  = '';   // '' = default (tier+mem)
+let _sortDir: number  = 1;    // 1 = asc, -1 = desc
+
+try {
+  const saved = JSON.parse(localStorage.getItem(_SORT_KEY) || '{}');
+  if (saved.col) { _sortCol = saved.col; _sortDir = saved.dir ?? 1; }
+} catch { /* ignore */ }
+
+function setSort(col: string): void {
+  if (_sortCol === col) {
+    _sortDir = -_sortDir;
+  } else {
+    _sortCol = col;
+    _sortDir = 1;
+  }
+  try { localStorage.setItem(_SORT_KEY, JSON.stringify({ col: _sortCol, dir: _sortDir })); } catch { /* ignore */ }
+  render();
+}
+
+function _sortDisplayed(): void {
+  if (!_sortCol) return; // default order preserved from load()
+  const tierOrder = { safe: 0, caution: 1, critical: 2 };
+  _displayed.sort((a, b) => {
+    let av: any, bv: any;
+    switch (_sortCol) {
+      case 'safety':  av = tierOrder[a.tier] ?? 0;     bv = tierOrder[b.tier] ?? 0;     break;
+      case 'pid':     av = a.pid;                       bv = b.pid;                       break;
+      case 'name':    av = (a.name || '').toLowerCase(); bv = (b.name || '').toLowerCase(); break;
+      case 'title':   av = (a.title || '').toLowerCase(); bv = (b.title || '').toLowerCase(); break;
+      case 'mem':     av = a._memNum;                   bv = b._memNum;                   break;
+      case 'threads': av = a.threads ?? 0;              bv = b.threads ?? 0;              break;
+      case 'company': av = (a.company || '').toLowerCase(); bv = (b.company || '').toLowerCase(); break;
+      case 'desc':    av = (a.description || '').toLowerCase(); bv = (b.description || '').toLowerCase(); break;
+      case 'path':    av = (a.path || '').toLowerCase(); bv = (b.path || '').toLowerCase(); break;
+      default:        return 0;
+    }
+    if (av < bv) return -_sortDir;
+    if (av > bv) return  _sortDir;
+    return 0;
+  });
+}
+
+function _thHtml(col: string, cls: string, label: string): string {
+  const active = _sortCol === col;
+  const indicator = active ? (_sortDir === 1 ? ' ▲' : ' ▼') : '';
+  return `<th class="${cls} task-th-sortable${active ? ' task-th-sorted' : ''}" onclick="window._taskMgr.setSort('${col}')">${label}${indicator}</th>`;
+}
+
 const _el = {
   get result() { return document.getElementById('taskResult'); },
   get filter() { return document.getElementById('taskFilter'); },
@@ -254,8 +305,8 @@ function render() {
   const container = _el.result;
   if (!container) return;
 
-  const textFilter = (_el.filter?.value || '').toLowerCase();
-  const safetyFilter = _el.safety?.value || '';
+  const textFilter = ((_el.filter as HTMLInputElement | null)?.value || '').toLowerCase();
+  const safetyFilter = (_el.safety as HTMLInputElement | null)?.value || '';
 
   _displayed = _allProcs.filter(p => {
     // Safety filter
@@ -276,19 +327,22 @@ function render() {
 
   _el.count.textContent = `${_displayed.length} of ${_allProcs.length} processes | ${fmtMem(totalMem)} | 🟢 ${safeCount}  🟡 ${cautionCount}  🔴 ${critCount}`;
 
+  // Apply column sort (no-op when _sortCol is empty — default tier+mem order preserved)
+  _sortDisplayed();
+
   // Build table
   let html = `<table class="task-table">
     <thead><tr>
       <th class="task-th-cb"><input type="checkbox" id="taskSelectAll" onchange="window._taskMgr?.toggleAll(this.checked)"></th>
-      <th class="task-th-safety">⚡</th>
-      <th class="task-th-pid">PID</th>
-      <th class="task-th-name">Name</th>
-      <th class="task-th-title">Window Title</th>
-      <th class="task-th-mem">Memory</th>
-      <th class="task-th-threads">Threads</th>
-      <th class="task-th-company">Company</th>
-      <th class="task-th-desc">Description</th>
-      <th class="task-th-path">Path</th>
+      ${_thHtml('safety',  'task-th-safety',  '⚡')}
+      ${_thHtml('pid',     'task-th-pid',     'PID')}
+      ${_thHtml('name',    'task-th-name',    'Name')}
+      ${_thHtml('title',   'task-th-title',   'Window Title')}
+      ${_thHtml('mem',     'task-th-mem',     'Memory')}
+      ${_thHtml('threads', 'task-th-threads', 'Threads')}
+      ${_thHtml('company', 'task-th-company', 'Company')}
+      ${_thHtml('desc',    'task-th-desc',    'Description')}
+      ${_thHtml('path',    'task-th-path',    'Path')}
     </tr></thead><tbody>`;
 
   for (const p of _displayed) {
@@ -358,11 +412,11 @@ async function focusWindow(pid: number): Promise<void> {
 function filter() { render(); }
 
 function toggleAll(checked) {
-  document.querySelectorAll('.task-cb:not(:disabled)').forEach(cb => { cb.checked = checked; });
+  document.querySelectorAll('.task-cb:not(:disabled)').forEach(cb => { (cb as HTMLInputElement).checked = checked; });
 }
 
 async function killSelected() {
-  const allChecked = [...document.querySelectorAll('.task-cb:checked')].map(cb => +cb.dataset.pid);
+  const allChecked = [...document.querySelectorAll('.task-cb:checked')].map(cb => +(cb as HTMLInputElement).dataset.pid);
   // Double-check: never kill dashboard browser processes even if somehow checked
   const pids = allChecked.filter(pid => {
     const p = _allProcs.find(x => x.pid === pid);
@@ -425,6 +479,6 @@ async function killSelected() {
 
 // ─── EXPORTS ─────────────────────────────────────────────────────
 
-window._taskMgr = { load, filter, killSelected, toggleAll };
+window._taskMgr = { load, filter, killSelected, toggleAll, setSort };
 
 export { load as loadTasks };
