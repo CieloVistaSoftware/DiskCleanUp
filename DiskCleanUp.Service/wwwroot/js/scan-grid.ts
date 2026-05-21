@@ -38,15 +38,15 @@ const _PREVIEW_VID_EXTS = new Set(['.mp4','.webm','.mov','.avi','.mkv']);
 const _previewObserver = new IntersectionObserver((entries) => {
   for (const entry of entries) {
     if (!entry.isIntersecting) continue;
-    const el = entry.target;
+    const el = entry.target as HTMLElement & { src?: string; currentTime?: number };
     _previewObserver.unobserve(el);
-    const src = el.dataset.lazySrc;
+    const src = (el as any).dataset.lazySrc;
     if (!src) continue;
     if (el.tagName === 'IMG') {
-      el.src = src;
+      (el as HTMLImageElement).src = src;
     } else if (el.tagName === 'VIDEO') {
-      el.src = src;
-      el.currentTime = 0.5;  // seek past first frame
+      (el as HTMLVideoElement).src = src;
+      (el as HTMLVideoElement).currentTime = 0.5;  // seek past first frame
     }
   }
 }, { rootMargin: '200px 0px', threshold: 0 }); // 200px pre-load buffer
@@ -95,7 +95,7 @@ try {
  * Create (or recreate) a grid for a section.
  * Auto-prepends a # column and appends a File|Folder actions column.
  */
-export function create(section, containerId, columns, opts = {}) {
+export function create(section, containerId, columns, opts: Record<string, any> = {}) {
 // FEAT-021 fix: Register filter BEFORE the early-return check.
 // showSkeleton() creates the grid with filterBar:false. When real data
 // arrives, create() is called again (without that flag) but returns early
@@ -161,7 +161,7 @@ header.dataset.section = section;
 cols.forEach((c, i) => {
   const cell = document.createElement('div');
   cell.className = 'sg-hcell';
-  cell.dataset.colIdx = i;
+  cell.dataset.colIdx = String(i);
 
   if (c.type === 'checkbox') {
     // Header checkbox — click checks/unchecks all visible rows
@@ -173,9 +173,9 @@ cols.forEach((c, i) => {
     cell.appendChild(hCb);
     // Mirror indeterminate state back to header when individual rows toggle
     body.addEventListener('change', (ev) => {
-      if (!ev.target.matches('input[type=checkbox]')) return;
-      const all   = [...body.querySelectorAll('input[type=checkbox]')];
-      const shown = all.filter(cb => cb.closest('.sg-row')?.style.display !== 'none');
+      if (!(ev.target as Element).matches('input[type=checkbox]')) return;
+      const all   = [...body.querySelectorAll('input[type=checkbox]')] as HTMLInputElement[];
+      const shown = all.filter(cb => (cb.closest('.sg-row') as HTMLElement)?.style.display !== 'none');
       hCb.checked       = shown.length > 0 && shown.every(cb => cb.checked);
       hCb.indeterminate = !hCb.checked && shown.some(cb => cb.checked);
     });
@@ -187,7 +187,7 @@ cols.forEach((c, i) => {
   if (c.type !== 'checkbox' && c.type !== 'lineNo' && c.type !== 'actions') {
     cell.classList.add('sg-sortable');
     cell.addEventListener('click', (e) => {
-      if (e.target.classList.contains('sg-resize-handle')) return;
+      if ((e.target as Element).classList.contains('sg-resize-handle')) return;
       _sortColumn(section, i);
     });
   }
@@ -265,7 +265,7 @@ g.columns.forEach(col => {
       kb.className = 'btn-keep';
       kb.textContent = '\uD83D\uDD12';
       kb.title = 'Keep — exclude from future scans';
-      kb.onclick = () => window.keepPaths([path]);
+      kb.onclick = () => (window.keepPaths as ((p: string[]) => void) | undefined)?.([path]);
       cell.appendChild(kb);
       break;
     }
@@ -322,7 +322,7 @@ g.columns.forEach(col => {
         fb.className = 'btn muted btn-xxs';
         fb.textContent = '\uD83D\uDCC4';
         fb.title = 'Open file in VS Code';
-        fb.onclick = (ev) => { ev.stopPropagation(); window.openInVSCode?.(p) || window.openFileInVSCode?.(p); };
+        fb.onclick = (ev) => { ev.stopPropagation(); window.openInVSCode ? window.openInVSCode(p) : window.openFileInVSCode?.(p); };
         acts.appendChild(fb);
         // Open folder
         const ob = document.createElement('button');
@@ -355,7 +355,7 @@ g.columns.forEach(col => {
       fileBtn.className = 'btn muted btn-xs';
       fileBtn.textContent = '\uD83D\uDCC4';
       fileBtn.title = 'Open file in VS Code';
-      fileBtn.onclick = () => window.openInVSCode?.(path) || window.openFileInVSCode?.(path);
+      fileBtn.onclick = () => { window.openInVSCode ? window.openInVSCode(path) : window.openFileInVSCode?.(path); };
       cell.appendChild(fileBtn);
       // Open Folder in Explorer button
       const folderBtn = document.createElement('button');
@@ -380,7 +380,7 @@ g.columns.forEach(col => {
       btn.className = 'btn muted btn-xs';
       btn.textContent = '\uD83D\uDCC4';
       btn.title = 'Open file';
-      btn.onclick = () => window.openInVSCode?.(path) || window.openFileInVSCode?.(path);
+      btn.onclick = () => { window.openInVSCode ? window.openInVSCode(path) : window.openFileInVSCode?.(path); };
       cell.appendChild(btn);
       break;
     }
@@ -399,7 +399,7 @@ if (path) {
   const _browserSections = new Set(['html-files', 'css-files']);
   row.addEventListener('dblclick', (e) => {
     // Don't trigger if clicking a button or checkbox
-    if (e.target.closest('button') || e.target.closest('input')) return;
+    if ((e.target as Element).closest('button') || (e.target as Element).closest('input')) return;
     const api = _browserSections.has(section) ? '/api/open-default' : '/api/open';
     fetch(api, {
       method: 'POST',
@@ -503,7 +503,7 @@ return [...g.body.querySelectorAll('input[type=checkbox]:checked')]
  * Remove rows matching a path from a specific section (or ALL sections).
  * Returns number of rows removed.
  */
-export function removeByPath(path, section) {
+export function removeByPath(path, section?) {
 let removed = 0;
 const sections = section ? [section] : Object.keys(_grids);
 for (const sec of sections) {
@@ -583,7 +583,7 @@ const mode     = SF.getMode(section);
 const included = SF.getIncluded(section);
 const excluded = SF.getExcluded(section);
 const textEl   = document.getElementById(`sf-text-${section}`);
-const text     = (textEl?.value || '').toLowerCase();
+const text     = ((textEl as HTMLInputElement | null)?.value || '').toLowerCase();
 
 let shown = 0;
 for (const row of g.rows) {
@@ -626,7 +626,7 @@ if (el) el.textContent = g.rows.length.toLocaleString();
 // Enable/disable Keep Selected + Delete Selected toolbar buttons
 const hasData = g.rows.length > 0;
 document.querySelectorAll(`[data-grid-section="${section}"]`).forEach(btn => {
-  btn.disabled = !hasData;
+  (btn as HTMLButtonElement).disabled = !hasData;
 });
 }
 
@@ -777,7 +777,7 @@ const handle = e.target;
 handle.classList.add('sg-dragging');
 
 const hCells = g.header.children;
-const widths = Array.from(hCells).map(c => c.getBoundingClientRect().width);
+const widths = Array.from(hCells).map(c => (c as Element).getBoundingClientRect().width);
 
 _resizeState = { section, colIdx, startX: e.clientX, widths: [...widths], handle };
 document.addEventListener('mousemove', _onResizeMove);
@@ -810,7 +810,7 @@ handle.classList.remove('sg-dragging');
 const g = _grids[section];
 if (g) {
   const hCells = g.header.children;
-  const widths = Array.from(hCells).map(c => `${Math.round(c.getBoundingClientRect().width)}px`);
+  const widths = Array.from(hCells).map(c => `${Math.round((c as Element).getBoundingClientRect().width)}px`);
   _saveWidths(section, widths);
   const template = widths.map(w => `minmax(0, ${w})`).join(' ');
   g.header.style.gridTemplateColumns = template;

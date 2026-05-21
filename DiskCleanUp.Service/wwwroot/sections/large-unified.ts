@@ -148,7 +148,7 @@ function _onResult(msg) {
 
 function _rebuildFilterOptions() {
   // Extract unique extensions for filtering
-  const exts = new Set();
+  const exts = new Set<string>();
   _allData.forEach((record) => {
     const match = record.path.match(/\.([a-z0-9]+)$/i);
     if (match) exts.add(match[1].toLowerCase());

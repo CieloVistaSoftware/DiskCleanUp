@@ -80,7 +80,7 @@ export function masked(element, options: Record<string, any> = {}) {
   element.addEventListener('input', applyMask);
   element.addEventListener('paste', (e) => {
     e.preventDefault();
-    const pasted = (e.clipboardData || window.clipboardData).getData('text');
+    const pasted = (e.clipboardData || (window as any).clipboardData).getData('text');
     element.value = element.value.substring(0, element.selectionStart) + pasted + element.value.substring(element.selectionEnd);
     applyMask();
   });

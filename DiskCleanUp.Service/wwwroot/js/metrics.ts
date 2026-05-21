@@ -187,7 +187,7 @@ export const Metrics = (() => {
       const activeSections = document.querySelectorAll('.section-sb.scanning');
       activeSections.forEach(sb => {
         const section = sb.closest('[id^=section-]');
-        if (section && section.style.display === 'none') {
+        if (section && (section as HTMLElement).style.display === 'none') {
           const sectionName = section.id.replace('section-', '');
           window._wsSend(JSON.stringify({ type: 'cancel', section: sectionName }));
         }

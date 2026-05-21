@@ -483,12 +483,12 @@ export function confirm(element, options: Record<string, any> = {}) {
       </div>
     `;
     
-    overlay.querySelector('.cancel').onclick = () => {
+    (overlay.querySelector('.cancel') as HTMLElement).onclick = () => {
       overlay.remove();
       element.dispatchEvent(new CustomEvent('wb:confirm:cancel', { bubbles: true }));
     };
-    
-    overlay.querySelector('.ok').onclick = () => {
+
+    (overlay.querySelector('.ok') as HTMLElement).onclick = () => {
       overlay.remove();
       element.dispatchEvent(new CustomEvent('wb:confirm:ok', { bubbles: true }));
     };
@@ -534,20 +534,20 @@ export function prompt(element, options: Record<string, any> = {}) {
     
     const input = overlay.querySelector('input');
     
-    overlay.querySelector('.cancel').onclick = () => {
+    (overlay.querySelector('.cancel') as HTMLElement).onclick = () => {
       overlay.remove();
       element.dispatchEvent(new CustomEvent('wb:prompt:cancel', { bubbles: true }));
     };
-    
-    overlay.querySelector('.ok').onclick = () => {
+
+    (overlay.querySelector('.ok') as HTMLElement).onclick = () => {
       const value = input.value;
       overlay.remove();
       element.dispatchEvent(new CustomEvent('wb:prompt:ok', { bubbles: true, detail: { value } }));
     };
-    
+
     input.onkeydown = (e) => {
-      if (e.key === 'Enter') overlay.querySelector('.ok').click();
-      if (e.key === 'Escape') overlay.querySelector('.cancel').click();
+      if (e.key === 'Enter') (overlay.querySelector('.ok') as HTMLElement).click();
+      if (e.key === 'Escape') (overlay.querySelector('.cancel') as HTMLElement).click();
     };
     
     overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };

@@ -22,7 +22,7 @@ const _LS_PREFIX = 'dcu_sf_';
  *   gridBodyId   — ID of the sg-body div (for direct row manipulation)
  *   onApply      — optional callback after filter applied
  */
-export function register(section, opts = {}) {
+export function register(section, opts: { containerId?: string; gridBodyId?: string; onApply?: ((...args: any[]) => any) | null; [key: string]: any } = {}) {
   if (_filters[section]) return;  // Already registered — idempotent
 
   _filters[section] = {
@@ -55,14 +55,14 @@ export function reset(section) {
   // and keeps the old extension selected — causing the next scan to send
   // the wrong extension filter to the backend (e.g. '.html' in an SVG folder).
   const dd = _el(`sf-dd-${section}`);
-  if (dd) dd.value = '';
+  if (dd) (dd as HTMLSelectElement).value = '';
   _rebuildChips(section);
   _updateStatus(section);
   _syncModeBtn(section);
   const box = _el(f.containerId);
   if (box) {
     const inp = box.querySelector('.sf-text');
-    if (inp) inp.value = '';
+    if (inp) (inp as HTMLInputElement).value = '';
   }
 }
 
@@ -90,7 +90,7 @@ export function rebuild(section) {
   if (f.mode === 'include' && f.selectedExt) {
     const dd = _el(`sf-dd-${section}`);
     if (dd && f.exts.has(f.selectedExt)) {
-      dd.value = f.selectedExt;
+      (dd as HTMLSelectElement).value = f.selectedExt;
     }
   }
   // Apply filter to reflect restored state
@@ -119,9 +119,10 @@ export function apply(section) {
   let shown = 0, total = 0;
 
   for (const row of body.querySelectorAll('.sg-row:not(.sg-skel-row)')) {
+    const rowEl = row as HTMLElement;
     total++;
-    const path = row.dataset.path || '';
-    const ext  = row.dataset.ext || '';
+    const path = rowEl.dataset.path || '';
+    const ext  = rowEl.dataset.ext || '';
     let visible = true;
 
     if (text) {
@@ -140,7 +141,7 @@ export function apply(section) {
       if (f.excluded.has(ext)) visible = false;
     }
 
-    row.style.display = visible ? '' : 'none';
+    rowEl.style.display = visible ? '' : 'none';
     if (visible) shown++;
   }
 
@@ -149,9 +150,9 @@ export function apply(section) {
 }
 
 /** Get the set of currently excluded extensions. */
-export function getExcluded(section) {
+export function getExcluded(section: string): Set<string> {
   const f = _filters[section];
-  return f ? new Set(f.excluded) : new Set();
+  return f ? new Set<string>(f.excluded) : new Set<string>();
 }
 
 /** Get the include-mode selected extension (or '' for all). */
@@ -199,7 +200,7 @@ function _restore(section) {
     if (state.textFilter) {
       f.textFilter = state.textFilter;
       const inp = _el(`sf-text-${section}`);
-      if (inp) inp.value = state.textFilter;
+      if (inp) (inp as HTMLInputElement).value = state.textFilter;
     }
 
     // Restore excluded set
@@ -254,7 +255,7 @@ function _extOf(path) {
 
 function _getDropdownValue(section) {
   const dd = _el(`sf-dd-${section}`);
-  return dd?.value || '';
+  return (dd as HTMLSelectElement | null)?.value || '';
 }
 
 function _syncModeBtn(section) {
@@ -288,7 +289,7 @@ function _injectUI(section) {
   _el(`sf-dd-${section}`).addEventListener('change', () => _onDropdownChange(section));
   _el(`sf-mode-${section}`).addEventListener('click', () => _toggleMode(section));
   _el(`sf-text-${section}`).addEventListener('input', (e) => {
-    f.textFilter = e.target.value;
+    f.textFilter = (e.target as HTMLInputElement).value;
     _save(section);
     apply(section);
   });
@@ -304,7 +305,7 @@ function _toggleMode(section) {
   _syncModeBtn(section);
 
   const dd = _el(`sf-dd-${section}`);
-  if (dd) dd.value = '';
+  if (dd) (dd as HTMLSelectElement).value = '';
 
   _rebuildDropdown(section);
   _rebuildChips(section);
@@ -317,7 +318,7 @@ function _onDropdownChange(section) {
   if (!f) return;
 
   if (f.mode === 'exclude') {
-    const dd = _el(`sf-dd-${section}`);
+    const dd = _el(`sf-dd-${section}`) as HTMLSelectElement | null;
     const val = dd?.value || '';
     if (val) {
       f.excluded.add(val);
@@ -343,16 +344,16 @@ function _removeExcluded(section, ext) {
 
 function _rebuildDropdown(section) {
   const f  = _filters[section];
-  const dd = _el(`sf-dd-${section}`);
+  const dd = _el(`sf-dd-${section}`) as HTMLSelectElement | null;
   if (!f || !dd) return;
 
   // Always derive extensions from LIVE grid rows — never stale tracked set.
   // This means the dropdown only ever shows types actually in the current results.
   const body = _el(f.gridBodyId);
-  const liveExts = new Set();
+  const liveExts = new Set<string>();
   if (body) {
     for (const row of body.querySelectorAll('.sg-row:not(.sg-skel-row)')) {
-      const ext = row.dataset.ext;
+      const ext = (row as HTMLElement).dataset.ext;
       if (ext) liveExts.add(ext);
     }
   } else {
@@ -393,11 +394,11 @@ function _rebuildChips(section) {
   ).join('');
 
   container.querySelectorAll('.sf-chip-x').forEach(btn => {
-    btn.addEventListener('click', () => _removeExcluded(section, btn.dataset.ext));
+    btn.addEventListener('click', () => _removeExcluded(section, (btn as HTMLElement).dataset.ext));
   });
 }
 
-function _updateStatus(section, shown, total) {
+function _updateStatus(section, shown?, total?) {
   const el = _el(`sf-status-${section}`);
   if (!el) return;
   if (shown === undefined || total === undefined) { el.textContent = ''; return; }

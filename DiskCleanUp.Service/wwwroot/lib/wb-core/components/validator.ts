@@ -152,7 +152,7 @@ export function validator(element: HTMLElement, options: ValidatorOptions = {}) 
       
       // Focus first invalid input
       const firstInvalid = element.querySelector(`.${config.errorClass}`);
-      if (firstInvalid) firstInvalid.focus();
+      if (firstInvalid) (firstInvalid as HTMLElement).focus();
     }
   };
 
@@ -169,7 +169,7 @@ export function validator(element: HTMLElement, options: ValidatorOptions = {}) 
   }
 
   // Expose methods
-  element.wbValidator = {
+  (element as any).wbValidator = {
     validate: validateAll,
     validateInput: (input) => showError(input, validateInput(input)),
     clearErrors: () => getInputs().forEach(clearError),
@@ -187,7 +187,7 @@ export function validator(element: HTMLElement, options: ValidatorOptions = {}) 
       element.removeEventListener('submit', onSubmit);
     }
     getInputs().forEach(clearError);
-    delete element.wbValidator;
+    delete (element as any).wbValidator;
   };
 }
 

@@ -207,7 +207,7 @@ export function fullscreen(element, options: Record<string, any> = {}) {
     targetEl = document.body;
   }
   
-  let originalStyles = {};
+  let originalStyles: { overflow?: string; overflowY?: string; height?: string } = {};
   
   // Handle fullscreen change events to restore styles
   const handleFullscreenChange = () => {
@@ -650,9 +650,9 @@ export function clock(element, options: Record<string, any> = {}) {
   update();
   const updateInterval = setInterval(update, 1000);
 
-  return () => { 
-    clearInterval(interval); 
-    element.classList.remove('wb-clock', `wb-clock--${config.variant}`); 
+  return () => {
+    clearInterval(updateInterval);
+    element.classList.remove('wb-clock', `wb-clock--${config.variant}`);
   };
 }
 
@@ -693,7 +693,7 @@ export function relativetime(element, options: Record<string, any> = {}) {
   update();
   const timerInterval = setInterval(update, config.refresh);
 
-  return () => { clearInterval(interval); element.classList.remove('wb-relativetime'); };
+  return () => { clearInterval(timerInterval); element.classList.remove('wb-relativetime'); };
 }
 
 /**

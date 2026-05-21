@@ -70,7 +70,7 @@ export const SummaryBadges = {
     wrapper.className = 'sb-container';
 
     // Create badge elements
-    const badges = {};
+    const badges: { totalSaved?: HTMLElement; queue?: HTMLElement; keepCount?: HTMLElement } = {};
 
     if (showTotalSaved) {
       badges.totalSaved = createBadgeEl('Total Saved', '0 B', 'green');

@@ -32,8 +32,8 @@ export function dropdown(element, options: Record<string, any> = {}) {
 
   // Check if using child elements as menu items
   const childElements = Array.from(element.children).filter(
-    child => child.tagName === 'A' || child.tagName === 'BUTTON' || child.tagName === 'DIV'
-  );
+    child => (child as Element).tagName === 'A' || (child as Element).tagName === 'BUTTON' || (child as Element).tagName === 'DIV'
+  ) as HTMLElement[];
   const hasChildItems = childElements.length > 0 && config.items.length === 0;
 
   // Create trigger button if using label
@@ -107,8 +107,8 @@ export function dropdown(element, options: Record<string, any> = {}) {
     
     // Add hover events
     menu.querySelectorAll('.wb-dropdown__item').forEach(item => {
-      item.addEventListener('mouseenter', () => item.style.background = 'var(--bg-tertiary,#374151)');
-      item.addEventListener('mouseleave', () => item.style.background = '');
+      item.addEventListener('mouseenter', () => (item as HTMLElement).style.background = 'var(--bg-tertiary,#374151)');
+      item.addEventListener('mouseleave', () => (item as HTMLElement).style.background = '');
     });
   }
 

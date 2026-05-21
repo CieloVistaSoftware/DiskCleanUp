@@ -58,7 +58,7 @@ export function darkmode(element, options: Record<string, any> = {}) {
     if (originalTheme) {
       targetEl.setAttribute('theme', originalTheme);
     } else {
-      delete targetEl.getAttribute('theme');
+      targetEl.removeAttribute('theme');
     }
   };
 }

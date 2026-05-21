@@ -39,15 +39,16 @@ export function tabs(element, options: Record<string, any> = {}) {
 
     // Process Panels
     originalPanels.forEach((panel, i) => {
-      const title = panel.getAttribute('tab-title') || panel.getAttribute('tab') || `Tab ${i + 1}`;
+      const panelEl = panel as HTMLElement;
+      const title = panelEl.getAttribute('tab-title') || panelEl.getAttribute('tab') || `Tab ${i + 1}`;
       const isActive = i === 0;
 
       // Create Tab Button
       const button = document.createElement('button');
       button.className = `wb-tabs__tab ${isActive ? 'wb-tabs__tab--active' : ''}`;
       button.setAttribute('role', 'tab');
-      button.setAttribute('index', i);
-      button.setAttribute('aria-selected', isActive);
+      button.setAttribute('index', String(i));
+      button.setAttribute('aria-selected', String(isActive));
       button.setAttribute('aria-controls', `panel-${i}`);
       button.id = `tab-${i}`;
       button.textContent = title;
@@ -75,7 +76,7 @@ export function tabs(element, options: Record<string, any> = {}) {
       const panelWrapper = document.createElement('section');
       panelWrapper.className = 'wb-tabs__panel';
       panelWrapper.setAttribute('role', 'tabpanel');
-      panelWrapper.setAttribute('index', i);
+      panelWrapper.setAttribute('index', String(i));
       panelWrapper.id = `panel-${i}`;
       panelWrapper.setAttribute('aria-labelledby', `tab-${i}`);
       Object.assign(panelWrapper.style, {
@@ -87,8 +88,8 @@ export function tabs(element, options: Record<string, any> = {}) {
       });
       
       // Move all children of the original panel to the new wrapper
-      while (panel.firstChild) {
-        panelWrapper.appendChild(panel.firstChild);
+      while (panelEl.firstChild) {
+        panelWrapper.appendChild(panelEl.firstChild);
       }
       
       panelsContainer.appendChild(panelWrapper);

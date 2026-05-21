@@ -73,7 +73,7 @@ export const MetricsBar = {
    * @param {Object} opts - Configuration
    *   @param {string[]} opts.metrics - Metrics to show: ['cpu', 'mem', 'threads', 'uptime']
    */
-  create(containerId, opts = {}) {
+  create(containerId, opts: { metrics?: string[] } = {}) {
     const {
       metrics = ['cpu', 'mem', 'threads', 'uptime']
     } = opts;
@@ -88,7 +88,7 @@ export const MetricsBar = {
     const bar = document.createElement('div');
     bar.className = 'mb-bar';
 
-    const elements = {};
+    const elements: { cpu?: { canvas: HTMLCanvasElement; value: HTMLElement }; mem?: { canvas: HTMLCanvasElement; value: HTMLElement }; threads?: { value: HTMLElement }; uptime?: { value: HTMLElement; dot: HTMLElement } } = {};
 
     // CPU metric
     if (metrics.includes('cpu')) {
@@ -175,7 +175,7 @@ export const MetricsBar = {
    * Update metrics display
    * @param {Object} data - Metrics { cpu, mem, threads }
    */
-  update(data = {}) {
+  update(data: { cpu?: number; mem?: number; threads?: number; uptime?: number } = {}) {
     if (!metricsInstance) {
       console.warn('MetricsBar: not initialized. Call create() first.');
       return;

@@ -50,7 +50,7 @@ async function loadMarked() {
 }
 
 export async function mdhtml(element, options: Record<string, any> = {}) {
-  const config = {
+  const config: Record<string, any> = {
     src: options.src || element.getAttribute('src'),
     sanitize: options.sanitize ?? (element.getAttribute('sanitize') !== 'false'),
     breaks: options.breaks ?? (element.getAttribute('breaks') !== 'false'),
@@ -58,6 +58,7 @@ export async function mdhtml(element, options: Record<string, any> = {}) {
     headerIds: options.headerIds ?? (element.getAttribute('header-ids') !== 'false'),
     highlight: options.highlight ?? element.getAttribute('highlight'),
     size: options.size || element.getAttribute('size') || 'xs',
+    captions: options.captions ?? true,
     ...options
   };
 
@@ -168,19 +169,20 @@ export async function mdhtml(element, options: Record<string, any> = {}) {
       let blockCount = 0;
       
       Array.from(element.children).forEach(child => {
-        if (child.tagName === 'H2') {
+        const childEl = child as HTMLElement;
+        if (childEl.tagName === 'H2') {
           chapterCount++;
           blockCount = 0;
-        } else if (child.tagName === 'PRE') {
+        } else if (childEl.tagName === 'PRE') {
           // Create wrapper
           const wrapper = document.createElement('div');
           wrapper.className = 'code-wrapper';
-          
+
           // Insert wrapper before pre
-          child.parentNode.insertBefore(wrapper, child);
-          
+          childEl.parentNode.insertBefore(wrapper, childEl);
+
           // Move pre into wrapper
-          wrapper.appendChild(child);
+          wrapper.appendChild(childEl);
           
           // Create caption
           const caption = document.createElement('div');

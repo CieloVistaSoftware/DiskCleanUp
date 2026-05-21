@@ -217,7 +217,7 @@ export function sidebarlayout(element, options: Record<string, any> = {}) {
   element.style.flexWrap = 'wrap';
   element.style.gap = config.gap;
 
-  const children = Array.from(element.children);
+  const children = Array.from(element.children) as HTMLElement[];
   if (children.length >= 2) {
     const sideIndex = config.side === 'left' ? 0 : 1;
     const mainIndex = config.side === 'left' ? 1 : 0;
@@ -248,7 +248,7 @@ export function switcher(element, options: Record<string, any> = {}) {
   element.style.flexWrap = 'wrap';
   element.style.gap = config.gap;
 
-  const children = Array.from(element.children);
+  const children = Array.from(element.children) as HTMLElement[];
   children.forEach(child => {
     child.style.flexGrow = '1';
     child.style.flexBasis = `calc((${config.threshold} - 100%) * 999)`;
@@ -548,10 +548,19 @@ export function drawerLayout(element, options: Record<string, any> = {}) {
     element.style.border = 'none';
   }
   
+  // Arrow helper for toggle button
+  const getArrow = (collapsed: boolean): string => {
+    if (config.position === 'left') return collapsed ? '▶' : '◀';
+    if (config.position === 'right') return collapsed ? '◀' : '▶';
+    if (config.position === 'top') return collapsed ? '▼' : '▲';
+    if (config.position === 'bottom') return collapsed ? '▲' : '▼';
+    return '?';
+  };
+
   // Toggle Logic
   const toggle = () => {
     isCollapsed = !isCollapsed;
-    if (config.saveState) localStorage.setItem(storageKeyCollapsed, isCollapsed);
+    if (config.saveState) localStorage.setItem(storageKeyCollapsed, String(isCollapsed));
     
     // Update arrow if using default button
     if (toggleBtn && !config.toggleSelector) {
@@ -604,14 +613,7 @@ export function drawerLayout(element, options: Record<string, any> = {}) {
     toggleBtn = document.createElement('button');
     toggleBtn.className = 'wb-drawer-toggle';
     
-    // Arrow logic
-    const getArrow = (collapsed) => {
-        if (config.position === 'left') return collapsed ? '▶' : '◀';
-        if (config.position === 'right') return collapsed ? '◀' : '▶';
-        if (config.position === 'top') return collapsed ? '▼' : '▲';
-        if (config.position === 'bottom') return collapsed ? '▲' : '▼';
-        return '?';
-    };
+
     
     toggleBtn.innerHTML = getArrow(isCollapsed);
     
@@ -676,7 +678,7 @@ export function drawerLayout(element, options: Record<string, any> = {}) {
       handle.className = 'wb-drawer-handle';
       // Style based on position
       const size = '8px';
-      const styles = { position: 'absolute', zIndex: '20', background: 'transparent' };
+      const styles: Record<string, string> = { position: 'absolute', zIndex: '20', background: 'transparent' };
       
       if (config.position === 'left') {
         styles.right = '0'; styles.top = '0'; styles.bottom = '0'; styles.width = size; styles.cursor = 'col-resize';

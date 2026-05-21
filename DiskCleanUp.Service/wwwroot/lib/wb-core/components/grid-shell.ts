@@ -100,6 +100,10 @@ function formatBytes(bytes) {
 
 // ─── Fragment Batching System ──────────────────────────────────────────────────
 class FragmentBatcher {
+  pending: Element[] = [];
+  scheduled: boolean = false;
+  batchedFragment: DocumentFragment | null = null;
+
   constructor() {
     this.pending = [];
     this.scheduled = false;
@@ -139,7 +143,7 @@ export const GridShell = {
    * @param {Array} columns - Column definitions [{ key, label, width, type }]
    * @param {Object} opts - Options
    */
-  create(id, containerOrOpts, columns, opts = {}) {
+  create(id, containerOrOpts, columns, opts: { lineNumbers?: boolean; rowClass?: string | null; onRowClick?: ((...args: any[]) => any) | null; onRowDblClick?: ((...args: any[]) => any) | null; actions?: any[]; colorFn?: ((...args: any[]) => any) | null; legendEnabled?: boolean; persistWidths?: boolean; skeletonRows?: number; container?: any; columns?: any } = {}) {
     try {
       // Support both calling conventions:
       //   create(id, containerId, columns, opts)   — positional
@@ -310,7 +314,7 @@ export const GridShell = {
 
     const checkboxes = grid.gridEl.querySelectorAll('.sg-checkbox:checked');
     return Array.from(checkboxes).map(cb => {
-      const path = cb.dataset.path;
+      const path = (cb as HTMLElement).dataset.path;
       const data = grid.rowMap.get(path);
       return data ? data[dataKey] : path;
     });
@@ -455,8 +459,8 @@ export const GridShell = {
     if (!grid) return;
 
     const headerCell = Array.from(grid.headerEl.children).find(
-      cell => cell.dataset.columnKey === columnKey
-    );
+      cell => (cell as HTMLElement).dataset.columnKey === columnKey
+    ) as HTMLElement | undefined;
 
     if (!headerCell) return;
 
@@ -490,8 +494,8 @@ export const GridShell = {
         this._handleResizeStart(grid, idx, e);
       });
 
-      cell.style.position = 'relative';
-      cell.appendChild(handle);
+      (cell as HTMLElement).style.position = 'relative';
+      (cell as HTMLElement).appendChild(handle);
     });
   },
 
@@ -503,7 +507,7 @@ export const GridShell = {
     if (!grid) return;
 
     const widths = Array.from(grid.headerEl.children).map(
-      cell => cell.offsetWidth
+      cell => (cell as HTMLElement).offsetWidth
     );
 
     localStorage.setItem(`sg-widths-${id}`, JSON.stringify(widths));
@@ -593,7 +597,7 @@ export const GridShell = {
 
     // Clear previous sort indicators
     headerCells.forEach(cell => {
-      cell.classList.remove('sg-sort-asc', 'sg-sort-desc');
+      (cell as HTMLElement).classList.remove('sg-sort-asc', 'sg-sort-desc');
     });
 
     // Rotate sort direction: asc → desc → original
@@ -607,8 +611,8 @@ export const GridShell = {
     // Apply sort indicator
     if (state.direction !== 'original') {
       const headerCell = headerCells.find(
-        cell => cell.dataset.columnKey === columnKey
-      );
+        cell => (cell as HTMLElement).dataset.columnKey === columnKey
+      ) as HTMLElement | undefined;
       if (headerCell) {
         headerCell.classList.add(`sg-sort-${state.direction}`);
       }
@@ -642,7 +646,7 @@ export const GridShell = {
     const startX = e.clientX;
     const cells = Array.from(grid.headerEl.children);
     // Snapshot current pixel widths for all columns
-    const widths = cells.map(cell => cell.offsetWidth);
+    const widths = cells.map(cell => (cell as HTMLElement).offsetWidth);
 
     const handleMouseMove = (moveEvent) => {
       const deltaX = moveEvent.clientX - startX;

@@ -74,7 +74,7 @@ export const StatusBar = {
    *   @param {Function} opts.onStop - Callback when stop button clicked
    *   @param {Function} opts.onError - Callback on error
    */
-  create(sectionId, opts = {}) {
+  create(sectionId, opts: { container?: HTMLElement | string | null; segments?: string[]; onStop?: () => void; onError?: () => void } = {}) {
     if (!sectionId) {
       console.warn('StatusBar.create() requires sectionId');
       return;
@@ -219,7 +219,7 @@ export const StatusBar = {
    * @param {string} sectionId
    * @param {Object} data - Metric values { files, results, size, folder, rowCount, ... }
    */
-  progress(sectionId, data = {}) {
+  progress(sectionId, data: Record<string, any> = {}) {
     const state = statusBars.get(sectionId);
     if (!state) return;
 
@@ -240,7 +240,7 @@ export const StatusBar = {
 
     // Update row count if provided
     if (typeof data.rowCount === 'number') {
-      state.segments.rows.textContent = data.rowCount;
+      state.segments.rows.textContent = String(data.rowCount);
     }
   },
 
@@ -337,7 +337,7 @@ export const StatusBar = {
     state.metrics = {};
 
     Object.values(state.segments.metric).forEach((el) => {
-      el.textContent = '0';
+      (el as HTMLElement).textContent = '0';
     });
   },
 

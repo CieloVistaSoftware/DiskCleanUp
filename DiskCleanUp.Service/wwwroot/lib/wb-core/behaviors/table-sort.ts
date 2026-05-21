@@ -74,7 +74,7 @@ export function cellValue(td) {
  * @param {Object} [opts]
  * @param {string} [opts.groupSepClass='group-sep'] — class name for group separator rows
  */
-export function sortTable(table, colIndex, dir, opts = {}) {
+export function sortTable(table, colIndex, dir, opts: { groupSepClass?: string } = {}) {
   const tbody = table.querySelector('tbody');
   if (!tbody) return;
 

@@ -76,8 +76,8 @@ export async function tooltip(element, options: Record<string, any> = {}) {
     return () => {};
   }
 
-  if (element._wbTooltip) {
-    return element._wbTooltip.cleanup;
+  if ((element as any)._wbTooltip) {
+    return (element as any)._wbTooltip.cleanup;
   }
 
   // Inject styles
@@ -254,10 +254,10 @@ export async function tooltip(element, options: Record<string, any> = {}) {
     if (originalTitle) element.setAttribute('title', originalTitle);
     element.removeAttribute('aria-describedby');
 
-    delete element._wbTooltip;
+    delete (element as any)._wbTooltip;
   };
 
-  element._wbTooltip = { cleanup };
+  (element as any)._wbTooltip = { cleanup };
 
   return cleanup;
 }

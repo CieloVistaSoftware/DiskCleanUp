@@ -206,7 +206,7 @@ export function resizable(element, options: Record<string, any> = {}) {
     element.removeEventListener('mousedown', onMouseDown);
     document.removeEventListener('mousemove', onMouseMove);
     document.removeEventListener('mouseup', onMouseUp);
-    Object.values(handles).forEach(h => h.remove());
+    Object.values(handles).forEach(h => (h as HTMLElement).remove());
     delete element.wbResizable;
   };
 }

@@ -65,7 +65,7 @@ function _recalcTableWidth(table, ths) {
  * @param {number} [opts.minWidth=40] — minimum column width in px
  * @returns {() => void} cleanup function
  */
-export function tableResize(table, opts = {}) {
+export function tableResize(table, opts: { minWidth?: number } = {}) {
   if (!table || table.dataset.wbResizable) return () => {};
   table.dataset.wbResizable = '1';
 

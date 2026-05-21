@@ -56,7 +56,7 @@ export const FilterBar = {
    *   @param {string} opts.persistKey - localStorage key for persistence
    *   @param {Function} opts.onFilter - Callback when filter state changes
    */
-  create(sectionId, opts = {}) {
+  create(sectionId, opts: { container?: HTMLElement | string | null; persistKey?: string; onFilter?: (...args: any[]) => any } = {}) {
     if (!sectionId) {
       console.warn('FilterBar.create() requires sectionId');
       return;
@@ -231,9 +231,11 @@ export const FilterBar = {
 
     // Keep options sorted
     const options = Array.from(state.elements.dropdown.options).sort((a, b) => {
-      if (a.value === '*') return -1;
-      if (b.value === '*') return 1;
-      return a.textContent.localeCompare(b.textContent);
+      const aOpt = a as HTMLOptionElement;
+      const bOpt = b as HTMLOptionElement;
+      if (aOpt.value === '*') return -1;
+      if (bOpt.value === '*') return 1;
+      return (aOpt.textContent || '').localeCompare(bOpt.textContent || '');
     });
     state.elements.dropdown.innerHTML = '';
     options.forEach((opt) => {

@@ -99,9 +99,9 @@ function openGalleryLightbox(images, index) {
       <button class="wb-lightbox__close">×</button>
       <div class="wb-lightbox__counter">${current + 1} / ${images.length}</div>
     `;
-    overlay.querySelector('.wb-lightbox__prev').onclick = (e) => { e.stopPropagation(); current = (current - 1 + images.length) % images.length; render(); };
-    overlay.querySelector('.wb-lightbox__next').onclick = (e) => { e.stopPropagation(); current = (current + 1) % images.length; render(); };
-    overlay.querySelector('.wb-lightbox__close').onclick = () => overlay.remove();
+    (overlay.querySelector('.wb-lightbox__prev') as HTMLElement).onclick = (e) => { e.stopPropagation(); current = (current - 1 + images.length) % images.length; render(); };
+    (overlay.querySelector('.wb-lightbox__next') as HTMLElement).onclick = (e) => { e.stopPropagation(); current = (current + 1) % images.length; render(); };
+    (overlay.querySelector('.wb-lightbox__close') as HTMLElement).onclick = () => overlay.remove();
   };
   
   render();
@@ -468,19 +468,19 @@ export function audio(element, options: Record<string, any> = {}) {
 
     const masterVol = document.createElement('input');
     masterVol.type = 'range';
-    masterVol.min = 0;
-    masterVol.max = 100;
-    masterVol.value = audioEl.volume * 100;
+    masterVol.min = '0';
+    masterVol.max = '100';
+    masterVol.value = String(audioEl.volume * 100);
     masterVol.className = 'wb-audio__master-vol wb-audio__eq-master-volume';
     Object.assign(masterVol.style, {
       width: '100px',
       height: '6px'
     });
     masterVol.oninput = (e) => {
-      audioEl.volume = e.target.value / 100;
+      audioEl.volume = (e.target as HTMLInputElement).valueAsNumber / 100;
     };
     audioEl.addEventListener('volumechange', () => {
-      masterVol.value = audioEl.volume * 100;
+      masterVol.value = String(audioEl.volume * 100);
     });
     volContainer.appendChild(masterVol);
     
@@ -656,9 +656,9 @@ export function audio(element, options: Record<string, any> = {}) {
       // Vertical slider input
       const slider = document.createElement('input');
       slider.type = 'range';
-      slider.min = -12;
-      slider.max = 12;
-      slider.value = 0;
+      slider.min = '-12';
+      slider.max = '12';
+      slider.value = '0';
       slider.className = 'wb-audio__eq-slider';
       Object.assign(slider.style, {
         width: '120px',
@@ -673,7 +673,7 @@ export function audio(element, options: Record<string, any> = {}) {
 
       slider.oninput = (e) => {
         initAudioContext();
-        const bandVal = parseFloat(e.target.value);
+        const bandVal = parseFloat((e.target as HTMLInputElement).value);
         if (filters[index]) {
           filters[index].gain.value = bandVal;
         }

@@ -85,7 +85,7 @@ export const Toolbar = {
    *   @param {Function} opts.onKeep - Keep button callback
    *   @param {Function} opts.onLoadMore - Load More button callback
    */
-  create(sectionId, opts = {}) {
+  create(sectionId, opts: { container?: HTMLElement | string | null; buttons?: string[] | null; custom?: any[] | null; customButtons?: any[] | null; onScan?: (() => void) | null; onCancel?: (() => void) | null; onSelectAll?: (() => void) | null; onSelectNone?: (() => void) | null; onDelete?: (() => void) | null; onKeep?: (() => void) | null; onLoadMore?: (() => void) | null } = {}) {
     if (!sectionId) {
       console.warn('Toolbar.create() requires sectionId');
       return;
@@ -208,7 +208,7 @@ export const Toolbar = {
    * @param {string} sectionId
    * @param {Object} state - { hasMore: boolean, loading: boolean }
    */
-  setLoadMoreState(sectionId, state = {}) {
+  setLoadMoreState(sectionId, state: { hasMore?: boolean; loading?: boolean } = {}) {
     const toolbar = toolbars.get(sectionId);
     if (!toolbar) return;
 
