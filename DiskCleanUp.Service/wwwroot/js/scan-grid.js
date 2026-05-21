@@ -407,6 +407,10 @@ export function addRow(section, data) {
             g._flushScheduled = false;
             _updateRowCount(section, g);
             _rebuildLegend(section, g);
+            // Re-apply filter after flush so newly-added rows obey any active chip filter
+            if (g._activeExts.size > 0) {
+                requestAnimationFrame(() => applyFilter(section));
+            }
         });
     }
     // Track extensions for filter + legend
@@ -619,7 +623,7 @@ function _rebuildLegend(section, g) {
             `<span class="sg-legend-label">File types (${sorted.length}):</span>` +
                 sorted.map(ext => `<span class="sg-legend-chip" data-ext="${ext}" title="Click to filter" style="cursor:pointer">${dot(ext)}<span style="color:${colorFor(ext)}">${ext}</span></span>`).join('') +
                 `<button class="sg-legend-clear" title="Clear chip filters" style="display:none">✕ Clear</button>`;
-        // Wire chip clicks
+        // Wire chip clicks — toggle state + visual immediately, defer heavy filter pass
         g.legend.querySelectorAll('.sg-legend-chip').forEach((chip) => {
             chip.addEventListener('click', () => {
                 const ext = chip.dataset.ext || '';
@@ -629,8 +633,8 @@ function _rebuildLegend(section, g) {
                 else {
                     g._activeExts.add(ext);
                 }
-                _syncLegendActive(section, g);
-                applyFilter(section);
+                _syncLegendActive(section, g);                              // instant chip highlight (same frame)
+                requestAnimationFrame(() => applyFilter(section));          // async row-filter (non-blocking)
             });
         });
         // Wire clear button
@@ -639,7 +643,7 @@ function _rebuildLegend(section, g) {
             clearBtn.addEventListener('click', () => {
                 g._activeExts.clear();
                 _syncLegendActive(section, g);
-                applyFilter(section);
+                requestAnimationFrame(() => applyFilter(section));
             });
         }
     }

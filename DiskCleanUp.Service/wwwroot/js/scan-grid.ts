@@ -216,6 +216,7 @@ _grids[section] = {
   containerId, columns: cols, gridTemplate, body, header, legend,
   rows: [], sortCol: -1, sortDir: 0,
   _frag: null, _flushScheduled: false, _legendExts: new Set(),
+  _activeExts: new Set(),   // chip-filter: extensions user has toggled on
   lastClickRow: null as Element | null,
 
 // Filter registration moved to top of create() — runs even when grid
@@ -432,6 +433,10 @@ if (!g._flushScheduled) {
     g._flushScheduled = false;
     _updateRowCount(section, g);
     _rebuildLegend(section, g);
+    // Re-apply filter after flush so newly-added rows obey any active chip filter
+    if (g._activeExts.size > 0) {
+      requestAnimationFrame(() => applyFilter(section));
+    }
   });
 }
 
@@ -596,6 +601,8 @@ for (const row of g.rows) {
   }
   if (vis && mode === 'include' && included && ext !== included) vis = false;
   if (vis && mode === 'exclude' && excluded.has(ext)) vis = false;
+  // Chip-filter: if any legend chips are active, row must match one of them
+  if (vis && g._activeExts.size > 0 && !g._activeExts.has(ext)) vis = false;
 
   row.style.display = vis ? '' : 'none';
   if (vis) shown++;
@@ -627,15 +634,51 @@ document.querySelectorAll(`[data-grid-section="${section}"]`).forEach(btn => {
 function _rebuildLegend(section, g) {
 if (!g.legend || g._legendExts.size === 0) return;
 const sorted = [...g._legendExts].sort();
-// Only rebuild if count changed
-if (g._legendLastCount === sorted.length) return;
-g._legendLastCount = sorted.length;
+// Only rebuild HTML when count changes; always sync active states
+if (g._legendLastCount !== sorted.length) {
+  g._legendLastCount = sorted.length;
+  g.legend.style.display = '';
+  g.legend.innerHTML =
+    `<span class="sg-legend-label">File types (${sorted.length}):</span>` +
+    sorted.map(ext =>
+      `<span class="sg-legend-chip" data-ext="${ext}" title="Click to filter" style="cursor:pointer">${dot(ext)}<span style="color:${colorFor(ext)}">${ext}</span></span>`
+    ).join('') +
+    `<button class="sg-legend-clear" title="Clear chip filters" style="display:none">✕ Clear</button>`;
 
-g.legend.style.display = '';
-g.legend.innerHTML = `<span class="sg-legend-label">File types (${sorted.length}):</span>` +
-  sorted.map(ext =>
-    `<span class="sg-legend-chip" title="${ext}">${dot(ext)}<span style="color:${colorFor(ext)}">${ext}</span></span>`
-  ).join('');
+  // Wire chip clicks — toggle state + visual immediately, defer heavy filter pass
+  g.legend.querySelectorAll('.sg-legend-chip').forEach((chip: Element) => {
+    chip.addEventListener('click', () => {
+      const ext = (chip as HTMLElement).dataset.ext || '';
+      if (g._activeExts.has(ext)) { g._activeExts.delete(ext); }
+      else { g._activeExts.add(ext); }
+      _syncLegendActive(section, g);           // instant chip highlight (same frame)
+      requestAnimationFrame(() => applyFilter(section)); // async row-filter (non-blocking)
+    });
+  });
+
+  // Wire clear button
+  const clearBtn = g.legend.querySelector('.sg-legend-clear') as HTMLElement | null;
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      g._activeExts.clear();
+      _syncLegendActive(section, g);
+      requestAnimationFrame(() => applyFilter(section));
+    });
+  }
+}
+// Always re-sync active highlight states (survives count-unchanged re-calls)
+_syncLegendActive(section, g);
+}
+
+/** Sync the visual active state of legend chips + show/hide the Clear button */
+function _syncLegendActive(section, g) {
+if (!g.legend) return;
+g.legend.querySelectorAll('.sg-legend-chip').forEach((chip: Element) => {
+  const ext = (chip as HTMLElement).dataset.ext || '';
+  chip.classList.toggle('active', g._activeExts.has(ext));
+});
+const clearBtn = g.legend.querySelector('.sg-legend-clear') as HTMLElement | null;
+if (clearBtn) clearBtn.style.display = g._activeExts.size > 0 ? '' : 'none';
 }
 
 /** Trash a single sub-path inside a 'paths' column (e.g. Will Delete list) */
