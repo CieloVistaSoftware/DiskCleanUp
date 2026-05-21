@@ -1,6 +1,6 @@
 ﻿import { ErrLog } from '../../../js/error-logger.js';
 // Standalone stepper behavior extracted from enhancements.js
-export function stepper(element, options = {}) {
+export function stepper(element, options: Record<string, any> = {}) {
   const config = {
     min: parseFloat(options.min ?? element.getAttribute('min') ?? '-Infinity'),
     max: parseFloat(options.max ?? element.getAttribute('max') ?? 'Infinity'),

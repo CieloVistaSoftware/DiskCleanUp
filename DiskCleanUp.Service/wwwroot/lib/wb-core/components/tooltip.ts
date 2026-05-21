@@ -70,7 +70,7 @@ function injectStyles() {
   stylesInjected = true;
 }
 
-export async function tooltip(element, options = {}) {
+export async function tooltip(element, options: Record<string, any> = {}) {
   if (!element || !(element instanceof HTMLElement)) {
     console.warn('[WB:tooltip] Invalid element');
     return () => {};

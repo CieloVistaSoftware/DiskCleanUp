@@ -14,7 +14,7 @@
  * custom tags but will be removed in a future version.
  * -----------------------------------------------------------------------------
  */
-export default function progressbar(element, options = {}) {
+export default function progressbar(element, options: Record<string, any> = {}) {
   const config = {
     value: parseFloat(options.value || element.dataset.value || 0),
     max: parseFloat(options.max || element.dataset.max || 100),

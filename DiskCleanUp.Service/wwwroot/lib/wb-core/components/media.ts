@@ -17,7 +17,7 @@
  * Image - Enhanced images
  * Helper Attribute: [x-image]
  */
-export function image(element, options = {}) {
+export function image(element, options: Record<string, any> = {}) {
   const config = {
     lazy: options.lazy ?? element.hasAttribute('lazy'),
     zoomable: options.zoomable ?? element.hasAttribute('zoomable'),
@@ -62,7 +62,7 @@ function openLightbox(src) {
  * Gallery - Image gallery
  * Custom Tag: <wb-gallery>
  */
-export function gallery(element, options = {}) {
+export function gallery(element, options: Record<string, any> = {}) {
   const config = {
     columns: parseInt(options.columns || element.getAttribute('columns') || '3'),
     gap: options.gap || element.getAttribute('gap') || '1rem',
@@ -113,7 +113,7 @@ function openGalleryLightbox(images, index) {
  * Video - Enhanced video player
  * Custom Tag: <wb-video>
  */
-export function video(element, options = {}) {
+export function video(element, options: Record<string, any> = {}) {
   const config = {
     src: options.src || element.getAttribute('src') || '',
     controls: options.controls ?? element.getAttribute('controls') !== 'false',
@@ -181,7 +181,7 @@ const EQ_BANDS = [
  * Custom Tag: <wb-audio>
  * Premium plastic slider design with 3D appearance
  */
-export function audio(element, options = {}) {
+export function audio(element, options: Record<string, any> = {}) {
   const config = {
     src: options.src || element.getAttribute('src') || '',
     controls: options.controls ?? element.getAttribute('controls') !== 'false',
@@ -883,7 +883,7 @@ function injectAudioStyles() {
  * Custom Tag: <wb-youtube>
  * YouTube - YouTube embed
  */
-export function youtube(element, options = {}) {
+export function youtube(element, options: Record<string, any> = {}) {
   const config = {
     id: options.id || element.getAttribute('video-id'),
     autoplay: options.autoplay ?? element.hasAttribute('autoplay'),
@@ -932,7 +932,7 @@ export function youtube(element, options = {}) {
  * Custom Tag: <wb-vimeo>
  * Vimeo - Vimeo embed
  */
-export function vimeo(element, options = {}) {
+export function vimeo(element, options: Record<string, any> = {}) {
   const config = {
     id: options.id || element.getAttribute('video-id'),
     autoplay: options.autoplay ?? element.hasAttribute('autoplay'),
@@ -975,7 +975,7 @@ export function vimeo(element, options = {}) {
  **
  * Ratio - Aspect ratio container
  */
-export function ratio(element, options = {}) {
+export function ratio(element, options: Record<string, any> = {}) {
   const config = {
     ratio: options.ratio || element.getAttribute('ratio') || '16x9',
     ...options
@@ -1006,7 +1006,7 @@ export function ratio(element, options = {}) {
  **
  * Figure - Enhanced figure with caption positioning and zoom
  */
-export function figure(element, options = {}) {
+export function figure(element, options: Record<string, any> = {}) {
   const config = {
     zoom: options.zoom ?? (element.getAttribute('zoom') === 'true' || element.hasAttribute('zoom')),
     lightbox: options.lightbox ?? (element.getAttribute('lightbox') !== 'false'),

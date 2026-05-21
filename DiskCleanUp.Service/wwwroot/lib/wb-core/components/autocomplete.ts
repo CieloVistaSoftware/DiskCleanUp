@@ -1,6 +1,6 @@
 ﻿import { ErrLog } from '../../../js/error-logger.js';
 // Standalone autocomplete behavior extracted from enhancements.js
-export function autocomplete(element, options = {}) {
+export function autocomplete(element, options: Record<string, any> = {}) {
   element.classList.add('wb-autocomplete');
   const input = document.createElement('input');
   input.type = 'text';

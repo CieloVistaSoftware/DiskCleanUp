@@ -47,7 +47,7 @@ export function createToast(message, variant = 'info', duration = 3000) {
  * Uses toast-variant to avoid conflict with the element's own variant attribute.
  * Falls back to variant for backwards compat on non-wb-button elements.
  */
-export function toast(element, options = {}) {
+export function toast(element, options: Record<string, any> = {}) {
   const message = options.message || element.getAttribute('message') || 'Notification';
   const variant = options.variant || element.getAttribute('toast-variant') || element.getAttribute('variant') || 'info';
   const duration = parseInt(options.duration || element.getAttribute('duration') || '3000');
@@ -69,7 +69,7 @@ export function toast(element, options = {}) {
  * CSS: src/styles/behaviors/badge.css
  * CSS targets wb-badge tag and attributes.
  */
-export function badge(element, options = {}) {
+export function badge(element, options: Record<string, any> = {}) {
   const variant = (options.variant || element.getAttribute('variant') || element.getAttribute('badge') || 'default')
     .replace(/\s+/g, '-').toLowerCase();
   const pill = options.pill ?? element.hasAttribute('pill');
@@ -95,7 +95,7 @@ export function badge(element, options = {}) {
  * CSS: src/styles/behaviors/progress.css
  * @deprecated Behavior routing moved to semantics/progress.js (2026-02-09).
  */
-export function progress(element, options = {}) {
+export function progress(element, options: Record<string, any> = {}) {
   const value = parseInt(options.value || element.getAttribute('value') || '0');
   const max = parseInt(options.max || element.getAttribute('max') || '100');
   const animated = options.animated ?? element.hasAttribute('animated');
@@ -142,7 +142,7 @@ export function progress(element, options = {}) {
  * CSS: already in site.css — targets .wb-spinner div with sizes/colors/speeds.
  * CSS uses wb-spinner[size="lg"], wb-spinner[color="success"], wb-spinner[speed="fast"]
  */
-export function spinner(element, options = {}) {
+export function spinner(element, options: Record<string, any> = {}) {
   if (element._wbSpinnerInit) return () => {};
   element._wbSpinnerInit = true;
 
@@ -165,7 +165,7 @@ export function spinner(element, options = {}) {
  * CSS targets <wb-avatar> tag and attributes directly.
  * JS only creates child elements.
  */
-export function avatar(element, options = {}) {
+export function avatar(element, options: Record<string, any> = {}) {
   const src = options.src || element.getAttribute('src') || '';
   const initials = options.initials || element.getAttribute('initials') || '';
   const name = options.name || element.getAttribute('name') || '';
@@ -197,7 +197,7 @@ export function avatar(element, options = {}) {
  * Chip - Removable chips/tags
  * CSS: src/styles/behaviors/chip.css
  */
-export function chip(element, options = {}) {
+export function chip(element, options: Record<string, any> = {}) {
   const dismissible = options.dismissible ?? element.hasAttribute('dismissible');
   const variant = options.variant || element.getAttribute('variant') || 'default';
 
@@ -224,7 +224,7 @@ export function chip(element, options = {}) {
  * Alert - Alert messages
  * CSS: src/styles/behaviors/alert.css
  */
-export function alert(element, options = {}) {
+export function alert(element, options: Record<string, any> = {}) {
   const variant = options.variant || element.getAttribute('variant') || 'info';
   const message = options.message || element.getAttribute('message') || '';
   const title = options.title || element.getAttribute('title') || '';
@@ -294,7 +294,7 @@ export function skeleton(element) {
  * Divider - Content dividers
  * CSS: src/styles/behaviors/divider.css (TODO: create if missing)
  */
-export function divider(element, options = {}) {
+export function divider(element, options: Record<string, any> = {}) {
   const text = options.text || element.getAttribute('text') || '';
   const vertical = options.vertical ?? element.hasAttribute('vertical');
 
@@ -319,7 +319,7 @@ export function divider(element, options = {}) {
  * Breadcrumb - Navigation breadcrumbs
  * CSS: src/styles/behaviors/breadcrumb.css
  */
-export function breadcrumb(element, options = {}) {
+export function breadcrumb(element, options: Record<string, any> = {}) {
   const items = (options.items || element.getAttribute('items') || '').split(',').filter(Boolean);
   const separator = options.separator || element.getAttribute('separator') || '/';
 
@@ -348,7 +348,7 @@ export function breadcrumb(element, options = {}) {
  * Notify - Toast notification that cycles through types on each click
  * CSS: src/styles/behaviors/toast.css (shares toast styles)
  */
-export function notify(element, options = {}) {
+export function notify(element, options: Record<string, any> = {}) {
   const types = ['info', 'success', 'warning', 'error'];
   let typeIndex = 0;
 
@@ -378,7 +378,7 @@ export function notify(element, options = {}) {
 /**
  * Pill - Badge with rounded corners (shortcut)
  */
-export function pill(element, options = {}) {
+export function pill(element, options: Record<string, any> = {}) {
   return badge(element, { ...options, pill: true });
 }
 

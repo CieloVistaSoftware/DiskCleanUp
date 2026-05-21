@@ -17,7 +17,7 @@
  *     </div>
  * -----------------------------------------------------------------------------
  */
-export function dropdown(element, options = {}) {
+export function dropdown(element, options: Record<string, any> = {}) {
   const config = {
     items: (options.items || element.getAttribute('items') || '').split(',').filter(Boolean),
     label: options.label || element.getAttribute('label') || '',

@@ -47,7 +47,7 @@ const DIALOG_STYLES = `
  * Popover - Click-triggered popup
  * Custom Tag: <wb-popover>
  */
-export function popover(element, options = {}) {
+export function popover(element, options: Record<string, any> = {}) {
   const config = {
     content: options.content || element.getAttribute('popover-content') || element.getAttribute('description') || '',
     title: options.title || element.getAttribute('popover-title') || element.getAttribute('heading') || '',
@@ -139,7 +139,7 @@ function positionPopover(trigger, popover, position) {
  * Drawer - Slide-out panel (works on button click)
  * Custom Tag: <wb-drawer>
  */
-export function drawer(element, options = {}) {
+export function drawer(element, options: Record<string, any> = {}) {
   const config = {
     title: options.title || element.getAttribute('drawer-title') || element.getAttribute('heading') || 'Drawer',
     content: options.content || element.getAttribute('drawer-content') || element.getAttribute('description') || 'Drawer content',
@@ -208,7 +208,7 @@ export function drawer(element, options = {}) {
  * Lightbox - Full-screen image viewer
  * Helper Attribute: [x-lightbox]
  */
-export function lightbox(element, options = {}) {
+export function lightbox(element, options: Record<string, any> = {}) {
   const config = {
     src: options.src || element.getAttribute('src') || element.src || element.href || '',
     ...options
@@ -290,7 +290,7 @@ export function lightbox(element, options = {}) {
  * Offcanvas - Off-canvas panel
  * Custom Tag: <wb-offcanvas>
  */
-export function offcanvas(element, options = {}) {
+export function offcanvas(element, options: Record<string, any> = {}) {
   const config = {
     title: options.title || element.getAttribute('offcanvas-title') || element.getAttribute('heading') || 'Panel',
     content: options.content || element.getAttribute('offcanvas-content') || element.getAttribute('description') || 'Panel content',
@@ -352,7 +352,7 @@ export function offcanvas(element, options = {}) {
  * Sheet - Notes panel from left side with resizable width
  * Custom Tag: <wb-sheet>
  */
-export function sheet(element, options = {}) {
+export function sheet(element, options: Record<string, any> = {}) {
   const config = {
     title: options.title || element.getAttribute('sheet-title') || element.getAttribute('heading') || 'Notes',
     content: options.content || element.getAttribute('sheet-content') || element.getAttribute('description') || '',
@@ -456,7 +456,7 @@ export function sheet(element, options = {}) {
  * Helper Attribute: [x-confirm]
  * Confirm - Confirmation dialog
  */
-export function confirm(element, options = {}) {
+export function confirm(element, options: Record<string, any> = {}) {
   const config = {
     title: options.title || element.getAttribute('confirm-title') || element.getAttribute('heading') || 'Confirm',
     message: options.message || element.getAttribute('confirm-message') || element.getAttribute('message') || 'Are you sure?',
@@ -504,7 +504,7 @@ export function confirm(element, options = {}) {
  * Helper Attribute: [x-prompt]
  * Prompt - Input prompt dialog
  */
-export function prompt(element, options = {}) {
+export function prompt(element, options: Record<string, any> = {}) {
   const config = {
     title: options.title || element.getAttribute('prompt-title') || element.getAttribute('heading') || 'Input',
     message: options.message || element.getAttribute('prompt-message') || element.getAttribute('message') || '',

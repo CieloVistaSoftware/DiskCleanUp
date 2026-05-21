@@ -7,7 +7,7 @@
  * Custom Tag: <wb-slider>
  * -----------------------------------------------------------------------------
  */
-export function slider(element, options = {}) {
+export function slider(element, options: Record<string, any> = {}) {
   element.classList.add('wb-slider');
   return () => element.classList.remove('wb-slider');
 }

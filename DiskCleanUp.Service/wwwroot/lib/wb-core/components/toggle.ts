@@ -7,7 +7,7 @@
  * Helper Attribute: [x-toggle]
  * -----------------------------------------------------------------------------
  */
-export function toggle(element, options = {}) {
+export function toggle(element, options: Record<string, any> = {}) {
   const config = {
     // Support both data-class/data-toggle-class for flexibility
     class: options.class || element.getAttribute('class') || element.getAttribute('toggle-class') || 'active',

@@ -7,7 +7,7 @@
  * Custom Tag: <wb-tabs>
  * -----------------------------------------------------------------------------
  */
-export function tabs(element, options = {}) {
+export function tabs(element, options: Record<string, any> = {}) {
   element.classList.add('wb-tabs');
 
   // 1. Check if structure exists (Pre-rendered from Template)

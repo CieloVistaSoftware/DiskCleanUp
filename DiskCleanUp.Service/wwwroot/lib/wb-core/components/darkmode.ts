@@ -7,7 +7,7 @@
  * Custom Tag: <wb-darkmode>
  * -----------------------------------------------------------------------------
  */
-export function darkmode(element, options = {}) {
+export function darkmode(element, options: Record<string, any> = {}) {
   const config = {
     target: options.target || element.getAttribute('target') || 'html',
     theme: options.theme || element.getAttribute('theme') || 'dark',

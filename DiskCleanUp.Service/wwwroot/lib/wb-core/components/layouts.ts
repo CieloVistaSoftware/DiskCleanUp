@@ -17,7 +17,7 @@
  * Grid - CSS Grid layout
  * Custom Tag: <wb-grid>
  */
-export function grid(element, options = {}) {
+export function grid(element, options: Record<string, any> = {}) {
   const config = {
     columns: options.columns || element.dataset.columns || element.getAttribute('columns') || '3',
     gap: options.gap || element.dataset.gap || element.getAttribute('gap') || '1rem',
@@ -47,7 +47,7 @@ export function grid(element, options = {}) {
  * Flex - Flexbox layout
  * Custom Tag: <wb-flex> or <wb-row>
  */
-export function flex(element, options = {}) {
+export function flex(element, options: Record<string, any> = {}) {
   const config = {
     direction: options.direction || element.dataset.direction || element.getAttribute('direction') || 'row',
     wrap: options.wrap || element.dataset.wrap || element.getAttribute('wrap') || 'wrap',
@@ -74,7 +74,7 @@ export function flex(element, options = {}) {
  * User controls: direction, columns, gap, align, justify, wrap, padding
  * Custom Tag: <wb-container>
  */
-export function container(element, options = {}) {
+export function container(element, options: Record<string, any> = {}) {
   const config = {
     direction: options.direction || element.dataset.direction || element.getAttribute('direction') || 'column',
     columns: parseInt(options.columns || element.dataset.columns || element.getAttribute('columns') || '1'),
@@ -133,7 +133,7 @@ export function container(element, options = {}) {
  * Stack - Vertical stack layout
  * Custom Tag: <wb-stack> or <wb-column>
  */
-export function stack(element, options = {}) {
+export function stack(element, options: Record<string, any> = {}) {
   const config = {
     gap: options.gap || element.dataset.gap || element.getAttribute('gap') || '1rem',
     ...options
@@ -151,7 +151,7 @@ export function stack(element, options = {}) {
  * Cluster - Horizontal cluster layout
  * Custom Tag: <wb-cluster>
  */
-export function cluster(element, options = {}) {
+export function cluster(element, options: Record<string, any> = {}) {
   const config = {
     gap: options.gap || element.dataset.gap || element.getAttribute('gap') || '1rem',
     justify: options.justify || element.dataset.justify || element.getAttribute('justify') || 'flex-start',
@@ -173,7 +173,7 @@ export function cluster(element, options = {}) {
  * Center - Center content
  * Custom Tag: <wb-center>
  */
-export function center(element, options = {}) {
+export function center(element, options: Record<string, any> = {}) {
   const config = {
     maxWidth: options.maxWidth || element.dataset.maxWidth || element.getAttribute('max-width') || '',
     gutters: options.gutters || element.dataset.gutters || element.getAttribute('gutters') || '1rem',
@@ -203,7 +203,7 @@ export function center(element, options = {}) {
  * Sidebar Layout - Main content with sidebar
  * Custom Tag: <wb-sidebar>
  */
-export function sidebarlayout(element, options = {}) {
+export function sidebarlayout(element, options: Record<string, any> = {}) {
   const config = {
     side: options.side || element.dataset.side || element.getAttribute('side') || 'left',
     sideWidth: options.sideWidth || element.dataset.sideWidth || element.getAttribute('side-width') || '300px',
@@ -235,7 +235,7 @@ export function sidebarlayout(element, options = {}) {
  * Switcher - Responsive switch layout
  * Custom Tag: <wb-switcher>
  */
-export function switcher(element, options = {}) {
+export function switcher(element, options: Record<string, any> = {}) {
   const config = {
     threshold: options.threshold || element.dataset.threshold || element.getAttribute('threshold') || '30rem',
     gap: options.gap || element.dataset.gap || element.getAttribute('gap') || '1rem',
@@ -261,7 +261,7 @@ export function switcher(element, options = {}) {
  * Masonry - Masonry layout
  * Custom Tag: <wb-masonry>
  */
-export function masonry(element, options = {}) {
+export function masonry(element, options: Record<string, any> = {}) {
   const config = {
     columns: parseInt(options.columns || element.dataset.columns || element.getAttribute('columns') || '3'),
     gap: options.gap || element.dataset.gap || element.getAttribute('gap') || '1rem',
@@ -285,7 +285,7 @@ export function masonry(element, options = {}) {
  * Sticky - Sticky positioning
  * Custom Tag: <wb-sticky>
  */
-export function sticky(element, options = {}) {
+export function sticky(element, options: Record<string, any> = {}) {
   const config = {
     top: options.top || element.dataset.top || element.getAttribute('top') || '0',
     bottom: options.bottom || element.dataset.bottom || element.getAttribute('bottom') || '',
@@ -305,7 +305,7 @@ export function sticky(element, options = {}) {
 /**
  * Fixed - Fixed positioning
  */
-export function fixed(element, options = {}) {
+export function fixed(element, options: Record<string, any> = {}) {
   const config = {
     position: options.position || element.dataset.position || element.getAttribute('position') || 'bottom-right',
     offset: options.offset || element.dataset.offset || element.getAttribute('offset') || '1rem',
@@ -335,7 +335,7 @@ export function fixed(element, options = {}) {
 /**
  * Scrollable - Scrollable container
  */
-export function scrollable(element, options = {}) {
+export function scrollable(element, options: Record<string, any> = {}) {
   const config = {
     direction: options.direction || element.dataset.direction || element.getAttribute('direction') || 'both',
     maxHeight: options.maxHeight || element.dataset.maxHeight || element.getAttribute('max-height') || '',
@@ -361,7 +361,7 @@ export function scrollable(element, options = {}) {
  * Cover - Cover layout
  * Custom Tag: <wb-cover>
  */
-export function cover(element, options = {}) {
+export function cover(element, options: Record<string, any> = {}) {
   const config = {
     minHeight: options.minHeight || element.dataset.minHeight || element.getAttribute('min-height') || '100vh',
     padding: options.padding || element.dataset.padding || element.getAttribute('padding') || '1rem',
@@ -387,7 +387,7 @@ export function cover(element, options = {}) {
  * Frame - Aspect ratio frame
  * Custom Tag: <wb-frame>
  */
-export function frame(element, options = {}) {
+export function frame(element, options: Record<string, any> = {}) {
   const config = {
     ratio: options.ratio || element.dataset.ratio || element.getAttribute('ratio') || '16/9',
     ...options
@@ -411,7 +411,7 @@ export function frame(element, options = {}) {
  * Reel - Horizontal scroll reel
  * Custom Tag: <wb-reel>
  */
-export function reel(element, options = {}) {
+export function reel(element, options: Record<string, any> = {}) {
   const config = {
     itemWidth: options.itemWidth || element.dataset.itemWidth || element.getAttribute('item-width') || 'auto',
     gap: options.gap || element.dataset.gap || element.getAttribute('gap') || '1rem',
@@ -437,7 +437,7 @@ export function reel(element, options = {}) {
 /**
  * Imposter - Overlay imposter
  */
-export function imposter(element, options = {}) {
+export function imposter(element, options: Record<string, any> = {}) {
   const config = {
     breakout: options.breakout ?? (element.hasAttribute('data-breakout') || element.hasAttribute('breakout')),
     margin: options.margin || element.dataset.margin || element.getAttribute('margin') || '0',
@@ -462,7 +462,7 @@ export function imposter(element, options = {}) {
  * Icon - Icon layout helper
  * Custom Tag: <wb-icon>
  */
-export function icon(element, options = {}) {
+export function icon(element, options: Record<string, any> = {}) {
   const config = {
     size: options.size || element.dataset.size || element.getAttribute('size') || '1em',
     space: options.space || element.dataset.space || element.getAttribute('space') || '0.5em',
@@ -487,7 +487,7 @@ export function icon(element, options = {}) {
  * Drawer Layout - Collapsible container that pulls to the edge
  * Custom Tag: <wb-drawer>
  */
-export function drawerLayout(element, options = {}) {
+export function drawerLayout(element, options: Record<string, any> = {}) {
   const config = {
     position: options.position || element.dataset.position || element.getAttribute('position') || 'left',
     width: options.width || element.dataset.width || element.getAttribute('width') || '250px',

@@ -5,7 +5,7 @@ import { createToast } from '../components/feedback.js';
  * Helper Attribute: [x-copy]
  * Copy text to clipboard on click.
  */
-export function copy(element, options = {}) {
+export function copy(element, options: Record<string, any> = {}) {
   const config = {
     text: options.text || element.getAttribute('copy-text'),
     target: options.target || element.getAttribute('copy-target'),

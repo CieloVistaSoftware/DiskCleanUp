@@ -3,7 +3,7 @@
  * Custom Tag: <wb-form>
  * Decoupled from wb-starter Events system — uses console for error logging.
  */
-export function form(element, options = {}) {
+export function form(element, options: Record<string, any> = {}) {
   const config = {
     ajax: options.ajax ?? element.hasAttribute('ajax'),
     validate: options.validate ?? element.getAttribute('validate') !== 'false',

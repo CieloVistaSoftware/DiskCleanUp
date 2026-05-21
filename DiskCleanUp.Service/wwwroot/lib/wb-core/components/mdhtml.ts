@@ -49,7 +49,7 @@ async function loadMarked() {
   return markedPromise;
 }
 
-export async function mdhtml(element, options = {}) {
+export async function mdhtml(element, options: Record<string, any> = {}) {
   const config = {
     src: options.src || element.getAttribute('src'),
     sanitize: options.sanitize ?? (element.getAttribute('sanitize') !== 'false'),

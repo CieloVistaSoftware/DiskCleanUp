@@ -19,7 +19,7 @@
  *   data-animate   - Add smooth transition (default: true)
  */
 
-export function sticky(element, options = {}) {
+export function sticky(element, options: Record<string, any> = {}) {
   console.log('[WB:sticky] Invoked on', element, 'with options:', options, 'dataset:', element.dataset);
   // Add base class for compliance
   element.classList.add('wb-sticky');

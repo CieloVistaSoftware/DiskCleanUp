@@ -1,6 +1,6 @@
 ﻿import { ErrLog } from '../../../js/error-logger.js';
 // Standalone floatinglabel behavior extracted from enhancements.js
-export function floatinglabel(element, options = {}) {
+export function floatinglabel(element, options: Record<string, any> = {}) {
   const wrapper = document.createElement('div');
   wrapper.className = 'wb-floating-label';
   element.parentNode.insertBefore(wrapper, element);

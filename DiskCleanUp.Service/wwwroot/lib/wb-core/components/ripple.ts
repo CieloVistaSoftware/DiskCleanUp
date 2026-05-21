@@ -7,7 +7,7 @@
  * Helper Attribute: [x-ripple]
  * -----------------------------------------------------------------------------
  */
-export function ripple(element, options = {}) {
+export function ripple(element, options: Record<string, any> = {}) {
   const config = {
     color: options.color || element.getAttribute('ripple-color') || element.getAttribute('ripple-color') || 'rgba(255, 255, 255, 0.4)',
     duration: parseInt(options.duration || element.getAttribute('ripple-duration') || element.getAttribute('ripple-duration') || '600', 10),

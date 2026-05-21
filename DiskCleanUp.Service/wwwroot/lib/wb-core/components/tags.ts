@@ -1,6 +1,6 @@
 ﻿import { ErrLog } from '../../../js/error-logger.js';
 // Standalone tags behavior extracted from enhancements.js
-export function tags(element, options = {}) {
+export function tags(element, options: Record<string, any> = {}) {
   element.classList.add('wb-tags');
   const input = document.createElement('input');
   input.type = 'text';

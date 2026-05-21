@@ -52,7 +52,7 @@ export const SummaryBadges = {
    *   @param {boolean} options.showQueue - Show Queue badge (default true)
    *   @param {boolean} options.showKeepCount - Show Keep Count badge (default true)
    */
-  create(containerId, options = {}) {
+  create(containerId, options: Record<string, any> = {}) {
     const {
       showTotalSaved = true,
       showQueue = true,

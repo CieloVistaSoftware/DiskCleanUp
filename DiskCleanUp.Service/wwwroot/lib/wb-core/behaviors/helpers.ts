@@ -17,7 +17,7 @@ import { ErrLog } from '../../../js/error-logger.js';
  * Defers image loading until element enters viewport
  * Helper Attribute: [x-lazy]
  */
-export function lazy(element, options = {}) {
+export function lazy(element, options: Record<string, any> = {}) {
   const config = {
     src: options.src || element.getAttribute('src') || '',
     srcset: options.srcset || element.getAttribute('srcset') || '',
@@ -109,7 +109,7 @@ export function lazy(element, options = {}) {
  * Print - Print button (VISIBLE)
  * Helper Attribute: [x-print]
  */
-export function print(element, options = {}) {
+export function print(element, options: Record<string, any> = {}) {
   const config = {
     target: options.target || element.getAttribute('target') || '',
     label: options.label || element.getAttribute('label') || '🖨️ Print',
@@ -146,7 +146,7 @@ export function print(element, options = {}) {
  * Share - Share button (VISIBLE)
  * Helper Attribute: [x-share]
  */
-export function share(element, options = {}) {
+export function share(element, options: Record<string, any> = {}) {
   const config = {
     title: options.title || element.getAttribute('share-title') || element.getAttribute('title') || document.title,
     text: options.text || element.getAttribute('share-text') || element.getAttribute('text') || '',
@@ -185,7 +185,7 @@ export function share(element, options = {}) {
  * Fullscreen - Toggle fullscreen (VISIBLE)
  * Helper Attribute: [x-fullscreen]
  */
-export function fullscreen(element, options = {}) {
+export function fullscreen(element, options: Record<string, any> = {}) {
   const config = {
     target: options.target || element.getAttribute('target') || '',
     label: options.label || element.getAttribute('label') || '⛶ Fullscreen',
@@ -255,7 +255,7 @@ export function fullscreen(element, options = {}) {
  * Hotkey - Keyboard shortcut with visual feedback
  * Helper Attribute: [x-hotkey]
  */
-export function hotkey(element, options = {}) {
+export function hotkey(element, options: Record<string, any> = {}) {
   const config = {
     key: (options.key || element.getAttribute('key') || '').toLowerCase(),
     ...options
@@ -335,7 +335,7 @@ export function hotkey(element, options = {}) {
  * Clipboard - Copy to clipboard (VISIBLE BUTTON)
  * Helper Attribute: [x-clipboard]
  */
-export function clipboard(element, options = {}) {
+export function clipboard(element, options: Record<string, any> = {}) {
   const config = {
     target: options.target || element.getAttribute('target') || '',
     text: options.text || element.getAttribute('clipboard-text') || element.getAttribute('text') || '',
@@ -381,7 +381,7 @@ export function clipboard(element, options = {}) {
  * Scroll - Scroll to element (VISIBLE)
  * Helper Attribute: [x-scroll]
  */
-export function scroll(element, options = {}) {
+export function scroll(element, options: Record<string, any> = {}) {
   const config = {
     target: options.target || element.getAttribute('scroll-to') || element.getAttribute('target') || '',
     behavior: options.behavior || element.getAttribute('behavior') || 'smooth',
@@ -420,7 +420,7 @@ export function scroll(element, options = {}) {
  * Truncate - Text truncation
  * Helper Attribute: [x-truncate]
  */
-export function truncate(element, options = {}) {
+export function truncate(element, options: Record<string, any> = {}) {
   const config = {
     lines: parseInt(options.lines || element.getAttribute('lines') || '1'),
     expandable: options.expandable ?? element.hasAttribute('data-expandable'),
@@ -454,7 +454,7 @@ export function truncate(element, options = {}) {
  * Highlight - Text highlight with VISIBLE yellow background
  * Helper Attribute: [x-highlight]
  */
-export function highlight(element, options = {}) {
+export function highlight(element, options: Record<string, any> = {}) {
   const config = {
     color: options.color || element.getAttribute('color') || '#fef08a', // Yellow
     textColor: options.textColor || element.getAttribute('text-color') || '#1f2937', // Dark text
@@ -482,7 +482,7 @@ export function highlight(element, options = {}) {
  * Helper Attribute: [x-external]
  * External - External link handler
  */
-export function external(element, options = {}) {
+export function external(element, options: Record<string, any> = {}) {
   const config = {
     icon: options.icon ?? element.getAttribute('icon') !== 'false',
     newTab: options.newTab ?? element.getAttribute('new-tab') !== 'false',
@@ -509,7 +509,7 @@ export function external(element, options = {}) {
  * Helper Attribute: [x-countdown]
  * Use: x-countdown data-seconds="60" OR data-date="2025-12-31"
  */
-export function countdown(element, options = {}) {
+export function countdown(element, options: Record<string, any> = {}) {
   const config = {
     date: options.date || element.getAttribute('date') || '',
     seconds: parseInt(options.seconds || element.getAttribute('seconds') || '0') || 0,
@@ -594,7 +594,7 @@ export function countdown(element, options = {}) {
  * Clock - Live clock with VARIANTS (digital, led, analog)
  * Helper Attribute: [x-clock]
  */
-export function clock(element, options = {}) {
+export function clock(element, options: Record<string, any> = {}) {
   const config = {
     variant: options.variant || element.getAttribute('variant') || 'digital',
     format: options.format || element.getAttribute('format') || '24',
@@ -660,7 +660,7 @@ export function clock(element, options = {}) {
  * RelativeTime - Relative time display
  * Helper Attribute: [x-relativetime]
  */
-export function relativetime(element, options = {}) {
+export function relativetime(element, options: Record<string, any> = {}) {
   const config = {
     date: options.date || element.getAttribute('date') || element.getAttribute('datetime') || '',
     refresh: parseInt(options.refresh || element.getAttribute('refresh') || '60000'),
@@ -700,7 +700,7 @@ export function relativetime(element, options = {}) {
  * Offline - Offline detection (VISIBLE)
  * Helper Attribute: [x-offline]
  */
-export function offline(element, options = {}) {
+export function offline(element, options: Record<string, any> = {}) {
   element.classList.add('wb-offline');
   element.style.padding = '0.5rem 1rem';
   element.style.borderRadius = '6px';
@@ -738,7 +738,7 @@ export function offline(element, options = {}) {
  * Visible - Visibility toggle
  * Helper Attribute: [x-visible]
  */
-export function visible(element, options = {}) {
+export function visible(element, options: Record<string, any> = {}) {
   element.classList.add('wb-visible');
 
   element.wbVisible = {
@@ -755,7 +755,7 @@ export function visible(element, options = {}) {
  * Shows console errors, warnings, and logs on screen
  * Helper Attribute: [x-debug]
  */
-export function debug(element, options = {}) {
+export function debug(element, options: Record<string, any> = {}) {
   const config = {
     showErrors: options.showErrors ?? element.getAttribute('show-errors') !== 'false',
     showWarnings: options.showWarnings ?? element.getAttribute('show-warnings') !== 'false',

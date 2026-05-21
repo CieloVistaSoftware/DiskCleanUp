@@ -4,7 +4,7 @@
  * Helper Attribute: [x-draggable]
  * Make an element draggable.
  */
-export function draggable(element, options = {}) {
+export function draggable(element, options: Record<string, any> = {}) {
   const config = {
     handle: options.handle || element.dataset.handle,
     axis: options.axis || element.dataset.axis || 'both', // x, y, both

@@ -7,7 +7,7 @@
  * Helper Attribute: [x-resizable]
  * -----------------------------------------------------------------------------
  */
-export function resizable(element, options = {}) {
+export function resizable(element, options: Record<string, any> = {}) {
   const config = {
     directions: options.directions || element.dataset.directions || 'se', // n, s, e, w, ne, nw, se, sw, all
     minWidth: parseInt(options.minWidth || element.dataset.minWidth || '50', 10),

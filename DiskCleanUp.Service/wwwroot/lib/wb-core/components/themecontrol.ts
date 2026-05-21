@@ -37,7 +37,7 @@ const THEMES = [
   { id: 'grape', name: 'Grape', description: 'Deep purple vibes' }
 ];
 
-export function themecontrol(element, options = {}) {
+export function themecontrol(element, options: Record<string, any> = {}) {
   const config = {
     target: options.target || element.dataset.target || 'html',
     default: options.default || element.dataset.default || 'dark',

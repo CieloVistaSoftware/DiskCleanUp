@@ -3,7 +3,7 @@
  * Search Component
  * Complete search input with icon, clear button, and debounced events
  */
-export function search(element, options = {}) {
+export function search(element, options: Record<string, any> = {}) {
   const config = {
     placeholder: options.placeholder || element.getAttribute('placeholder') || 'Search...',
     value: options.value || element.getAttribute('value') || '',

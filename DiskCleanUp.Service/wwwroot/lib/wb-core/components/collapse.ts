@@ -10,7 +10,7 @@
  * Helper Attribute: [x-collapse]
  * -----------------------------------------------------------------------------
  */
-export function collapse(element, options = {}) {
+export function collapse(element, options: Record<string, any> = {}) {
   const config = {
     heading: options.heading || element.getAttribute('heading') || 'Toggle',
     open: options.open ?? element.hasAttribute('expanded') ?? element.hasAttribute('open'),

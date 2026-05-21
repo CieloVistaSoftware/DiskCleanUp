@@ -1,6 +1,6 @@
 ﻿import { ErrLog } from '../../../js/error-logger.js';
 // Standalone masked behavior extracted from enhancements.js
-export function masked(element, options = {}) {
+export function masked(element, options: Record<string, any> = {}) {
   const config = {
     mask: options.mask || element.getAttribute('mask') || '',
     placeholder: options.placeholder || element.getAttribute('mask-placeholder') || '_',

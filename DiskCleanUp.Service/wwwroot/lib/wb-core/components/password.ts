@@ -1,6 +1,6 @@
 ﻿import { ErrLog } from '../../../js/error-logger.js';
 // Standalone password behavior extracted from enhancements.js
-export function password(element, options = {}) {
+export function password(element, options: Record<string, any> = {}) {
   const config = {
     toggle: options.toggle ?? element.getAttribute('toggle') !== 'false',
     strength: options.strength ?? element.hasAttribute('data-strength'),
