@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 //  ACTIONS — trash, delete, smart-dedup apply, image groups
 // ═══════════════════════════════════════════════════════════════════════════
-import { ErrLog } from '/js/error-logger.js';
+import { ErrLog } from './error-logger.js';
 import { TrashQ } from './trash-queue.js';
 import { apiFetch, fmt, getCheckedPaths } from './ui-utils.js';
 import { updateTotalSaved } from './savings.js';
@@ -60,8 +60,9 @@ export function startScan(section) {
         const query = (input?.value || '').trim().replace(/^\.+/, '');
         if (!query)
             return;
-        // Root comes from header #rootDisplay (global config root) — no per-scan override
-        msg.extensions = [query];
+        const rootInput = document.getElementById('extSearchRootInput');
+        const root = (rootInput?.value || '').trim();
+        msg.extensions = root ? [query, root] : [query];
     }
     else if (SF && _extSections.has(section)) {
         const mode = SF.getMode(section);
@@ -255,7 +256,7 @@ export async function extractSvgFromSelectedHtml() {
 }
 export function renderImageGroups(resultEl, groups) {
     let html = '';
-    Object.values(groups).forEach(files => {
+    Object.values(groups).forEach((files) => {
         if (!files.length)
             return;
         html += `<div class="img-group">
@@ -333,6 +334,7 @@ export function trashAllImageCopies() {
 // Expose for inline HTML onclick handlers
 window.trashGroup = trashGroup;
 window.trashImage = trashImage;
+window._trashSelected = trashSelected; // used by Commands → Delete Selected
 window._extractSvgFromSelectedHtml = extractSvgFromSelectedHtml;
 window._runHtmlUtility = runHtmlUtility;
 //# sourceMappingURL=actions.js.map

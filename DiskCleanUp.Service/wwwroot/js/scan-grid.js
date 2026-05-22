@@ -149,7 +149,7 @@ export function create(section, containerId, columns, opts = {}) {
     cols.forEach((c, i) => {
         const cell = document.createElement('div');
         cell.className = 'sg-hcell';
-        cell.dataset.colIdx = i;
+        cell.dataset.colIdx = String(i);
         if (c.type === 'checkbox') {
             // Header checkbox — click checks/unchecks all visible rows
             const hCb = document.createElement('input');
@@ -242,7 +242,7 @@ export function addRow(section, data) {
                 kb.className = 'btn-keep';
                 kb.textContent = '\uD83D\uDD12';
                 kb.title = 'Keep — exclude from future scans';
-                kb.onclick = () => window.keepPaths([path]);
+                kb.onclick = () => window.keepPaths?.([path]);
                 cell.appendChild(kb);
                 break;
             }
@@ -300,7 +300,7 @@ export function addRow(section, data) {
                     fb.className = 'btn muted btn-xxs';
                     fb.textContent = '\uD83D\uDCC4';
                     fb.title = 'Open file in VS Code';
-                    fb.onclick = (ev) => { ev.stopPropagation(); window.openInVSCode?.(p) || window.openFileInVSCode?.(p); };
+                    fb.onclick = (ev) => { ev.stopPropagation(); window.openInVSCode ? window.openInVSCode(p) : window.openFileInVSCode?.(p); };
                     acts.appendChild(fb);
                     // Open folder
                     const ob = document.createElement('button');
@@ -333,7 +333,7 @@ export function addRow(section, data) {
                 fileBtn.className = 'btn muted btn-xs';
                 fileBtn.textContent = '\uD83D\uDCC4';
                 fileBtn.title = 'Open file in VS Code';
-                fileBtn.onclick = () => window.openInVSCode?.(path) || window.openFileInVSCode?.(path);
+                fileBtn.onclick = () => { window.openInVSCode ? window.openInVSCode(path) : window.openFileInVSCode?.(path); };
                 cell.appendChild(fileBtn);
                 // Open Folder in Explorer button
                 const folderBtn = document.createElement('button');
@@ -358,7 +358,7 @@ export function addRow(section, data) {
                 btn.className = 'btn muted btn-xs';
                 btn.textContent = '\uD83D\uDCC4';
                 btn.title = 'Open file';
-                btn.onclick = () => window.openInVSCode?.(path) || window.openFileInVSCode?.(path);
+                btn.onclick = () => { window.openInVSCode ? window.openInVSCode(path) : window.openFileInVSCode?.(path); };
                 cell.appendChild(btn);
                 break;
             }
@@ -633,8 +633,8 @@ function _rebuildLegend(section, g) {
                 else {
                     g._activeExts.add(ext);
                 }
-                _syncLegendActive(section, g);                              // instant chip highlight (same frame)
-                requestAnimationFrame(() => applyFilter(section));          // async row-filter (non-blocking)
+                _syncLegendActive(section, g); // instant chip highlight (same frame)
+                requestAnimationFrame(() => applyFilter(section)); // async row-filter (non-blocking)
             });
         });
         // Wire clear button

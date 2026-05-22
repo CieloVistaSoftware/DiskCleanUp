@@ -32,7 +32,7 @@ const _grids = {};
  * @param {Object} opts      - Options: { rowClass, onRowClick, actions }
  *   actions: Array of { icon, title, className, onClick(rowData, rowEl) }
  */
-export function create(id, containerId, columns, opts = {}) {
+export function create(id, containerId, columns, opts: Record<string, any> = {}) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
@@ -70,13 +70,13 @@ export function create(id, containerId, columns, opts = {}) {
     cell.className = 'sg-hcell';
     cell.textContent = c.label || '';
     cell.title = c.label || '';
-    cell.dataset.colIdx = i;
+    cell.dataset.colIdx = String(i);
 
     // Sortable (skip checkbox, lineNo, actions)
     if (c.type !== 'checkbox' && c.type !== 'lineNo' && c.type !== 'actions') {
       cell.classList.add('sg-sortable');
       cell.addEventListener('click', (e) => {
-        if (e.target.classList.contains('sg-resize-handle')) return;
+        if ((e.target as Element).classList.contains('sg-resize-handle')) return;
         _sortColumn(id, i);
       });
     }
@@ -126,12 +126,12 @@ export function addRow(id, data) {
   const rowNum = g.rows.length + 1;
 
   // Store raw data for sorting + callbacks
-  row._dgData = data;
+  (row as any)._dgData = data;
 
   // Copy data-* attributes from data object
   if (data._dataAttrs) {
     for (const [k, v] of Object.entries(data._dataAttrs)) {
-      row.dataset[k] = v;
+      row.dataset[k] = String(v);
     }
   }
 
@@ -201,7 +201,7 @@ export function addRow(id, data) {
   if (g.opts.onRowClick) {
     row.style.cursor = 'pointer';
     row.addEventListener('click', (e) => {
-      if (e.target.closest('button') || e.target.closest('input')) return;
+      if ((e.target as Element).closest('button') || (e.target as Element).closest('input')) return;
       g.opts.onRowClick(data, row);
     });
   }
@@ -373,7 +373,7 @@ function _startResize(e, id, colIdx) {
   handle.classList.add('sg-dragging');
 
   const hCells = g.header.children;
-  const widths = Array.from(hCells).map(c => c.getBoundingClientRect().width);
+  const widths = Array.from(hCells).map(c => (c as Element).getBoundingClientRect().width);
 
   _resizeState = { id, colIdx, startX: e.clientX, widths: [...widths], handle };
   document.addEventListener('mousemove', _onResizeMove);
@@ -394,7 +394,7 @@ function _onResizeMove(e) {
   const template = updated.map(w => `${Math.round(w)}px`).join(' ');
   g.header.style.gridTemplateColumns = template;
   for (const row of g.body.children) {
-    row.style.gridTemplateColumns = template;
+    (row as HTMLElement).style.gridTemplateColumns = template;
   }
 }
 
@@ -406,7 +406,7 @@ function _onResizeEnd() {
   const g = _grids[id];
   if (g) {
     const hCells = g.header.children;
-    const widths = Array.from(hCells).map(c => `${Math.round(c.getBoundingClientRect().width)}px`);
+    const widths = Array.from(hCells).map(c => `${Math.round((c as Element).getBoundingClientRect().width)}px`);
     const template = widths.join(' ');
     g.header.style.gridTemplateColumns = template;
     g.gridTemplate = template;

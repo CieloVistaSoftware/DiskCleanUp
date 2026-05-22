@@ -1,5 +1,9 @@
-import { ErrLog } from '/js/error-logger.js';
-
+// ═══════════════════════════════════════════════════════════════════════════
+//  LARGE FILES MODEL — data contract
+//
+//  Defines: field names, column layout, JSONL row parsing.
+//  Pure data description — no DOM, no state, no side effects.
+// ═══════════════════════════════════════════════════════════════════════════
 export const LargeModel = {
     section: 'large',
     keyField: 'path', // rows keyed by file path
@@ -12,12 +16,7 @@ export const LargeModel = {
     ],
     // Grid template from column widths
     get gridTemplate() {
-        try {
-            return this.columns.map(c => c.width).join(' ');
-        } catch (err) {
-            ErrLog.log('[large-model.js]', err?.message || String(err), err?.stack || null, 'LARGE_MODEL_ERROR');
-            throw err;
-        }
+        return this.columns.map(c => c.width).join(' ');
     },
     /**
      * Parse one JSONL row → normalized file record.
@@ -27,21 +26,16 @@ export const LargeModel = {
      * @returns {{ path: string, size: number } | null}
      */
     parse(row) {
-        try {
-            const d = row.data ?? row.Data;
-            if (!d)
-                return null;
-            const path = d.path ?? d.Path;
-            if (!path)
-                return null;
-            return {
-                path,
-                size: d.size ?? d.Size ?? 0,
-            };
-        } catch (err) {
-            ErrLog.log('[large-model.js]', err?.message || String(err), err?.stack || null, 'LARGE_MODEL_ERROR');
-            throw err;
-        }
+        const d = row.data ?? row.Data;
+        if (!d)
+            return null;
+        const path = d.path ?? d.Path;
+        if (!path)
+            return null;
+        return {
+            path,
+            size: d.size ?? d.Size ?? 0,
+        };
     },
 };
 //# sourceMappingURL=large-model.js.map

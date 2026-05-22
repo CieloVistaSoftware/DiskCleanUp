@@ -1,5 +1,3 @@
-import { ErrLog } from '/js/error-logger.js';
-
 // ═══════════════════════════════════════════════════════════════════════════
 //  NODE MODULES MODEL — data contract
 //
@@ -18,12 +16,7 @@ export const NodeModulesModel = {
     ],
     // Grid template from column widths
     get gridTemplate() {
-        try {
-            return this.columns.map(c => c.width).join(' ');
-        } catch (err) {
-            ErrLog.log('[node-modules-model.js]', err?.message || String(err), err?.stack || null, 'NODE_MODULES_MODEL_ERROR');
-            throw err;
-        }
+        return this.columns.map(c => c.width).join(' ');
     },
     /**
      * Parse one JSONL row → normalized folder record.
@@ -33,21 +26,16 @@ export const NodeModulesModel = {
      * @returns {{ path: string, size: number } | null}
      */
     parse(row) {
-        try {
-            const d = row.data ?? row.Data;
-            if (!d)
-                return null;
-            const path = d.path ?? d.Path;
-            if (!path)
-                return null;
-            return {
-                path,
-                size: d.size ?? d.Size ?? 0,
-            };
-        } catch (err) {
-            ErrLog.log('[node-modules-model.js]', err?.message || String(err), err?.stack || null, 'NODE_MODULES_MODEL_ERROR');
-            throw err;
-        }
+        const d = row.data ?? row.Data;
+        if (!d)
+            return null;
+        const path = d.path ?? d.Path;
+        if (!path)
+            return null;
+        return {
+            path,
+            size: d.size ?? d.Size ?? 0,
+        };
     },
 };
 //# sourceMappingURL=node-modules-model.js.map

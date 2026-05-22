@@ -9,7 +9,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 import { pubsub } from '/lib/wb-core/utils/pubsub.js';
 import { crumb } from './breadcrumb.js';
-import { ErrLog } from '/js/error-logger.js';
+import { ErrLog } from './error-logger.js';
 // Configure batch size for scan event throughput
 pubsub.setBatchSize(20);
 // Section handler registry — subscribe wrappers

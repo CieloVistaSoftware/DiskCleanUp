@@ -1,5 +1,3 @@
-import { ErrLog } from './error-logger.js';
-
 // ═══════════════════════════════════════════════════════════════════════════
 //  SCAN-FILTER — Universal filter module for all scan sections
 //  ONE-TIME-ONE-PLACE: type dropdown, text search, include/exclude modes
@@ -117,9 +115,10 @@ export function apply(section) {
     const text = f.textFilter.toLowerCase();
     let shown = 0, total = 0;
     for (const row of body.querySelectorAll('.sg-row:not(.sg-skel-row)')) {
+        const rowEl = row;
         total++;
-        const path = row.dataset.path || '';
-        const ext = row.dataset.ext || '';
+        const path = rowEl.dataset.path || '';
+        const ext = rowEl.dataset.ext || '';
         let visible = true;
         if (text) {
             const extShorthand = _parseExtShorthand(text);
@@ -141,7 +140,7 @@ export function apply(section) {
             if (f.excluded.has(ext))
                 visible = false;
         }
-        row.style.display = visible ? '' : 'none';
+        rowEl.style.display = visible ? '' : 'none';
         if (visible)
             shown++;
     }
@@ -178,9 +177,7 @@ function _save(section) {
         };
         localStorage.setItem(_LS_PREFIX + section, JSON.stringify(state));
     }
-    catch (err) {
-        ErrLog.log('[scan-filter.js]', err?.message || String(err), err?.stack || null, 'SCAN_FILTER_ERROR');
-    }
+    catch { /* quota exceeded — silently ignore */ }
 }
 function _restore(section) {
     const f = _filters[section];
@@ -215,17 +212,13 @@ function _restore(section) {
         _rebuildChips(section);
         // Don't call apply() here — no rows exist yet. rebuild() handles it after cache restore.
     }
-    catch (err) {
-        ErrLog.log('[scan-filter.js]', err?.message || String(err), err?.stack || null, 'SCAN_FILTER_ERROR');
-    }
+    catch { /* corrupt data — ignore */ }
 }
 function _clearSaved(section) {
     try {
         localStorage.removeItem(_LS_PREFIX + section);
     }
-    catch (err) {
-        ErrLog.log('[scan-filter.js]', err?.message || String(err), err?.stack || null, 'SCAN_FILTER_ERROR');
-    }
+    catch { /* ignore */ }
 }
 // ═══════════════════════════════════════════════════════════════════════════
 //  INTERNAL

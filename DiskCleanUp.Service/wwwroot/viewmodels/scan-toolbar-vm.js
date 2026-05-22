@@ -1,5 +1,13 @@
-import { ErrLog } from '/js/error-logger.js';
-
+// ═══════════════════════════════════════════════════════════════════════════
+//  SCAN TOOLBAR VIEWMODEL — owns toolbar state, notifies View on change.
+//
+//  State it owns:
+//    scanning     — true while a scan is running
+//    hasRows      — true when grid has ≥1 row
+//    hasSelection — true when ≥1 row is checked
+//
+//  Knows nothing about: DOM, HTML, CSS, APIs, WebSockets.
+// ═══════════════════════════════════════════════════════════════════════════
 export class ScanToolbarVM {
     /** @param {import('../models/scan-toolbar-model.js').ScanToolbarConfig} config */
     constructor(config) {
@@ -13,33 +21,21 @@ export class ScanToolbarVM {
     // ── View binding ──────────────────────────────────────────
     /** @param {import('../views/scan-toolbar-view.js').ScanToolbarView} view */
     bindView(view) {
-        try {
-            this._view = view;
-            this._notify();
-        } catch (err) {
-            ErrLog.log('[scan-toolbar-vm.js]', err?.message || String(err), err?.stack || null, 'SCAN_TOOLBAR_VM_ERROR');
-        }
+        this._view = view;
+        this._notify();
     }
     // ── State transitions (called by section controllers) ─────
     /** Call when scan starts. Disables Scan, enables Cancel. */
     scanStarted() {
-        try {
-            this.scanning = true;
-            this.hasRows = false;
-            this.hasSelection = false;
-            this._notify();
-        } catch (err) {
-            ErrLog.log('[scan-toolbar-vm.js]', err?.message || String(err), err?.stack || null, 'SCAN_TOOLBAR_VM_ERROR');
-        }
+        this.scanning = true;
+        this.hasRows = false;
+        this.hasSelection = false;
+        this._notify();
     }
     /** Call when scan finishes or is cancelled. Re-enables Scan. */
     scanDone() {
-        try {
-            this.scanning = false;
-            this._notify();
-        } catch (err) {
-            ErrLog.log('[scan-toolbar-vm.js]', err?.message || String(err), err?.stack || null, 'SCAN_TOOLBAR_VM_ERROR');
-        }
+        this.scanning = false;
+        this._notify();
     }
     /**
      * Call whenever the row count or selection count changes.
@@ -47,27 +43,19 @@ export class ScanToolbarVM {
      * @param {number} selectedCount  — checked rows
      */
     rowsChanged(rowCount, selectedCount = 0) {
-        try {
-            this.hasRows = rowCount > 0;
-            this.hasSelection = selectedCount > 0;
-            this._notify();
-        } catch (err) {
-            ErrLog.log('[scan-toolbar-vm.js]', err?.message || String(err), err?.stack || null, 'SCAN_TOOLBAR_VM_ERROR');
-        }
+        this.hasRows = rowCount > 0;
+        this.hasSelection = selectedCount > 0;
+        this._notify();
     }
     // ── Internal ──────────────────────────────────────────────
     _notify() {
-        try {
-            if (!this._view)
-                return;
-            this._view.update({
-                scanning: this.scanning,
-                hasRows: this.hasRows,
-                hasSelection: this.hasSelection,
-            });
-        } catch (err) {
-            ErrLog.log('[scan-toolbar-vm.js]', err?.message || String(err), err?.stack || null, 'SCAN_TOOLBAR_VM_ERROR');
-        }
+        if (!this._view)
+            return;
+        this._view.update({
+            scanning: this.scanning,
+            hasRows: this.hasRows,
+            hasSelection: this.hasSelection,
+        });
     }
     /** Derive enabled/disabled state for every button from current state. */
     getButtonStates() {

@@ -19,3 +19,4 @@ export const ErrLog = {
     getErrors,
     clearErrors
 };
+//# sourceMappingURL=error-logger.js.map

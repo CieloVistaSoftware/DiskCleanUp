@@ -449,10 +449,31 @@ async function runDiagnostics() {
         detail: wsStatus
     });
     console.log(`${wsConnected ? '✅' : '⏳'} WebSocket Connection: ${wsStatus}\n`);
-    // Check 3: Event queue
+    // Check 3: Alternate port
+    const altPort = currentPort === 5100 ? 5000 : 5100;
+    let altPortOk = false;
+    try {
+        const r = await fetch(`http://localhost:${altPort}/api/service/info`, { signal: AbortSignal.timeout(3000) });
+        altPortOk = r.ok;
+        results.checks.push({
+            name: `Alternate Port (${altPort})`,
+            status: 'REACHABLE',
+            detail: `Service running on wrong port? Try http://localhost:${altPort}`
+        });
+        console.log(`⚠️  Alternate Port ${altPort}: REACHABLE (possible port mismatch)\n`);
+    }
+    catch (e) {
+        results.checks.push({
+            name: `Alternate Port (${altPort})`,
+            status: 'UNREACHABLE',
+            detail: 'Both ports unavailable'
+        });
+        console.log(`✅ Alternate Port ${altPort}: UNREACHABLE (correct)\n`);
+    }
+    // Check 4: Event queue
     const eventQueueInfo = window._eventQueue ?
         {
-            size: window._eventQueue.length || 0,
+            size: window._eventQueue?.length || 0,
             isProcessing: window._processingQueue ? true : false
         } :
         { size: 'unknown', isProcessing: 'unknown' };
@@ -462,7 +483,7 @@ async function runDiagnostics() {
         detail: `Queue length: ${eventQueueInfo.size}, Processing: ${eventQueueInfo.isProcessing}`
     });
     console.log(`📊 Event Queue: ${JSON.stringify(eventQueueInfo)}\n`);
-    // Check 4: Page connectivity
+    // Check 5: Page connectivity
     const isOnline = navigator.onLine;
     results.checks.push({
         name: 'Browser Connectivity',

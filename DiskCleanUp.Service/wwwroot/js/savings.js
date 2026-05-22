@@ -5,7 +5,7 @@
 import { apiFetch, fmt } from './ui-utils.js';
 import { wireTable } from './column-controls.js';
 import { escHtml } from '/lib/wb-core/utils/format.js';
-import { ErrLog } from '/js/error-logger.js';
+import { ErrLog } from './error-logger.js';
 export async function updateTotalSaved() {
     try {
         const data = await apiFetch('/api/savings', {}, { timeout: 20000 });

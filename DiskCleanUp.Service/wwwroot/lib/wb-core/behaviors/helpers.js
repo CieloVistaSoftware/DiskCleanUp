@@ -593,7 +593,7 @@ export function clock(element, options = {}) {
     update();
     const updateInterval = setInterval(update, 1000);
     return () => {
-        clearInterval(interval);
+        clearInterval(updateInterval);
         element.classList.remove('wb-clock', `wb-clock--${config.variant}`);
     };
 }
@@ -631,7 +631,7 @@ export function relativetime(element, options = {}) {
     };
     update();
     const timerInterval = setInterval(update, config.refresh);
-    return () => { clearInterval(interval); element.classList.remove('wb-relativetime'); };
+    return () => { clearInterval(timerInterval); element.classList.remove('wb-relativetime'); };
 }
 /**
  * Offline - Offline detection (VISIBLE)

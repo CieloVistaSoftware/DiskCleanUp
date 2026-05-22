@@ -25,10 +25,18 @@ interface Window {
 
   // ── Scan grid module (scan-grid.ts) ───────────────────────────────────
   _scanGrid?: {
-    applyFilter?: (section: string) => void;
-    getChecked?:  (section: string) => string[];
-    create?:      (section: string, opts?: unknown) => unknown;
-    removeByPaths?: (section: string, paths: string[]) => void;
+    applyFilter?:   (section: string) => void;
+    getChecked?:    (section: string) => string[];
+    create?:        (section: string, containerId?: string, columns?: unknown[], opts?: unknown) => unknown;
+    removeByPaths?: (paths: string[]) => void;
+    removeByPath?:  (path: string, section?: string) => number;
+    rowCount?:      (section: string) => number;
+    hasRows?:       (section: string) => boolean;
+    selectAll?:     (section: string, val: boolean) => void;
+    addRow?:        (section: string, data: unknown) => void;
+    clear?:         (section: string) => void;
+    showSkeleton?:  (section: string, containerId: string, columns: unknown[]) => void;
+    removeSkeleton?:(section: string) => void;
   };
 
   // ── Domain data ────────────────────────────────────────────────────────
@@ -55,13 +63,13 @@ interface Window {
   _DataStore?: unknown;
 
   // ── Extension color maps (ext-colors.ts) ──────────────────────────────
-  _extColor?: Record<string, string>;
-  _extBg?:    Record<string, string>;
-  _extDot?:   Record<string, string>;
-  _extOf?:    Record<string, string>;
+  _extColor?: ((ext: string) => string) | Record<string, string>;
+  _extBg?:    ((ext: string) => string) | Record<string, string>;
+  _extDot?:   ((ext: string) => string) | Record<string, string>;
+  _extOf?:    ((path: string) => string) | Record<string, string>;
 
   // ── Breadcrumb trail (breadcrumb.ts) ──────────────────────────────────
-  _crumbs?: unknown[];
+  _crumbs?: { dump: (n?: number) => string; recent: (n?: number) => unknown[]; crumb: (module: string, fn: string, detail?: unknown) => void; flush: () => void };
 
   // ── Page loader (page-loader.ts) ──────────────────────────────────────
   _pageLoader?: unknown;
@@ -72,7 +80,7 @@ interface Window {
   };
 
   // ── Keep list (keep-list.ts) ──────────────────────────────────────────
-  keepPaths?:              string[];
+  keepPaths?:              ((paths: string[]) => Promise<void>) | string[];
   _keepListClearAll?:      () => void;
   _keepListRemoveChecked?: () => void;
 
@@ -90,7 +98,7 @@ interface Window {
   restoreSavingsSelected?:  () => void;
 
   // ── UI Utils (ui-utils.ts) ────────────────────────────────────────────
-  showSection?:     (id: string) => void;
+  showSection?:     (id: string, btn?: HTMLElement | null) => void;
   selectAllTable?:  (tableId: string, checked: boolean) => void;
   filterTable?:     (tableId: string, query: string) => void;
   fmt?:             (bytes: number) => string;
@@ -111,9 +119,17 @@ interface Window {
   keepSelected?:              (tableId: string) => void;
   _selectAll?:                (tableId: string) => void;
   _selectNone?:               (tableId: string) => void;
-  _trashSelected?:            (tableId: string) => void;
+  _trashSelected?:            (tableId: string, directPaths?: string[]) => void;
   _deleteAllCopies?:          (section: string) => void;
   _applySmartDedup?:          () => Promise<void>;
+
+  // ── Section status tracker (init.ts) ────────────────────────────────────
+  _setSectionStatus?: (section: string, status: string) => void;
+
+  // ── WebSocket internals (event-queue.ts / websocket.ts) ──────────────────
+  _eventQueue?:       unknown;
+  _processingQueue?:  boolean;
+  _runDiagnostics?:   () => void;
 
   // ── WB Core ────────────────────────────────────────────────────────────
   WB?: Record<string, unknown> & { scan?: (el: Element) => void };

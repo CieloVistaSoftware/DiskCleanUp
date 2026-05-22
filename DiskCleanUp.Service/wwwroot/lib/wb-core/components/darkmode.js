@@ -50,7 +50,7 @@ export function darkmode(element, options = {}) {
             targetEl.setAttribute('theme', originalTheme);
         }
         else {
-            delete targetEl.getAttribute('theme');
+            targetEl.removeAttribute('theme');
         }
     };
 }

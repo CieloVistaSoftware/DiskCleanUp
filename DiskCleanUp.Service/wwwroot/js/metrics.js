@@ -1,5 +1,3 @@
-import { ErrLog } from './error-logger.js';
-
 // ═══════════════════════════════════════════════════════════════════════════
 //  METRICS — System-wide CPU & MEM mini-graphs, updated via WebSocket
 // ═══════════════════════════════════════════════════════════════════════════
@@ -138,9 +136,7 @@ export const Metrics = (() => {
                 if (gcBtn)
                     gcBtn.textContent = `GC → ${json.process_mb} MB`;
             }
-            catch (err) {
-                ErrLog.log('[metrics.js]', err?.message || String(err), err?.stack || null, 'METRICS_ERROR');
-            }
+            catch { /* best effort */ }
         }
         // Critical: cancel idle scans + close previews
         if (isCritical) {
@@ -197,9 +193,7 @@ export const Metrics = (() => {
             if (btn)
                 btn.textContent = `GC → ${json.process_mb} MB`;
         }
-        catch (err) {
-            ErrLog.log('[metrics.js]', err?.message || String(err), err?.stack || null, 'METRICS_ERROR');
-        }
+        catch { /* ignore */ }
     };
     // ── Uptime Heartbeat Ticker ──────────────────────────────
     // Ticks every 1s. Proves: JS event loop alive, server responding.
@@ -249,3 +243,4 @@ export const Metrics = (() => {
     }
     return { update, markAlive };
 })();
+//# sourceMappingURL=metrics.js.map

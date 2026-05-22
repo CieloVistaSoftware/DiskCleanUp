@@ -1,4 +1,8 @@
-import { ErrLog } from './error-logger.js';
+// ═══════════════════════════════════════════════════════════════════════════
+//  EVENT DELEGATION — replaces all inline onclick/oninput handlers
+//  Uses data-action attributes on buttons + single document listener.
+//  Routes grid-based sections through scan-grid.js, tables through ui-utils.
+// ═══════════════════════════════════════════════════════════════════════════
 import { startScan, cancelScan, trashSelected, applySmartDedup, deleteNMSelected, deleteEmpty, trashAllImageCopies } from './actions.js';
 import { selectAllTable, showSection } from './ui-utils.js';
 import { loadSavings, exportSavings, newSession } from './savings.js';
@@ -26,7 +30,7 @@ function _wireFolderChoices(input, listId = 'folderChoicesList') {
                 list.appendChild(opt);
             }
         }
-        catch (err) { ErrLog.log('[events.js]', err?.message || String(err), err?.stack || null, 'EVENTS_ERROR'); }
+        catch { }
     };
     input.addEventListener('focus', refresh);
     input.addEventListener('input', () => {
@@ -189,7 +193,7 @@ async function _initExtRoot() {
             localStorage.setItem('dcu_ext_search_root', root);
         }
     }
-    catch (err) { ErrLog.log('[events.js]', err?.message || String(err), err?.stack || null, 'EVENTS_ERROR'); }
+    catch { }
 }
 _initExtRoot();
 document.getElementById('extSearchRootInput')?.addEventListener('change', (e) => {
@@ -210,7 +214,7 @@ document.getElementById('extSearchPickFolderBtn')?.addEventListener('click', asy
             input.value = res.path;
         localStorage.setItem('dcu_ext_search_root', res.path);
     }
-    catch (err) { ErrLog.log('[events.js]', err?.message || String(err), err?.stack || null, 'EVENTS_ERROR'); }
+    catch { }
 });
 // ── Input delegation (filter) ────────────────────────────────────────────
 let _extSearchDebounce = null;

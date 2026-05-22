@@ -1,5 +1,9 @@
-import { ErrLog } from '/js/error-logger.js';
-
+// ═══════════════════════════════════════════════════════════════════════════
+//  STALE FILE MODEL — data contract
+//
+//  Defines: field names, column layout, JSONL row parsing.
+//  Pure data description — no DOM, no state, no side effects.
+// ═══════════════════════════════════════════════════════════════════════════
 export const StaleModel = {
     section: 'stale',
     keyField: 'path', // rows keyed by file path
@@ -13,12 +17,7 @@ export const StaleModel = {
     ],
     // Grid template from column widths
     get gridTemplate() {
-        try {
-            return this.columns.map(c => c.width).join(' ');
-        } catch (err) {
-            ErrLog.log('[stale-model.js]', err?.message || String(err), err?.stack || null, 'STALE_MODEL_ERROR');
-            throw err;
-        }
+        return this.columns.map(c => c.width).join(' ');
     },
     /**
      * Parse one JSONL row → normalized file record.
@@ -28,22 +27,17 @@ export const StaleModel = {
      * @returns {{ path: string, size: number, modified: string } | null}
      */
     parse(row) {
-        try {
-            const d = row.data ?? row.Data;
-            if (!d)
-                return null;
-            const path = d.path ?? d.Path;
-            if (!path)
-                return null;
-            return {
-                path,
-                size: d.size ?? d.Size ?? 0,
-                modified: d.modified ?? d.Modified ?? '',
-            };
-        } catch (err) {
-            ErrLog.log('[stale-model.js]', err?.message || String(err), err?.stack || null, 'STALE_MODEL_ERROR');
+        const d = row.data ?? row.Data;
+        if (!d)
             return null;
-        }
+        const path = d.path ?? d.Path;
+        if (!path)
+            return null;
+        return {
+            path,
+            size: d.size ?? d.Size ?? 0,
+            modified: d.modified ?? d.Modified ?? '',
+        };
     },
 };
 //# sourceMappingURL=stale-model.js.map

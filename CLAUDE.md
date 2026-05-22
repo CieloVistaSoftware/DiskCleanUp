@@ -25,7 +25,7 @@ relativepath: CLAUDE.md
 
 ## Project Overview
 
-**Type:** ASP.NET Core 8 Windows Service + vanilla HTML/JS frontend + SignalR real-time
+**Type:** ASP.NET Core 8 Worker Service (Generic Host) + vanilla HTML/JS frontend + SignalR real-time
 **Location:** `C:\Users\jwpmi\source\repos\DiskCleanUp`
 **Data:** `C:\ProgramData\DiskCleanUp\` (always, both modes)
 **Service port:** 5100 | **Console port:** 5000

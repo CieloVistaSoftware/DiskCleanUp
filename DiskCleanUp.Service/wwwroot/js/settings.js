@@ -2,7 +2,7 @@
 //  SETTINGS — load / save configuration via REST
 // ═══════════════════════════════════════════════════════════════════════════
 import { apiFetch } from './ui-utils.js';
-import { ErrLog } from '/js/error-logger.js';
+import { ErrLog } from './error-logger.js';
 function _wireFolderChoices(input, listId = 'folderChoicesList') {
     if (!input || input.dataset.folderChoicesWired)
         return;
@@ -23,9 +23,7 @@ function _wireFolderChoices(input, listId = 'folderChoicesList') {
                 list.appendChild(opt);
             }
         }
-        catch (err) {
-            ErrLog.log('[settings.js]', err?.message || String(err), err?.stack || null, 'SETTINGS_ERROR');
-        }
+        catch { }
     };
     input.addEventListener('focus', refresh);
     input.addEventListener('input', () => {
@@ -40,9 +38,9 @@ export async function loadSettings() {
         document.getElementById('cfgRoot').value = cfg.root || '';
         _wireFolderChoices(document.getElementById('cfgRoot'));
         document.getElementById('cfgExtraRoots').value = (cfg.extra_roots || cfg.extraRoots || []).join('\n');
-        document.getElementById('cfgStaleDays').value = cfg.stale_days || cfg.staleDays || 90;
-        document.getElementById('cfgLargeMb').value = cfg.large_file_mb || cfg.largeFileMb || 50;
-        document.getElementById('cfgParallelism').value = cfg.max_parallelism || cfg.maxParallelism || 4;
+        document.getElementById('cfgStaleDays').value = String(cfg.stale_days || cfg.staleDays || 90);
+        document.getElementById('cfgLargeMb').value = String(cfg.large_file_mb || cfg.largeFileMb || 50);
+        document.getElementById('cfgParallelism').value = String(cfg.max_parallelism || cfg.maxParallelism || 4);
         document.getElementById('rootDisplay').textContent = cfg.root || '';
         _wireRootEditable();
         const _rb = document.getElementById('rootOpenBtn');
@@ -53,11 +51,10 @@ export async function loadSettings() {
         if (traceEl)
             traceEl.checked = localStorage.getItem('dcu_trace') !== 'false';
     }
-    catch (err) {
-        ErrLog.log('[settings.js]', err?.message || String(err), err?.stack || null, 'SETTINGS_ERROR');
-        document.getElementById('cfgStaleDays').value = 90;
-        document.getElementById('cfgLargeMb').value = 50;
-        document.getElementById('cfgParallelism').value = 4;
+    catch {
+        document.getElementById('cfgStaleDays').value = '90';
+        document.getElementById('cfgLargeMb').value = '50';
+        document.getElementById('cfgParallelism').value = '4';
         document.getElementById('rootDisplay').textContent = '⚠️ Offline';
     }
 }
@@ -126,8 +123,7 @@ function _wireRootEditable() {
                 rootOpenBtn.style.display = newRoot ? '' : 'none';
             window._T?.('SETTINGS', 'Root changed via header: ' + newRoot);
         }
-        catch (err) {
-            ErrLog.log('[settings.js]', err?.message || String(err), err?.stack || null, 'SETTINGS_ERROR');
+        catch (e) {
             display.textContent = '⚠️ Save failed';
             setTimeout(() => loadSettings(), 1500);
         }
@@ -157,17 +153,17 @@ export async function loadSettingsHelp() {
         }
         const md = await res.text();
         // marked.js loaded via CDN <script> tag — available as window.marked
-        if (typeof marked !== 'undefined' && marked.parse) {
-            el.innerHTML = marked.parse(md);
+        if (typeof window.marked !== 'undefined' && window.marked?.parse) {
+            el.innerHTML = window.marked.parse(md);
         }
         else {
             // Fallback: render as preformatted text
             el.innerHTML = '<pre style="white-space:pre-wrap">' + md.replace(/</g, '&lt;') + '</pre>';
         }
     }
-    catch (err) {
-        el.textContent = '(failed to load help: ' + err.message + ')';
-        ErrLog.log('[settings.js]', err?.message || String(err), err?.stack || null, 'SETTINGS_ERROR');
+    catch (e) {
+        el.textContent = '(failed to load help: ' + e.message + ')';
+        ErrLog.log('[SETTINGS]', e.message, e.stack, 'CAUGHT_ERROR');
     }
 }
 // Kick off help load when settings module loads

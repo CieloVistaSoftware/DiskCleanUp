@@ -3,7 +3,7 @@
  * Logs errors and displays them in a fixed panel.
  * Styles in css/error-logger.css — zero inline styles.
  */
-const ERROR_LOG_PATH = 'data/errors.json';
+const ERROR_LOG_PATH = 'api/errors';
 let errorContainer = null;
 let errors = [];
 let _cssLoaded = false;
@@ -124,14 +124,6 @@ function inferType(err, overrideType) {
         return 'FETCH_ERROR';
     return 'APP_ERROR';
 }
-/**
- * Log an error — simple interface, automatic field extraction.
- *
- * Usage:
- *   logError('[docs]', err);
- *   logError('[docs]', err, { context: 'boot', to: 'docs-container' });
- *   logError('[docs]', 'Something went wrong', { context: 'boot' });
- */
 export async function logError(prefix, error, options = {}) {
     initErrorDisplay();
     const isErrorObj = error instanceof Error;
@@ -286,7 +278,7 @@ function escapeHtml(str) {
 function updateErrorCount() {
     const countEl = document.getElementById('wb-error-count');
     if (countEl)
-        countEl.textContent = errors.length;
+        countEl.textContent = String(errors.length);
 }
 /**
  * Setup global error catching

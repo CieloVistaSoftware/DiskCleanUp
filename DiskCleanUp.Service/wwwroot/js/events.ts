@@ -79,7 +79,7 @@ function _trashSelectedGrid(el) {
       const container = document.getElementById(_resultContainerOf(grid));
       if (container) {
         paths = [...container.querySelectorAll('input[type=checkbox]:checked[data-path]')]
-          .map(cb => cb.dataset.path).filter(Boolean);
+          .map(cb => (cb as HTMLInputElement).dataset.path).filter(Boolean);
       }
     }
 
@@ -117,7 +117,7 @@ const ACTIONS = {
 
 // ── Click delegation on document ─────────────────────────────────────────
 document.addEventListener('click', (e) => {
-  const el = e.target.closest('[data-action]');
+  const el = (e.target as Element).closest('[data-action]') as HTMLElement | null;
   if (!el) return;
 
   const handler = ACTIONS[el.dataset.action];
@@ -165,7 +165,7 @@ document.addEventListener('mouseover', (e) => {
 
 // ── Nav section switching ────────────────────────────────────────────────
 document.getElementById('mainNav')?.addEventListener('click', (e) => {
-  const btn = e.target.closest('[data-section]');
+  const btn = (e.target as Element).closest('[data-section]') as HTMLElement | null;
   if (!btn) return;
   showSection(btn.dataset.section, btn);
 });
@@ -221,7 +221,7 @@ document.getElementById('extSearchPickFolderBtn')?.addEventListener('click', asy
 // ── Input delegation (filter) ────────────────────────────────────────────
 let _extSearchDebounce: number | null = null;
 document.addEventListener('input', (e) => {
-  const el = e.target.closest('[data-action="filter-duplicates"]');
+  const el = (e.target as Element).closest('[data-action="filter-duplicates"]') as HTMLInputElement | null;
   if (el) DuplicatesSection.filter(el.value);
 
   const extInput = (e.target as HTMLElement).closest('#extSearchInput') as HTMLInputElement | null;

@@ -1,45 +1,10 @@
-/**
- * Dynamically handle UI action errors: log, disable, show error/report ID.
- * @param {HTMLElement} el - The card/button element that triggered the action.
- * @param {Error|string} error - The error object or message.
- * @param {string} [context] - Optional context string for logging.
- * @param {string} [reportId] - Optional error/report ID to display.
- */
-export function handleActionError(el, error, context = 'UI_ACTION', reportId = null) {
-    const msg = typeof error === 'string' ? error : (error?.message || String(error));
-    const stack = error?.stack || null;
-    // Log error
-    ErrLog.log(`[${context}]`, msg, stack, 'ACTION_ERROR');
-    // Disable the element (button/card)
-    if (el && typeof el.disabled !== 'undefined') {
-        el.disabled = true;
-        el.classList.add('error-disabled');
-    } else if (el && el.classList) {
-        el.classList.add('error-disabled');
-    }
-    // Show error/report ID if provided
-    if (el && reportId) {
-        let badge = el.querySelector('.error-report-id');
-        if (!badge) {
-            badge = document.createElement('span');
-            badge.className = 'error-report-id';
-            badge.style.cssText = 'margin-left:8px;color:#f85149;font-size:0.9em;font-weight:bold;';
-            el.appendChild(badge);
-        }
-        badge.textContent = `Error ID: ${reportId}`;
-    }
-    // Optionally, show a tooltip or alert
-    if (el) {
-        el.title = `Error: ${msg}${reportId ? ` (ID: ${reportId})` : ''}`;
-    }
-}
 // ═══════════════════════════════════════════════════════════════════════════
 //  UI UTILITIES — formatting, table helpers, section nav, fetch wrapper
 //  Now powered by @cielovista/wb-core for fmt and apiFetch.
 // ═══════════════════════════════════════════════════════════════════════════
 import { fmtBytes } from '/lib/wb-core/utils/format.js';
 import { apiFetch as coreApiFetch } from '/lib/wb-core/utils/api-fetch.js';
-import { ErrLog } from '/js/error-logger.js';
+import { ErrLog } from './error-logger.js';
 // ── Format — re-export wb-core's formatter under the old name ────────────
 export const fmt = fmtBytes;
 // ── API Fetch — wire wb-core's apiFetch to our error logger ──────────────
@@ -122,6 +87,7 @@ export function showSection(name, btn) {
     }
     if (_sectionModules[name]?.onShow)
         _sectionModules[name].onShow();
+    window._restoreSectionIfEmpty?.(name);
 }
 // Restore last active tab on page load
 export function restoreActiveTab() {

@@ -14,7 +14,7 @@ import { fmt } from './ui-utils.js';
 import { resetPaging } from './page-loader.js';
 import * as SG from './scan-grid.js';
 import * as SF from './scan-filter.js';
-import { ErrLog } from '/js/error-logger.js';
+import { ErrLog } from './error-logger.js';
 // ── Column definitions (shared across sections) ──────────────────────────
 try {
     const COL = {

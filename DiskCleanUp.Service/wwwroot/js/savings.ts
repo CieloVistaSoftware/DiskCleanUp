@@ -105,8 +105,8 @@ export async function loadSavings() {
 
 // ── Filter savings rows ──────────────────────────────────────
 export function filterSavings() {
-  const text = (document.getElementById('savingsFilter')?.value || '').toLowerCase();
-  const action = document.getElementById('savingsActionFilter')?.value || '';
+  const text = ((document.getElementById('savingsFilter') as HTMLInputElement | null)?.value || '').toLowerCase();
+  const action = (document.getElementById('savingsActionFilter') as HTMLInputElement | null)?.value || '';
   const tables = document.querySelectorAll('#savingsLog table');
   let visible = 0, total = 0;
 
@@ -118,7 +118,7 @@ export function filterSavings() {
       const textMatch = !text || rowText.includes(text);
       const actionMatch = !action || rowAction === action;
       const show = textMatch && actionMatch;
-      tr.style.display = show ? '' : 'none';
+      (tr as HTMLElement).style.display = show ? '' : 'none';
       if (show) visible++;
     });
   });
@@ -130,8 +130,8 @@ export function filterSavings() {
 // ── Select All / None (visible rows only) ────────────────────
 export function savingsSelectAll() {
   document.querySelectorAll('#savingsLog tbody tr').forEach(tr => {
-    if (tr.style.display !== 'none') {
-      const cb = tr.querySelector('input[type=checkbox]');
+    if ((tr as HTMLElement).style.display !== 'none') {
+      const cb = tr.querySelector('input[type=checkbox]') as HTMLInputElement | null;
       if (cb) cb.checked = true;
     }
   });
@@ -139,7 +139,7 @@ export function savingsSelectAll() {
 }
 
 export function savingsSelectNone() {
-  document.querySelectorAll('#savingsLog input[type=checkbox]').forEach(cb => cb.checked = false);
+  document.querySelectorAll('#savingsLog input[type=checkbox]').forEach(cb => (cb as HTMLInputElement).checked = false);
   _updateSelCount();
 }
 
@@ -154,7 +154,7 @@ export async function restoreSavingsSelected() {
   const checked = [...document.querySelectorAll('#savingsLog input[type=checkbox]:checked')];
   if (!checked.length) { alert('Select entries first.'); return; }
 
-  const paths = checked.map(cb => cb.dataset.path).filter(Boolean);
+  const paths = checked.map(cb => (cb as HTMLInputElement).dataset.path).filter(Boolean);
   if (!paths.length) { alert('No file paths to restore.'); return; }
   if (!confirm(`Attempt to restore ${paths.length} item(s) from the Recycle Bin?\n\nNote: Only items still in the Recycle Bin can be restored.`)) return;
 
@@ -195,7 +195,7 @@ export async function restoreSavingsSelected() {
     alert(msg);
 
     // Uncheck restored rows
-    checked.forEach(cb => { cb.checked = false; });
+    checked.forEach(cb => { (cb as HTMLInputElement).checked = false; });
     _updateSelCount();
   } catch (e) {
     if (status) status.textContent = '';
@@ -240,5 +240,5 @@ window.restoreSavingsSelected = restoreSavingsSelected;
 
 // Wire checkbox change events for selection count
 document.addEventListener('change', (e) => {
-  if (e.target.matches('#savingsLog input[type=checkbox]')) _updateSelCount();
+  if ((e.target as Element).matches('#savingsLog input[type=checkbox]')) _updateSelCount();
 });

@@ -15,13 +15,6 @@ import { ErrLog } from '../../../js/error-logger.js';
  */
 /** @type {((type: string, message: string, detail?: any) => void) | null} */
 let _onError = null;
-/**
- * @param {string} url
- * @param {RequestInit} [opts]
- * @param {Object} [config]
- * @param {number} [config.timeout=8000] — ms before AbortController fires
- * @returns {Promise<any>} parsed JSON
- */
 export async function apiFetch(url, opts = {}, config = {}) {
     const { timeout = 8000 } = config;
     const ctrl = new AbortController();

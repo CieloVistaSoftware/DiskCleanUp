@@ -53,6 +53,7 @@ export async function mdhtml(element, options = {}) {
         headerIds: options.headerIds ?? (element.getAttribute('header-ids') !== 'false'),
         highlight: options.highlight ?? element.getAttribute('highlight'),
         size: options.size || element.getAttribute('size') || 'xs',
+        captions: options.captions ?? true,
         ...options
     };
     element.classList.add('wb-mdhtml');
@@ -151,18 +152,19 @@ export async function mdhtml(element, options = {}) {
             let chapterCount = 0;
             let blockCount = 0;
             Array.from(element.children).forEach(child => {
-                if (child.tagName === 'H2') {
+                const childEl = child;
+                if (childEl.tagName === 'H2') {
                     chapterCount++;
                     blockCount = 0;
                 }
-                else if (child.tagName === 'PRE') {
+                else if (childEl.tagName === 'PRE') {
                     // Create wrapper
                     const wrapper = document.createElement('div');
                     wrapper.className = 'code-wrapper';
                     // Insert wrapper before pre
-                    child.parentNode.insertBefore(wrapper, child);
+                    childEl.parentNode.insertBefore(wrapper, childEl);
                     // Move pre into wrapper
-                    wrapper.appendChild(child);
+                    wrapper.appendChild(childEl);
                     // Create caption
                     const caption = document.createElement('div');
                     caption.className = 'code-caption';

@@ -6,46 +6,49 @@ dewey: 300.7
 id: diskcleanup
 title: DiskCleanUp
 project: DiskCleanUp
-description: ASP.NET Core 8 Windows Service + browser dashboard for reclaiming disk space. Scans duplicates, stale files, large files, empty folders, and additi…
+description: ASP.NET Core 8 Worker Service + browser dashboard for reclaiming disk space. Scans duplicates, stale files, large files, empty folders, and more.
 status: active
 tags: [readme, diskcleanup, quick]
 category: 300.7 — Getting Started
 created: 2026-02-21
-updated: 2026-04-27
-version: 1.0.0
+updated: 2026-05-18
+version: 2.2.0
 author: CieloVista Software
 relativepath: README.md
 ---
 # DiskCleanUp
 
-ASP.NET Core 8 Windows Service + browser dashboard for reclaiming disk space.
-Scans duplicates, stale files, large files, empty folders, and additional cleanup categories with real-time SignalR updates.
+ASP.NET Core 8 Worker Service + browser dashboard for reclaiming disk space.
+Scans duplicates, stale files, large files, empty folders, and additional cleanup categories with real-time WebSocket updates.
 
 ## Quick Start
 
-**Install as Windows Service (production):**
-```powershell
-dotnet build DiskCleanUp.sln
-dotnet run --project DiskCleanUp.Service -- --install
-# Dashboard: http://localhost:5100
-```text
 **Run in console mode (development):**
 ```powershell
+dotnet build DiskCleanUp.sln
 dotnet run --project DiskCleanUp.Service -- --console
 # Dashboard: http://localhost:5000
-```text
+```
+
+**Headless scan mode (Task Scheduler / CI):**
+```powershell
+dotnet run --project DiskCleanUp.Service -- --scan
+```
+
 **MCP Server (for Claude Desktop):**
 ```powershell
 cd mcp-server
 npm install
 node server.js
-```text
+```
+
 ## Architecture
 
-- **Backend:** ASP.NET Core 8 Windows Service, Minimal API, SignalR
+- **Backend:** ASP.NET Core 8 Worker Service (Generic Host), Minimal API, WebSocket
+- **Scan engine:** `IScanRule` plugin pipeline (13 rules, no switch statements)
 - **Frontend:** Vanilla HTML/JS, ES modules, no frameworks
 - **Data:** `C:\ProgramData\DiskCleanUp\` (single location, both modes)
-- **Tray App:** WinForms NotifyIcon with service health polling
+- **Tray App:** WinForms NotifyIcon
 
 ## Notes
 

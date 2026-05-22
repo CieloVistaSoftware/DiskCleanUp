@@ -1,4 +1,4 @@
-import { ErrLog } from '/js/error-logger.js';
+import { ErrLog } from './error-logger.js';
 // ═══════════════════════════════════════════════════════════════════════════
 //  DATA STORE — MVVM ViewModel layer
 //

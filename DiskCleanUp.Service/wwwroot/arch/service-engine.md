@@ -3,38 +3,36 @@ docid: 300.2.diskcleanup-service-wwwroot-arch-service-engine
 id: diskcleanupservice-the-engine
 title: DiskCleanUp.Service — The Engine
 project: DiskCleanUp
-description: A headless Windows Service built on ASP.NET Core 8 with UseWindowsService(). Starts on boot, survives logoff, owns all state.
+description: A .NET 8 Generic Host Worker Service. Runs as a console app (dev) or headless via Task Scheduler (scheduled scans).
 status: active
 tags: [service, engine, diskcleanupservice]
 category: 300.2 — Architecture
 created: 2026-02-28
-updated: 2026-04-27
-version: 1.0.0
+updated: 2026-05-18
+version: 2.2.0
 author: CieloVista Software
 relativepath: DiskCleanUp.Service/wwwroot/arch/service-engine.md
 ---
 # DiskCleanUp.Service — The Engine
 
-A headless **Windows Service** built on ASP.NET Core 8 with `UseWindowsService()`. Starts on boot, survives logoff, owns all state.
+A **.NET 8 Generic Host Worker Service** running as a plain console application. No Windows Service registration required — schedule via Task Scheduler or run interactively.
 
 ## Hosting
 
 ```csharp
-var builder = Host.CreateApplicationBuilder(args);
-builder.Services.AddWindowsService(options =>
-{
-    options.ServiceName = "DiskCleanUp";
-});
+// No UseWindowsService() — plain Generic Host
+var builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.ConfigureKestrel(k =>
-    k.ListenLocalhost(5100));  // localhost only — no attack surface
+// IScanRule plugin pipeline
+builder.Services.AddSingleton<ScanPipeline>();
+builder.Services.AddSingleton<IScanRule, DuplicatesRule>();
+// ... all 13 rule registrations
 
-builder.Services.AddSingleton<ConfigService>();
-builder.Services.AddSingleton<WsManager>();
 builder.Services.AddSingleton<ScanOrchestrator>();
+builder.Services.AddSingleton<WsManager>();
+builder.Services.AddSingleton<ConfigService>();
 builder.Services.AddHostedService<MetricsService>();
 builder.Services.AddHostedService<BackgroundScanService>();
-builder.Services.AddHostedService<SysmonWatcher>();  // NEW
 ```
 
 ## Endpoint Organization
@@ -51,13 +49,12 @@ Current `Program.cs` has ~500 lines of inline endpoints. Split into domain files
 | `ScanEndpoints.cs` | `/api/scan/start`, `/api/scan/activity` |
 | `DiagEndpoints.cs` | `/api/debug`, `/api/trace`, `/api/errors` |
 | `FileEndpoints.cs` | `/api/file`, `/api/preview`, `/api/open*` |
-| `SysmonEndpoints.cs` | `/api/sysmon/status`, `/api/sysmon/reload` |
 
-Each is a static extension class — one `MapXxxEndpoints(this WebApplication app)` method. No logic changes, just reorganization.
+Each is a static extension class — one `MapXxxEndpoints(this WebApplication app)` method.
 
 ## Data Directory
 
-Moves from `AppContext.BaseDirectory` to `%ProgramData%\DiskCleanUp\`:
+All state in `%ProgramData%\DiskCleanUp\` via `Constants.DataDir`:
 
 ```text
 %ProgramData%\DiskCleanUp\

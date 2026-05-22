@@ -8,17 +8,31 @@ status: active
 tags: [current, status, parking]
 category: 300.9 — Meta
 created: 2026-03-24
-updated: 2026-04-27
-version: 1.0.0
+updated: 2026-05-18
+version: 2.2.0
 author: CieloVista Software
 relativepath: docs/_today/CURRENT-STATUS.md
 ---
 # 🅿️ PARKING LOT
 
-**Last session:** 2026-05-09
+**Last session:** 2026-05-18
 **Active project:** DiskCleanUp (`C:\Users\jwpmi\source\repos\DiskCleanUp`)
 
-## 🅿️ PARKING LOT — end of session 2026-05-09
+## ✅ COMPLETED — 2026-05-18 (Issue #18 — Worker Service + IScanRule Pipeline)
+
+**TASK:** Redesign as Worker Service + plugin scanner pipeline (GitHub Issue #18)
+**STATUS:** Complete — build succeeds, 0 errors
+**FILES TOUCHED:**
+- Removed Windows Service: `UseWindowsService`, `--install`/`--uninstall`, `InstallService`, `UninstallService`, `RunSc`, `MigrateData` from `Program.cs`
+- `DiskCleanUp.Service/Program.cs` — added `ScanPipeline` + 13 `IScanRule` DI registrations in both scan and serve/console modes
+- `DiskCleanUp.Service/Services/ScanOrchestrator.cs` — rewrote: inject `ScanPipeline`, replace switch with `_pipeline.RunAsync`, add `_GatedXxHashAsync`/`_GatedSha256Async`, remove all private scan methods + scan log machinery
+- `DiskCleanUp.Shared/Scanning/ScanContext.cs` — added `Extensions` property
+- Created 13 IScanRule files in `DiskCleanUp.Service/Scanning/Rules/`: Duplicates, SmartDedup, Stale, Large, TinyFiles, HtmlFiles, CssFiles, Empty, NodeModules, Venvs, Images, Backups, ExtSearch
+- `DiskCleanUp.Service/Scanning/FileEnumerator.cs` — already complete (BFS enumeration helper)
+- `DiskCleanUp.Service/Scanning/ScanPipeline.cs` — already complete (rule dispatcher)
+- Docs updated: `SERVICE-ARCHITECTURE.md`, `service-engine.md`, `server-pipeline.md`, `README.md`, `CLAUDE.md`, `.github/copilot-instructions.md`, `CHANGELOG.md`
+
+## 🅿️ PARKING LOT — previous session 2026-05-09
 
 **TASK:** WebSocket auto-recovery (diagram-informed) + CieloVistaStandards git repo
 **FILES TOUCHED:**

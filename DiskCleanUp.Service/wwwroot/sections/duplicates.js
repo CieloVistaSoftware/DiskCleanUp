@@ -1,9 +1,20 @@
+// ═══════════════════════════════════════════════════════════════════════════
+//  DUPLICATES SECTION — MVVM Controller
+//
+//  Wires together:
+//    Model    (duplicates-model.js)  — data shape, parsing, column defs
+//    ViewModel (section-vm.js)       — JSONL ↔ data Map ↔ view notification
+//    View     (grid-view.js)         — pure DOM renderer
+//
+//  This file is the thin glue: handles scan events, user actions,
+//  visibility, and preview loading. No data logic, no DOM building.
+// ═══════════════════════════════════════════════════════════════════════════
 import { SB } from '../js/status-bar.js';
 import { DuplicatesModel } from '../models/duplicates-model.js';
 import { SectionVM } from '../viewmodels/section-vm.js';
 import { GridView } from '../views/grid-view.js';
 import { ErrLog } from '../js/error-logger.js';
-
+// -- File type detection (for previews) --------------------------------------
 const _imgExts = new Set(['.svg', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.ico']);
 const _codeExts = new Set(['.js', '.ts', '.jsx', '.tsx', '.css', '.html', '.htm', '.json',
     '.xml', '.md', '.txt', '.cs', '.py', '.ps1', '.yaml', '.yml',
@@ -13,6 +24,7 @@ function _extOf(path) {
     return m ? m[0].toLowerCase() : '';
 }
 export const DuplicatesSection = (() => {
+    // ── Create MVVM layers ───────────────────────────────────
     const vm = new SectionVM(DuplicatesModel);
     const view = new GridView('dupResult', {
         onDeleteGroup: (hash, paths, btn) => deleteGroup(btn, hash, paths),
@@ -21,29 +33,28 @@ export const DuplicatesSection = (() => {
     vm.bindView(view);
     let _visible = true;
     let _allCopiesNuked = false;
-    vm.visible = true;
-
+    vm.visible = true; // duplicates is the default active tab
+    // ── Visibility ───────────────────────────────────────────
     function onShow() {
         window._T?.('DUP', `onShow data=${vm.size}`);
         _visible = true;
         vm.visible = true;
         if (vm.size === 0) {
-            vm.loadAndBind().catch(err => {
-                ErrLog.log('[duplicates.js]', err?.message || String(err), err?.stack || null, 'DUPLICATES_ERROR');
-                window._T?.('DUP', `restore failed: ${err.message}`);
-            });
+            // Restore from JSONL on first show
+            vm.loadAndBind().catch(e => window._T?.('DUP', `restore failed: ${e.message}`));
         }
     }
     function onHide() {
         _visible = false;
         vm.visible = false;
     }
+    // ── Scan events from WebSocket ───────────────────────────
     function onEvent(msg) {
         switch (msg.type) {
             case 'started':
                 if (vm.size > 0)
                     reset();
-                vm.visible = true;
+                vm.visible = true; // ensure flushes render during scan
                 vm.scanStarted();
                 SB.begin('duplicates', msg.root);
                 window._setSectionStatus?.('duplicates', 'scanning');
@@ -64,13 +75,16 @@ export const DuplicatesSection = (() => {
                 return;
             case 'result':
             case 'result_update':
+                // Suppress if user already deleted all copies
                 if (_allCopiesNuked)
                     return;
+                // Delegate to ViewModel — it updates data + notifies view
                 vm.onScanEvent(msg);
                 _updateRows();
                 return;
         }
     }
+    // ── Reset (new scan starting) ────────────────────────────
     function reset() {
         _allCopiesNuked = false;
         vm.reset();
@@ -81,6 +95,7 @@ export const DuplicatesSection = (() => {
         if (el)
             el.textContent = vm.size.toLocaleString();
     }
+    // ── Delete actions ───────────────────────────────────────
     async function deleteGroup(btn, hash, paths) {
         if (!Array.isArray(paths) || !paths.length)
             return;
@@ -89,10 +104,35 @@ export const DuplicatesSection = (() => {
             btn.textContent = '\u23f3 deleting\u2026';
             btn.disabled = true;
         }
+        // Await the result and handle errors
+        let result;
         try {
-            await vm.removePaths(paths, { trash: true });
-        } catch (err) {
-            ErrLog.log('[duplicates.js]', err?.message || String(err), err?.stack || null, 'DUPLICATES_ERROR');
+            result = await vm.removePaths(paths, { trash: true });
+        }
+        catch (e) {
+            ErrLog.log('[DUPLICATES]', 'Delete failed', e.message, 'CAUGHT_ERROR');
+            if (btn) {
+                btn.textContent = 'Delete failed';
+                btn.disabled = false;
+            }
+            alert('Delete failed: ' + (e.message || e));
+            return;
+        }
+        // If backend returns per-file errors, show them
+        if (result && result.deleteResults) {
+            const failed = result.deleteResults.filter(r => !r.ok);
+            if (failed.length > 0) {
+                if (btn) {
+                    btn.textContent = 'Some failed';
+                    btn.disabled = false;
+                }
+                alert('Some files could not be deleted:\n' + failed.map(f => `${f.path}: ${f.error || 'Unknown error'}`).join('\n'));
+                return;
+            }
+        }
+        if (btn) {
+            btn.textContent = 'Deleted';
+            setTimeout(() => { btn.textContent = 'Delete'; btn.disabled = false; }, 1200);
         }
     }
     async function deleteAllCopies() {
@@ -106,21 +146,18 @@ export const DuplicatesSection = (() => {
         window._T?.('DEL', `deleteAllCopies: ${paths.length} paths`);
         _allCopiesNuked = true;
         SB.progress('duplicates', { files: 0, results: 0, folder: 'Deleting copies\u2026' });
-        try {
-            await vm.removeAllCopies();
-            if (vm.size === 0) {
-                fetch('/api/cache/duplicates', { method: 'DELETE' }).catch(err => {
-                    ErrLog.log('[duplicates.js]', err?.message || String(err), err?.stack || null, 'DUPLICATES_ERROR');
-                });
-            }
-            SB.done('duplicates', `${vm.size} dupe groups`);
-        } catch (err) {
-            ErrLog.log('[duplicates.js]', err?.message || String(err), err?.stack || null, 'DUPLICATES_ERROR');
+        await vm.removeAllCopies();
+        // Nuke server cache to prevent stale data on tab switch
+        if (vm.size === 0) {
+            fetch('/api/cache/duplicates', { method: 'DELETE' }).catch(() => { });
         }
+        SB.done('duplicates', `${vm.size} dupe groups`);
     }
+    // ── Filter ───────────────────────────────────────────────
     function filter(val) {
         view.filter(val);
     }
+    // ── Preview loading (callback from View) ─────────────────
     async function _loadPreview(el) {
         const path = el.dataset.previewPath;
         if (!path)
@@ -159,8 +196,8 @@ export const DuplicatesSection = (() => {
                 else {
                     el.textContent = '(binary file)';
                 }
-            } catch (err) {
-                ErrLog.log('[duplicates.js]', err?.message || String(err), err?.stack || null, 'DUPLICATES_ERROR');
+            }
+            catch {
                 el.textContent = '(preview failed)';
             }
         }
@@ -168,6 +205,7 @@ export const DuplicatesSection = (() => {
             el.textContent = `(.${ext.slice(1) || '?'} file)`;
         }
     }
+    // ── Public API ───────────────────────────────────────────
     return {
         onEvent,
         onShow,
@@ -179,3 +217,4 @@ export const DuplicatesSection = (() => {
         get size() { return vm.size; }
     };
 })();
+//# sourceMappingURL=duplicates.js.map

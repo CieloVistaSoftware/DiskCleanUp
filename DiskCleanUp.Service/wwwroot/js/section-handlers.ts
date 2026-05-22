@@ -243,7 +243,7 @@ try {
       resetPaging('images');
       window._updateLoadMoreBtn?.('images');
       SB.begin('images', msg.root);
-      const delBtn = document.getElementById('imgDeleteAllBtn');
+      const delBtn = document.getElementById('imgDeleteAllBtn') as HTMLButtonElement | null;
       if (delBtn) { delBtn.classList.add('hidden'); delBtn.disabled = false; delBtn.textContent = '\ud83d\uddd1 Delete All Copies'; }
       document.getElementById('imageResult').innerHTML =
         '<div class="skel-grid">' +
