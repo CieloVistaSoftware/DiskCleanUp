@@ -4,6 +4,7 @@
 //  Works with scan-grid.js (CSS grid rows, not <table> rows)
 //  Filter state persists per section via localStorage (key: dcu_sf_{section})
 // ═══════════════════════════════════════════════════════════════════════════
+import { ErrLog } from './error-logger.js';
 const _filters = {};
 const _LS_PREFIX = 'dcu_sf_';
 /**
@@ -212,7 +213,7 @@ function _restore(section) {
         _rebuildChips(section);
         // Don't call apply() here — no rows exist yet. rebuild() handles it after cache restore.
     }
-    catch { /* corrupt data — ignore */ }
+    catch (e) { ErrLog.log('[scan-filter]', e?.message || String(e), e?.stack || null, 'RESTORE_ERROR'); }
 }
 function _clearSaved(section) {
     try {

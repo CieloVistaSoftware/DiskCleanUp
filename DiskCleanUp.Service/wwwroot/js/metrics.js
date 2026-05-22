@@ -1,6 +1,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 //  METRICS — System-wide CPU & MEM mini-graphs, updated via WebSocket
 // ═══════════════════════════════════════════════════════════════════════════
+import { ErrLog } from './error-logger.js';
 export const Metrics = (() => {
     const maxPoints = 24;
     let cpuHistory = [];
@@ -136,7 +137,7 @@ export const Metrics = (() => {
                 if (gcBtn)
                     gcBtn.textContent = `GC → ${json.process_mb} MB`;
             }
-            catch { /* best effort */ }
+            catch (e) { ErrLog.log('[metrics]', e?.message || String(e), e?.stack || null, 'GC_AUTO_ERROR'); }
         }
         // Critical: cancel idle scans + close previews
         if (isCritical) {
@@ -193,7 +194,7 @@ export const Metrics = (() => {
             if (btn)
                 btn.textContent = `GC → ${json.process_mb} MB`;
         }
-        catch { /* ignore */ }
+        catch (e) { ErrLog.log('[metrics]', e?.message || String(e), e?.stack || null, 'GC_MANUAL_ERROR'); }
     };
     // ── Uptime Heartbeat Ticker ──────────────────────────────
     // Ticks every 1s. Proves: JS event loop alive, server responding.

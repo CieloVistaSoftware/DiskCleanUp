@@ -12,6 +12,7 @@
 //    if (hasMore('duplicates')) { ... show "Load More" button ... }
 //    const { rows: more } = await loadPage('duplicates');     // next page
 // ═══════════════════════════════════════════════════════════════════════════
+import { ErrLog } from './error-logger.js';
 import { crumb } from './breadcrumb.js';
 // Per-section state: tracks the next byte offset for paging
 const _offsets = {}; // section → nextOffset (null = no more data)
@@ -52,7 +53,8 @@ export async function loadPage(section) {
         crumb('page', 'loaded', { section, rows: rows.length, total: _loaded[section], more: _offsets[section] != null });
         return { rows, loaded: _loaded[section] };
     }
-    catch {
+    catch (e) {
+        ErrLog.log('[page-loader]', e?.message || String(e), e?.stack || null, 'LOAD_PAGE_ERROR');
         _offsets[section] = null;
         return { rows: [], loaded: _loaded[section] || 0 };
     }

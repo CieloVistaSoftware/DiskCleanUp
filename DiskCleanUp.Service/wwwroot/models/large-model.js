@@ -4,6 +4,7 @@
 //  Defines: field names, column layout, JSONL row parsing.
 //  Pure data description — no DOM, no state, no side effects.
 // ═══════════════════════════════════════════════════════════════════════════
+import { ErrLog } from '../js/error-logger.js';
 export const LargeModel = {
     section: 'large',
     keyField: 'path', // rows keyed by file path
@@ -26,16 +27,21 @@ export const LargeModel = {
      * @returns {{ path: string, size: number } | null}
      */
     parse(row) {
-        const d = row.data ?? row.Data;
-        if (!d)
+        try {
+            const d = row.data ?? row.Data;
+            if (!d)
+                return null;
+            const path = d.path ?? d.Path;
+            if (!path)
+                return null;
+            return {
+                path,
+                size: d.size ?? d.Size ?? 0,
+            };
+        } catch (e) {
+            ErrLog.log('[large-model]', e?.message || String(e), e?.stack || null, 'PARSE_ERROR');
             return null;
-        const path = d.path ?? d.Path;
-        if (!path)
-            return null;
-        return {
-            path,
-            size: d.size ?? d.Size ?? 0,
-        };
+        }
     },
 };
 //# sourceMappingURL=large-model.js.map

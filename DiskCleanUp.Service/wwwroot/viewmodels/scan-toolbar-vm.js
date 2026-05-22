@@ -8,6 +8,7 @@
 //
 //  Knows nothing about: DOM, HTML, CSS, APIs, WebSockets.
 // ═══════════════════════════════════════════════════════════════════════════
+import { ErrLog } from '../js/error-logger.js';
 export class ScanToolbarVM {
     /** @param {import('../models/scan-toolbar-model.js').ScanToolbarConfig} config */
     constructor(config) {
@@ -51,11 +52,15 @@ export class ScanToolbarVM {
     _notify() {
         if (!this._view)
             return;
-        this._view.update({
-            scanning: this.scanning,
-            hasRows: this.hasRows,
-            hasSelection: this.hasSelection,
-        });
+        try {
+            this._view.update({
+                scanning: this.scanning,
+                hasRows: this.hasRows,
+                hasSelection: this.hasSelection,
+            });
+        } catch (e) {
+            ErrLog.log('[scan-toolbar-vm]', e?.message || String(e), e?.stack || null, 'NOTIFY_ERROR');
+        }
     }
     /** Derive enabled/disabled state for every button from current state. */
     getButtonStates() {

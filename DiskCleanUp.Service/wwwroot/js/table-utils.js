@@ -2,6 +2,7 @@
 //  TABLE UTILITIES — skeleton, ensure, append, row index, clear
 // ═══════════════════════════════════════════════════════════════════════════
 import { makeColumnsResizable, makeColumnsSortable } from './column-controls.js';
+import { ErrLog } from './error-logger.js';
 const _sectionTbodies = {};
 // Per-section row index maps: section → hash → [tr elements]
 // Eliminates querySelectorAll('[data-hash=...]') on every result_update (O(n²) otherwise)
@@ -29,51 +30,60 @@ export function clearSection(section) {
     clearIndex(section);
 }
 export function ensureTable(section, containerId, tableId, headerHTML) {
-    if (_sectionTbodies[section])
+    try {
+        if (_sectionTbodies[section])
+            return _sectionTbodies[section];
+        // Skeleton may already have built the table shell — reuse it, strip skeleton rows
+        let tbl = document.getElementById(tableId);
+        if (tbl) {
+            const tbody = tbl.querySelector('tbody');
+            tbody.querySelectorAll('.skel-row').forEach(r => r.remove());
+            _sectionTbodies[section] = tbody;
+            return tbody;
+        }
+        const container = document.getElementById(containerId);
+        if (container) {
+            container.innerHTML = `<table id="${tableId}">${headerHTML}<tbody></tbody></table>`;
+        }
+        _sectionTbodies[section] = document.querySelector(`#${tableId} tbody`);
+        tbl = document.getElementById(tableId);
+        if (tbl)
+            requestAnimationFrame(() => { makeColumnsResizable(tbl); makeColumnsSortable(tbl); });
         return _sectionTbodies[section];
-    // Skeleton may already have built the table shell — reuse it, strip skeleton rows
-    let tbl = document.getElementById(tableId);
-    if (tbl) {
-        const tbody = tbl.querySelector('tbody');
-        tbody.querySelectorAll('.skel-row').forEach(r => r.remove());
-        _sectionTbodies[section] = tbody;
-        return tbody;
+    } catch (e) {
+        ErrLog.log('[table-utils]', e?.message || String(e), e?.stack || null, 'ENSURE_TABLE_ERROR');
+        return null;
     }
-    const container = document.getElementById(containerId);
-    if (container) {
-        container.innerHTML = `<table id="${tableId}">${headerHTML}<tbody></tbody></table>`;
-    }
-    _sectionTbodies[section] = document.querySelector(`#${tableId} tbody`);
-    tbl = document.getElementById(tableId);
-    if (tbl)
-        requestAnimationFrame(() => { makeColumnsResizable(tbl); makeColumnsSortable(tbl); });
-    return _sectionTbodies[section];
 }
 export function appendRow(tbody, html) {
-    const tmp = document.createElement('tbody');
-    tmp.innerHTML = html;
-    [...tmp.children].forEach(tr => {
-        tr.classList.add('live-row');
-        const cells = tr.querySelectorAll('td');
-        let path = '';
-        for (let i = 0; i < cells.length; i++) {
-            const text = cells[i].textContent || '';
-            if (text.match(/\\|\//) && text.length > 3) {
-                path = text.trim();
-                break;
+    try {
+        const tmp = document.createElement('tbody');
+        tmp.innerHTML = html;
+        [...tmp.children].forEach(tr => {
+            tr.classList.add('live-row');
+            const cells = tr.querySelectorAll('td');
+            let path = '';
+            for (let i = 0; i < cells.length; i++) {
+                const text = cells[i].textContent || '';
+                if (text.match(/\\|\//) && text.length > 3) {
+                    path = text.trim();
+                    break;
+                }
             }
-        }
-        if (path) {
-            const openBtn = document.createElement('button');
-            openBtn.textContent = 'Open';
-            openBtn.className = 'btn muted';
-            openBtn.classList.add('btn-inline');
-            openBtn.onclick = () => window.openInVSCode(path);
-            if (cells.length)
-                cells[cells.length - 1].appendChild(openBtn);
-        }
-        tbody.appendChild(tr);
-    });
+            if (path) {
+                const openBtn = document.createElement('button');
+                openBtn.textContent = 'Open';
+                openBtn.className = 'btn muted';
+                openBtn.classList.add('btn-inline');
+                openBtn.onclick = () => window.openInVSCode(path);
+                if (cells.length)
+                    cells[cells.length - 1].appendChild(openBtn);
+            }
+            tbody.appendChild(tr);
+        });
+    } catch (e) {
+        ErrLog.log('[table-utils]', e?.message || String(e), e?.stack || null, 'APPEND_ROW_ERROR');
+    }
 }
 /** Remove all skeleton elements from a section container — call on 'done' */
 export function removeSkeletons(containerId) {

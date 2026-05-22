@@ -23,7 +23,7 @@ function _wireFolderChoices(input, listId = 'folderChoicesList') {
                 list.appendChild(opt);
             }
         }
-        catch { }
+        catch (e) { ErrLog.log('[settings]', e?.message || String(e), e?.stack || null, 'FOLDER_CHOICES_ERROR'); }
     };
     input.addEventListener('focus', refresh);
     input.addEventListener('input', () => {

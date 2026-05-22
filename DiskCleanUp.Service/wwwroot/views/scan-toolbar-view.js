@@ -7,6 +7,7 @@
 //  ONE-TIME-ONE-PLACE: the MCD toolbar HTML lives here and only here.
 //  Specialty buttons are added via the config.specialty array.
 // ═══════════════════════════════════════════════════════════════════════════
+import { ErrLog } from '../js/error-logger.js';
 export class ScanToolbarView {
     constructor(config, callbacks = {}) {
         this._config = config;
@@ -16,6 +17,7 @@ export class ScanToolbarView {
     }
     // ── Initial render ────────────────────────────────────────
     mount() {
+        try {
         const { section, tableId, specialty } = this._config;
         const container = document.getElementById(`toolbar-${section}`);
         if (!container)
@@ -237,6 +239,9 @@ export class ScanToolbarView {
             container.appendChild(this._els.fullView);
         container.appendChild(this._els.trace);
         this._rendered = true;
+        } catch (e) {
+            ErrLog.log('[scan-toolbar-view]', e?.message || String(e), e?.stack || null, 'MOUNT_ERROR');
+        }
         return;
         const order = [
             'scan', 'cancel', 'deleteSelected',
@@ -258,6 +263,7 @@ export class ScanToolbarView {
     update(state) {
         if (!this._rendered)
             return;
+        try {
         const { scanning, hasRows, hasSelection } = state;
         const e = this._els;
         this._setDisabled(e.scan, scanning);
@@ -291,6 +297,9 @@ export class ScanToolbarView {
                 keep.disabled = !!scanning || !hasSelection;
             if (more)
                 more.disabled = !!e.loadMore?.disabled;
+        }
+        } catch (e) {
+            ErrLog.log('[scan-toolbar-view]', e?.message || String(e), e?.stack || null, 'UPDATE_ERROR');
         }
     }
     exposeDeleteAllAsLegacyId() {

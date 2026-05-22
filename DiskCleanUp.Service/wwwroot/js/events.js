@@ -3,6 +3,7 @@
 //  Uses data-action attributes on buttons + single document listener.
 //  Routes grid-based sections through scan-grid.js, tables through ui-utils.
 // ═══════════════════════════════════════════════════════════════════════════
+import { ErrLog } from './error-logger.js';
 import { startScan, cancelScan, trashSelected, applySmartDedup, deleteNMSelected, deleteEmpty, trashAllImageCopies } from './actions.js';
 import { selectAllTable, showSection } from './ui-utils.js';
 import { loadSavings, exportSavings, newSession } from './savings.js';
@@ -30,7 +31,7 @@ function _wireFolderChoices(input, listId = 'folderChoicesList') {
                 list.appendChild(opt);
             }
         }
-        catch { }
+        catch (e) { ErrLog.log('[events]', e?.message || String(e), e?.stack || null, 'FOLDER_CHOICES_ERROR'); }
     };
     input.addEventListener('focus', refresh);
     input.addEventListener('input', () => {
@@ -193,7 +194,7 @@ async function _initExtRoot() {
             localStorage.setItem('dcu_ext_search_root', root);
         }
     }
-    catch { }
+    catch (e) { ErrLog.log('[events]', e?.message || String(e), e?.stack || null, 'INIT_EXT_ROOT_ERROR'); }
 }
 _initExtRoot();
 document.getElementById('extSearchRootInput')?.addEventListener('change', (e) => {
@@ -214,7 +215,7 @@ document.getElementById('extSearchPickFolderBtn')?.addEventListener('click', asy
             input.value = res.path;
         localStorage.setItem('dcu_ext_search_root', res.path);
     }
-    catch { }
+    catch (e) { ErrLog.log('[events]', e?.message || String(e), e?.stack || null, 'PICK_FOLDER_ERROR'); }
 });
 // ── Input delegation (filter) ────────────────────────────────────────────
 let _extSearchDebounce = null;

@@ -4,6 +4,7 @@
 //  Defines:  field names, types, column layout, JSONL row parsing.
 //  No DOM, no state, no side effects. Pure data description.
 // ═══════════════════════════════════════════════════════════════════════════
+import { ErrLog } from '../js/error-logger.js';
 export const DuplicatesModel = {
     section: 'duplicates',
     keyField: 'hash', // groups keyed by content hash
@@ -28,21 +29,26 @@ export const DuplicatesModel = {
      * @returns {{ hash: string, files: FileRecord[] } | null}
      */
     parse(row) {
-        const d = row.data ?? row.Data;
-        if (!d)
+        try {
+            const d = row.data ?? row.Data;
+            if (!d)
+                return null;
+            const hash = d.hash ?? d.Hash;
+            const files = d.files ?? d.Files;
+            if (!hash || !Array.isArray(files) || files.length < 2)
+                return null;
+            return {
+                hash,
+                files: files.map(f => ({
+                    path: f.path ?? f.Path ?? '',
+                    size: f.size ?? f.Size ?? 0,
+                    modified: f.modified ?? f.Modified ?? '',
+                }))
+            };
+        } catch (e) {
+            ErrLog.log('[duplicates-model]', e?.message || String(e), e?.stack || null, 'PARSE_ERROR');
             return null;
-        const hash = d.hash ?? d.Hash;
-        const files = d.files ?? d.Files;
-        if (!hash || !Array.isArray(files) || files.length < 2)
-            return null;
-        return {
-            hash,
-            files: files.map(f => ({
-                path: f.path ?? f.Path ?? '',
-                size: f.size ?? f.Size ?? 0,
-                modified: f.modified ?? f.Modified ?? '',
-            }))
-        };
+        }
     },
     /**
      * Extract all "copy" paths from a group (everything except index 0).

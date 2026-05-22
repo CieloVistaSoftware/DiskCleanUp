@@ -201,7 +201,7 @@ function _startWatchdog() {
                 try {
                     _ws.close();
                 }
-                catch { }
+                catch (e) { ErrLog.log('[ws]', e?.message || String(e), e?.stack || null, 'WS_CLOSE_ERROR'); }
                 _ws = null;
             }
             _wsReconnectDelay = 0; // reset backoff

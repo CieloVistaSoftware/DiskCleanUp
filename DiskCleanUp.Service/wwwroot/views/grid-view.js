@@ -11,6 +11,7 @@
 //    clear()        — wipe DOM
 // ═══════════════════════════════════════════════════════════════════════════
 import { fmt } from '../js/ui-utils.js';
+import { ErrLog } from '../js/error-logger.js';
 const MAX_ROWS_PER_GROUP = 20;
 const MAX_RENDERED = 200;
 const GROUPS_PER_FRAME = 20;
@@ -51,6 +52,7 @@ export class GridView {
     }
     // ── Public API ────────────────────────────────────────────
     render(data, model, opts = {}) {
+        try {
         this._model = model;
         this._data = data;
         if (opts.incremental && opts.key) {
@@ -58,8 +60,12 @@ export class GridView {
             return;
         }
         this._fullRender(data, model);
+        } catch (e) {
+            ErrLog.log('[grid-view]', e?.message || String(e), e?.stack || null, 'RENDER_ERROR');
+        }
     }
     renderBatch(data, model, keys) {
+        try {
         this._model = model;
         this._data = data;
         if (!this._rendered)
@@ -101,6 +107,9 @@ export class GridView {
         if (this._overflowKeys.length)
             this._updateOverflowBanner();
         window._T?.('VIEW', `batch: +${added} new, ${updated} patched, ${this._renderedCount} total`);
+        } catch (e) {
+            ErrLog.log('[grid-view]', e?.message || String(e), e?.stack || null, 'RENDER_BATCH_ERROR');
+        }
     }
     clear() {
         this._cancelRaf();

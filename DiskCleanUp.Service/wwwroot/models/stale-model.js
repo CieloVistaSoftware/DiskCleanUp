@@ -4,6 +4,7 @@
 //  Defines: field names, column layout, JSONL row parsing.
 //  Pure data description — no DOM, no state, no side effects.
 // ═══════════════════════════════════════════════════════════════════════════
+import { ErrLog } from '../js/error-logger.js';
 export const StaleModel = {
     section: 'stale',
     keyField: 'path', // rows keyed by file path
@@ -27,17 +28,22 @@ export const StaleModel = {
      * @returns {{ path: string, size: number, modified: string } | null}
      */
     parse(row) {
-        const d = row.data ?? row.Data;
-        if (!d)
+        try {
+            const d = row.data ?? row.Data;
+            if (!d)
+                return null;
+            const path = d.path ?? d.Path;
+            if (!path)
+                return null;
+            return {
+                path,
+                size: d.size ?? d.Size ?? 0,
+                modified: d.modified ?? d.Modified ?? '',
+            };
+        } catch (e) {
+            ErrLog.log('[stale-model]', e?.message || String(e), e?.stack || null, 'PARSE_ERROR');
             return null;
-        const path = d.path ?? d.Path;
-        if (!path)
-            return null;
-        return {
-            path,
-            size: d.size ?? d.Size ?? 0,
-            modified: d.modified ?? d.Modified ?? '',
-        };
+        }
     },
 };
 //# sourceMappingURL=stale-model.js.map

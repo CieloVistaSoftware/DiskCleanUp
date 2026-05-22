@@ -17,6 +17,7 @@
 //    DG.addRow('myGrid', { name: 'hello', size: 1234 });
 // ═══════════════════════════════════════════════════════════════════════════
 import { fmtBytes } from '/lib/wb-core/utils/format.js';
+import { ErrLog } from './error-logger.js';
 const _grids = {};
 // ── Public API ───────────────────────────────────────────────────────────
 /**
@@ -28,68 +29,73 @@ const _grids = {};
  *   actions: Array of { icon, title, className, onClick(rowData, rowEl) }
  */
 export function create(id, containerId, columns, opts = {}) {
-    const container = document.getElementById(containerId);
-    if (!container)
-        return;
-    // Auto-prepend line-number column unless opted out
-    const allColumns = [];
-    if (opts.lineNumbers !== false) {
-        allColumns.push({ key: '_lineNo', label: '#', width: 36, type: 'lineNo' });
-    }
-    allColumns.push(...columns);
-    // Auto-append actions column if actions provided
-    if (opts.actions?.length) {
-        const actWidth = Math.max(40, opts.actions.length * 36);
-        allColumns.push({ key: '_actions', label: '', width: actWidth, type: 'actions' });
-    }
-    const cols = allColumns.map((c, i) => ({
-        ...c, _idx: i,
-        _template: c.flex
-            ? `minmax(${c.minWidth || 80}px, ${c.flex}fr)`
-            : `${c.width || 80}px`,
-    }));
-    const gridTemplate = cols.map(c => c._template).join(' ');
-    container.innerHTML = '';
-    // Header
-    const header = document.createElement('div');
-    header.className = 'sg-header';
-    header.style.gridTemplateColumns = gridTemplate;
-    cols.forEach((c, i) => {
-        const cell = document.createElement('div');
-        cell.className = 'sg-hcell';
-        cell.textContent = c.label || '';
-        cell.title = c.label || '';
-        cell.dataset.colIdx = String(i);
-        // Sortable (skip checkbox, lineNo, actions)
-        if (c.type !== 'checkbox' && c.type !== 'lineNo' && c.type !== 'actions') {
-            cell.classList.add('sg-sortable');
-            cell.addEventListener('click', (e) => {
-                if (e.target.classList.contains('sg-resize-handle'))
-                    return;
-                _sortColumn(id, i);
-            });
+    try {
+        const container = document.getElementById(containerId);
+        if (!container)
+            return;
+        // Auto-prepend line-number column unless opted out
+        const allColumns = [];
+        if (opts.lineNumbers !== false) {
+            allColumns.push({ key: '_lineNo', label: '#', width: 36, type: 'lineNo' });
         }
-        // Resize handle (all but last)
-        if (i < cols.length - 1) {
-            const handle = document.createElement('div');
-            handle.className = 'sg-resize-handle';
-            handle.addEventListener('mousedown', (e) => _startResize(e, id, i));
-            cell.appendChild(handle);
+        allColumns.push(...columns);
+        // Auto-append actions column if actions provided
+        if (opts.actions?.length) {
+            const actWidth = Math.max(40, opts.actions.length * 36);
+            allColumns.push({ key: '_actions', label: '', width: actWidth, type: 'actions' });
         }
-        header.appendChild(cell);
-    });
-    // Body
-    const body = document.createElement('div');
-    body.className = 'sg-body';
-    body.id = `dg-body-${id}`;
-    container.appendChild(header);
-    container.appendChild(body);
-    _grids[id] = {
-        containerId, columns: cols, gridTemplate, body, header,
-        rows: [], rowData: [], sortCol: -1, sortDir: 0,
-        opts, _frag: null, _flushScheduled: false,
-    };
-    return _grids[id];
+        const cols = allColumns.map((c, i) => ({
+            ...c, _idx: i,
+            _template: c.flex
+                ? `minmax(${c.minWidth || 80}px, ${c.flex}fr)`
+                : `${c.width || 80}px`,
+        }));
+        const gridTemplate = cols.map(c => c._template).join(' ');
+        container.innerHTML = '';
+        // Header
+        const header = document.createElement('div');
+        header.className = 'sg-header';
+        header.style.gridTemplateColumns = gridTemplate;
+        cols.forEach((c, i) => {
+            const cell = document.createElement('div');
+            cell.className = 'sg-hcell';
+            cell.textContent = c.label || '';
+            cell.title = c.label || '';
+            cell.dataset.colIdx = String(i);
+            // Sortable (skip checkbox, lineNo, actions)
+            if (c.type !== 'checkbox' && c.type !== 'lineNo' && c.type !== 'actions') {
+                cell.classList.add('sg-sortable');
+                cell.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('sg-resize-handle'))
+                        return;
+                    _sortColumn(id, i);
+                });
+            }
+            // Resize handle (all but last)
+            if (i < cols.length - 1) {
+                const handle = document.createElement('div');
+                handle.className = 'sg-resize-handle';
+                handle.addEventListener('mousedown', (e) => _startResize(e, id, i));
+                cell.appendChild(handle);
+            }
+            header.appendChild(cell);
+        });
+        // Body
+        const body = document.createElement('div');
+        body.className = 'sg-body';
+        body.id = `dg-body-${id}`;
+        container.appendChild(header);
+        container.appendChild(body);
+        _grids[id] = {
+            containerId, columns: cols, gridTemplate, body, header,
+            rows: [], rowData: [], sortCol: -1, sortDir: 0,
+            opts, _frag: null, _flushScheduled: false,
+        };
+        return _grids[id];
+    } catch (e) {
+        ErrLog.log('[data-grid]', e?.message || String(e), e?.stack || null, 'CREATE_ERROR');
+        return null;
+    }
 }
 /**
  * Add a data row. Uses DocumentFragment batching (same as scan-grid).
@@ -98,104 +104,109 @@ export function create(id, containerId, columns, opts = {}) {
  * @returns {HTMLElement} The row element
  */
 export function addRow(id, data) {
-    const g = _grids[id];
-    if (!g)
-        return null;
-    const row = document.createElement('div');
-    row.className = `sg-row ${g.opts.rowClass || ''}`.trim();
-    row.style.gridTemplateColumns = g.header.style.gridTemplateColumns;
-    const rowNum = g.rows.length + 1;
-    // Store raw data for sorting + callbacks
-    row._dgData = data;
-    // Copy data-* attributes from data object
-    if (data._dataAttrs) {
-        for (const [k, v] of Object.entries(data._dataAttrs)) {
-            row.dataset[k] = String(v);
+    try {
+        const g = _grids[id];
+        if (!g)
+            return null;
+        const row = document.createElement('div');
+        row.className = `sg-row ${g.opts.rowClass || ''}`.trim();
+        row.style.gridTemplateColumns = g.header.style.gridTemplateColumns;
+        const rowNum = g.rows.length + 1;
+        // Store raw data for sorting + callbacks
+        row._dgData = data;
+        // Copy data-* attributes from data object
+        if (data._dataAttrs) {
+            for (const [k, v] of Object.entries(data._dataAttrs)) {
+                row.dataset[k] = String(v);
+            }
         }
-    }
-    g.columns.forEach(col => {
-        const cell = document.createElement('div');
-        cell.className = 'sg-cell';
-        switch (col.type) {
-            case 'lineNo':
-                cell.classList.add('sg-lineno');
-                cell.textContent = rowNum;
-                break;
-            case 'checkbox': {
-                const cb = document.createElement('input');
-                cb.type = 'checkbox';
-                if (data[col.key] !== undefined)
-                    cb.dataset.value = data[col.key];
-                if (col.dataKey)
-                    cb.dataset[col.dataKey] = data[col.dataKey] || '';
-                if (data._disabled)
-                    cb.disabled = true;
-                cell.appendChild(cb);
-                break;
-            }
-            case 'size':
-                cell.textContent = fmtBytes(data[col.key] || 0);
-                cell.dataset.sortVal = data[col.key] || 0;
-                break;
-            case 'badge': {
-                const val = data[col.key] || '';
-                const cls = col.badgeClass || data._badgeClass || 'orange';
-                cell.innerHTML = `<span class="badge ${_esc(cls)}">${_esc(val)}</span>`;
-                break;
-            }
-            case 'html':
-                cell.innerHTML = data[col.key] || '';
-                break;
-            case 'actions': {
-                cell.classList.add('sg-actions');
-                for (const action of (g.opts.actions || [])) {
-                    const btn = document.createElement('button');
-                    btn.className = action.className || 'btn muted btn-xs';
-                    btn.textContent = action.icon || '';
-                    btn.title = action.title || '';
-                    if (data._disabled && action.disableOnRow)
-                        btn.disabled = true;
-                    btn.onclick = (e) => {
-                        e.stopPropagation();
-                        action.onClick?.(data, row);
-                    };
-                    cell.appendChild(btn);
+        g.columns.forEach(col => {
+            const cell = document.createElement('div');
+            cell.className = 'sg-cell';
+            switch (col.type) {
+                case 'lineNo':
+                    cell.classList.add('sg-lineno');
+                    cell.textContent = rowNum;
+                    break;
+                case 'checkbox': {
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    if (data[col.key] !== undefined)
+                        cb.dataset.value = data[col.key];
+                    if (col.dataKey)
+                        cb.dataset[col.dataKey] = data[col.dataKey] || '';
+                    if (data._disabled)
+                        cb.disabled = true;
+                    cell.appendChild(cb);
+                    break;
                 }
-                break;
+                case 'size':
+                    cell.textContent = fmtBytes(data[col.key] || 0);
+                    cell.dataset.sortVal = data[col.key] || 0;
+                    break;
+                case 'badge': {
+                    const val = data[col.key] || '';
+                    const cls = col.badgeClass || data._badgeClass || 'orange';
+                    cell.innerHTML = `<span class="badge ${_esc(cls)}">${_esc(val)}</span>`;
+                    break;
+                }
+                case 'html':
+                    cell.innerHTML = data[col.key] || '';
+                    break;
+                case 'actions': {
+                    cell.classList.add('sg-actions');
+                    for (const action of (g.opts.actions || [])) {
+                        const btn = document.createElement('button');
+                        btn.className = action.className || 'btn muted btn-xs';
+                        btn.textContent = action.icon || '';
+                        btn.title = action.title || '';
+                        if (data._disabled && action.disableOnRow)
+                            btn.disabled = true;
+                        btn.onclick = (e) => {
+                            e.stopPropagation();
+                            action.onClick?.(data, row);
+                        };
+                        cell.appendChild(btn);
+                    }
+                    break;
+                }
+                default:
+                    cell.textContent = data[col.key] ?? '';
+                    cell.title = data[col.key] ?? '';
+                    break;
             }
-            default:
-                cell.textContent = data[col.key] ?? '';
-                cell.title = data[col.key] ?? '';
-                break;
+            row.appendChild(cell);
+        });
+        // Row click handler
+        if (g.opts.onRowClick) {
+            row.style.cursor = 'pointer';
+            row.addEventListener('click', (e) => {
+                if (e.target.closest('button') || e.target.closest('input'))
+                    return;
+                g.opts.onRowClick(data, row);
+            });
         }
-        row.appendChild(cell);
-    });
-    // Row click handler
-    if (g.opts.onRowClick) {
-        row.style.cursor = 'pointer';
-        row.addEventListener('click', (e) => {
-            if (e.target.closest('button') || e.target.closest('input'))
-                return;
-            g.opts.onRowClick(data, row);
-        });
+        g.rows.push(row);
+        g.rowData.push(data);
+        // Fragment batching — same pattern as scan-grid
+        if (!g._frag)
+            g._frag = document.createDocumentFragment();
+        g._frag.appendChild(row);
+        if (!g._flushScheduled) {
+            g._flushScheduled = true;
+            queueMicrotask(() => {
+                if (g._frag) {
+                    g.body.appendChild(g._frag);
+                    g._frag = null;
+                }
+                g._flushScheduled = false;
+            });
+        }
+        return row;
+    } catch (e) {
+        ErrLog.log('[data-grid]', e?.message || String(e), e?.stack || null, 'ADD_ROW_ERROR');
+        return null;
     }
-    g.rows.push(row);
-    g.rowData.push(data);
-    // Fragment batching — same pattern as scan-grid
-    if (!g._frag)
-        g._frag = document.createDocumentFragment();
-    g._frag.appendChild(row);
-    if (!g._flushScheduled) {
-        g._flushScheduled = true;
-        queueMicrotask(() => {
-            if (g._frag) {
-                g.body.appendChild(g._frag);
-                g._frag = null;
-            }
-            g._flushScheduled = false;
-        });
-    }
-    return row;
 }
 /**
  * Add multiple rows at once (convenience wrapper).

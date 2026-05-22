@@ -4,6 +4,7 @@
 //  Defines: field names, column layout, JSONL row parsing.
 //  Pure data description — no DOM, no state, no side effects.
 // ═══════════════════════════════════════════════════════════════════════════
+import { ErrLog } from '../js/error-logger.js';
 export const NodeModulesModel = {
     section: 'node-modules',
     keyField: 'path', // rows keyed by folder path
@@ -26,16 +27,21 @@ export const NodeModulesModel = {
      * @returns {{ path: string, size: number } | null}
      */
     parse(row) {
-        const d = row.data ?? row.Data;
-        if (!d)
+        try {
+            const d = row.data ?? row.Data;
+            if (!d)
+                return null;
+            const path = d.path ?? d.Path;
+            if (!path)
+                return null;
+            return {
+                path,
+                size: d.size ?? d.Size ?? 0,
+            };
+        } catch (e) {
+            ErrLog.log('[node-modules-model]', e?.message || String(e), e?.stack || null, 'PARSE_ERROR');
             return null;
-        const path = d.path ?? d.Path;
-        if (!path)
-            return null;
-        return {
-            path,
-            size: d.size ?? d.Size ?? 0,
-        };
+        }
     },
 };
 //# sourceMappingURL=node-modules-model.js.map
