@@ -884,11 +884,14 @@ function _sortColumn(section, colIdx) {
  * If text looks like a bare extension shorthand (e.g. "exe", ".exe", "*.exe"),
  * returns the normalised extension with dot (e.g. ".exe").
  * Returns '' if the text looks like a path fragment or contains spaces.
+ * Words longer than 5 chars without a leading dot/star are treated as path
+ * fragments (fix for #41 — typing "backup", "downloads" hid all rows).
  */
 function _parseExtShorthand(text: string): string {
   if (!text) return '';
   const t = text.replace(/^\*/, '').toLowerCase();
-  if (t && !t.includes('/') && !t.includes('\\') && !t.includes(' ')) {
+  if (!t || t.includes('/') || t.includes('\\') || t.includes(' ')) return '';
+  if (t.startsWith('.') || t.length <= 5) {
     return t.startsWith('.') ? t : '.' + t;
   }
   return '';

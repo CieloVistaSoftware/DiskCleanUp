@@ -4,7 +4,6 @@
 //  Works with scan-grid.js (CSS grid rows, not <table> rows)
 //  Filter state persists per section via localStorage (key: dcu_sf_{section})
 // ═══════════════════════════════════════════════════════════════════════════
-import { ErrLog } from './error-logger.js';
 const _filters = {};
 const _LS_PREFIX = 'dcu_sf_';
 /**
@@ -213,7 +212,7 @@ function _restore(section) {
         _rebuildChips(section);
         // Don't call apply() here — no rows exist yet. rebuild() handles it after cache restore.
     }
-    catch (e) { ErrLog.log('[scan-filter]', e?.message || String(e), e?.stack || null, 'RESTORE_ERROR'); }
+    catch { /* corrupt data — ignore */ }
 }
 function _clearSaved(section) {
     try {
@@ -229,13 +228,16 @@ function _el(id) { return document.getElementById(id); }
  * If text looks like a bare extension shorthand (e.g. "exe", ".exe", "*.exe"),
  * returns the normalised extension with dot (e.g. ".exe").
  * Returns '' if the text looks like a path fragment or contains spaces.
+ * Words longer than 5 chars without a leading dot/star are treated as path
+ * fragments (fix for #41 — typing "backup", "downloads" hid all rows).
  */
 function _parseExtShorthand(text) {
     if (!text)
         return '';
     const t = text.replace(/^\*/, '').toLowerCase();
-    // No path separators and no spaces → treat as extension
-    if (t && !t.includes('/') && !t.includes('\\') && !t.includes(' ')) {
+    if (!t || t.includes('/') || t.includes('\\') || t.includes(' '))
+        return '';
+    if (t.startsWith('.') || t.length <= 5) {
         return t.startsWith('.') ? t : '.' + t;
     }
     return '';
