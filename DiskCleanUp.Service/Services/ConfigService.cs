@@ -235,6 +235,26 @@ public class ConfigService
         return result;
     }
 
+    public async Task<SavingsPage> ReadSavingsPagedAsync(int offset, int limit)
+    {
+        var all   = await ReadSavingsAsync();
+        var total = all.Count;
+        var start = Math.Max(0, total - offset - limit);
+        var end   = Math.Max(0, total - offset);
+        var page  = all.Skip(start).Take(end - start).ToList();
+        page.Reverse();
+        return new SavingsPage(page, total, offset, limit);
+    }
+
+    public async Task<SavingsSummary> ReadSavingsSummaryAsync()
+    {
+        var all     = await ReadSavingsAsync();
+        var session = await GetCurrentSessionAsync();
+        var totalBytes   = all.Sum(e => e.Bytes);
+        var sessionBytes = all.Where(e => e.SessionId == session.Id).Sum(e => e.Bytes);
+        return new SavingsSummary(totalBytes, sessionBytes, all.Count);
+    }
+
     // ── Error Log ────────────────────────────────────────────────
     // Append-only JSONL — one error per line. Same philosophy as
     // savings_log.jsonl: never truncated, never reset automatically.

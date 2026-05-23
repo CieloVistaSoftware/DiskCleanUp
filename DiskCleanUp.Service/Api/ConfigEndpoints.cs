@@ -44,9 +44,21 @@ public static class ConfigEndpoints
             catch (Exception ex) { return Results.Ok(new { ok = false, error = ex.Message }); }
         });
 
-        app.MapGet("/api/savings", async (ConfigService cfgService) =>
+        app.MapGet("/api/savings", async (HttpContext ctx, ConfigService cfgService) =>
         {
-            try { return Results.Ok(await cfgService.ReadSavingsAsync()); }
+            try
+            {
+                var qs     = ctx.Request.Query;
+                int limit  = int.TryParse(qs["limit"],  out var l) ? l : 200;
+                int offset = int.TryParse(qs["offset"], out var o) ? o : 0;
+                return Results.Ok(await cfgService.ReadSavingsPagedAsync(offset, limit));
+            }
+            catch (Exception ex) { return Results.Ok(new { error = ex.Message }); }
+        });
+
+        app.MapGet("/api/savings/summary", async (ConfigService cfgService) =>
+        {
+            try { return Results.Ok(await cfgService.ReadSavingsSummaryAsync()); }
             catch (Exception ex) { return Results.Ok(new { error = ex.Message }); }
         });
     }
