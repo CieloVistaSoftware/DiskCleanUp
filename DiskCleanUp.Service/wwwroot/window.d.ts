@@ -96,6 +96,7 @@ interface Window {
   savingsSelectAll?:        () => void;
   savingsSelectNone?:       () => void;
   restoreSavingsSelected?:  () => void;
+  auditBinStatus?:          () => void;
 
   // ── UI Utils (ui-utils.ts) ────────────────────────────────────────────
   showSection?:     (id: string, btn?: HTMLElement | null) => void;

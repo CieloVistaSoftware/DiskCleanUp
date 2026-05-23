@@ -570,6 +570,23 @@
   .savings-meta { color: var(--muted); font-size: 11px; }
   .stat-accent .val { color: var(--accent); }
 
+  /* Bin-status audit pills (appended to trash rows by auditBinStatus()) */
+  .bin-status { font-size: 10px; padding: 1px 6px; border-radius: 8px; margin-left: 6px; white-space: nowrap; }
+  .bin-status-in   { background: rgba(210,90,40,.18); color: #e07040; }
+  .bin-status-gone { background: rgba(63,185,80,.15);  color: var(--green); }
+  .bin-audit-summary {
+    padding: 8px 12px; margin-bottom: 12px; border-radius: 6px;
+    background: rgba(210,90,40,.12); border: 1px solid rgba(210,90,40,.3);
+    font-size: 13px; color: var(--text);
+  }
+  .bin-audit-summary strong { color: #e07040; }
+  .savings-load-more {
+    display: block; width: 100%; margin: 12px 0; padding: 8px;
+    background: transparent; border: 1px dashed var(--border);
+    color: var(--muted); cursor: pointer; border-radius: 6px; font-size: 12px;
+  }
+  .savings-load-more:hover { border-color: var(--accent); color: var(--accent); }
+
   /* Image duplicate results */
   .img-group { margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
   .img-group .img-grid { margin-top: 10px; }

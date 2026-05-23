@@ -372,6 +372,7 @@ window._T = (tag, msg) => {
       <button class="btn muted" onclick="window.savingsSelectAll()">Select All</button>
       <button class="btn muted" onclick="window.savingsSelectNone()">Select None</button>
       <button class="btn green" onclick="window.restoreSavingsSelected()">↩️ Restore Selected</button>
+      <button class="btn muted" id="binAuditBtn" onclick="window.auditBinStatus()" title="Check which trashed files are still in the Recycle Bin">🗑 Bin Status</button>
       <span id="savingsSelCount" class="savings-meta"></span>
       <span id="savingsFilterStatus" class="savings-meta"></span>
     </div>

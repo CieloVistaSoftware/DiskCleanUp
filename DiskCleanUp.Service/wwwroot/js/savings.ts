@@ -266,11 +266,71 @@ export async function exportSavings() {
   a.click();
 }
 
+// ── Recycle Bin audit — cross-reference savings log against current bin ──────
+export async function auditBinStatus() {
+  const btn = document.getElementById('binAuditBtn') as HTMLButtonElement | null;
+  const status = document.getElementById('savingsFilterStatus');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Checking…'; }
+
+  // Remove any prior audit badges
+  document.querySelectorAll('#savingsLog .bin-status').forEach(el => el.remove());
+  const summary = document.getElementById('binAuditSummary');
+  if (summary) summary.remove();
+
+  try {
+    const bin = await apiFetch('/api/recycle-bin', {}, { timeout: 35000 });
+    const binPaths = new Set(
+      (bin.items || []).map((item: any) => (item.originalPath || '').toLowerCase())
+    );
+
+    let trashTotal = 0, inBin = 0;
+    document.querySelectorAll('#savingsLog tbody tr').forEach(tr => {
+      const badge = tr.querySelector('.badge');
+      if (!badge) return;
+      const action = badge.textContent?.trim() || '';
+      if (action !== 'trash') return;
+
+      trashTotal++;
+      const path = (tr as HTMLElement).dataset.savingsPath || '';
+      const inRecycleBin = binPaths.has(path.toLowerCase());
+      if (inRecycleBin) inBin++;
+
+      const pill = document.createElement('span');
+      pill.className = `bin-status bin-status-${inRecycleBin ? 'in' : 'gone'}`;
+      pill.title = inRecycleBin
+        ? 'Still in Recycle Bin — space not yet reclaimed'
+        : 'No longer in Recycle Bin — space has been reclaimed';
+      pill.textContent = inRecycleBin ? '♻️ in bin' : '✅ reclaimed';
+      tr.querySelector('td.td-path')?.append(pill);
+    });
+
+    const log = document.getElementById('savingsLog');
+    if (log && trashTotal > 0) {
+      const div = document.createElement('div');
+      div.id = 'binAuditSummary';
+      div.className = 'bin-audit-summary';
+      const gone = trashTotal - inBin;
+      div.innerHTML = inBin > 0
+        ? `⚠️ <strong>${inBin} of ${trashTotal}</strong> trashed files still in Recycle Bin — disk space not yet reclaimed. Empty the bin to reclaim <em>estimated</em> space.`
+        : `✅ All ${trashTotal} trashed files have been purged from the Recycle Bin — disk space fully reclaimed.`;
+      log.prepend(div);
+    }
+
+    if (status && trashTotal === 0) status.textContent = 'No trash entries in visible rows.';
+  } catch (e) {
+    ErrLog.log('[SAVINGS]', e.message, e.stack, 'CAUGHT_ERROR');
+    if (status) status.textContent = '⚠️ Bin audit failed';
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🗑 Bin Status'; }
+  }
+}
+
 // Expose for inline onclick handlers
 window.filterSavings          = filterSavings;
 window.savingsSelectAll       = savingsSelectAll;
 window.savingsSelectNone      = savingsSelectNone;
 window.restoreSavingsSelected = restoreSavingsSelected;
+window.auditBinStatus         = auditBinStatus;
 
 // Wire checkbox change events for selection count
 document.addEventListener('change', (e) => {
