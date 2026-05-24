@@ -8,26 +8,46 @@ const _sectionTbodies = {};
 // Eliminates querySelectorAll('[data-hash=...]') on every result_update (O(n²) otherwise)
 const _rowIndex = {};
 export function indexRows(section, hash, rows) {
-    if (!_rowIndex[section])
-        _rowIndex[section] = new Map();
-    _rowIndex[section].set(hash, rows);
+    try {
+        if (!_rowIndex[section])
+            _rowIndex[section] = new Map();
+        _rowIndex[section].set(hash, rows);
+    }
+    catch (err) {
+        ErrLog.log('[table-utils]', String(err), null, 'TABLE_ERROR');
+    }
 }
 export function removeIndexedRows(section, hash) {
-    const map = _rowIndex[section];
-    if (!map)
-        return;
-    const rows = map.get(hash);
-    if (rows) {
-        rows.forEach(r => r.remove());
-        map.delete(hash);
+    try {
+        const map = _rowIndex[section];
+        if (!map)
+            return;
+        const rows = map.get(hash);
+        if (rows) {
+            rows.forEach(r => r.remove());
+            map.delete(hash);
+        }
+    }
+    catch (err) {
+        ErrLog.log('[table-utils]', String(err), null, 'TABLE_ERROR');
     }
 }
 export function clearIndex(section) {
-    delete _rowIndex[section];
+    try {
+        delete _rowIndex[section];
+    }
+    catch (err) {
+        ErrLog.log('[table-utils]', String(err), null, 'TABLE_ERROR');
+    }
 }
 export function clearSection(section) {
-    delete _sectionTbodies[section];
-    clearIndex(section);
+    try {
+        delete _sectionTbodies[section];
+        clearIndex(section);
+    }
+    catch (err) {
+        ErrLog.log('[table-utils]', String(err), null, 'TABLE_ERROR');
+    }
 }
 export function ensureTable(section, containerId, tableId, headerHTML) {
     try {
@@ -50,8 +70,9 @@ export function ensureTable(section, containerId, tableId, headerHTML) {
         if (tbl)
             requestAnimationFrame(() => { makeColumnsResizable(tbl); makeColumnsSortable(tbl); });
         return _sectionTbodies[section];
-    } catch (e) {
-        ErrLog.log('[table-utils]', e?.message || String(e), e?.stack || null, 'ENSURE_TABLE_ERROR');
+    }
+    catch (err) {
+        ErrLog.log('[table-utils]', String(err), null, 'TABLE_ERROR');
         return null;
     }
 }
@@ -81,32 +102,43 @@ export function appendRow(tbody, html) {
             }
             tbody.appendChild(tr);
         });
-    } catch (e) {
-        ErrLog.log('[table-utils]', e?.message || String(e), e?.stack || null, 'APPEND_ROW_ERROR');
+    }
+    catch (err) {
+        ErrLog.log('[table-utils]', String(err), null, 'TABLE_ERROR');
     }
 }
 /** Remove all skeleton elements from a section container — call on 'done' */
 export function removeSkeletons(containerId) {
-    const c = document.getElementById(containerId);
-    if (!c)
-        return;
-    c.querySelectorAll('.skel-row').forEach(r => r.remove());
-    c.querySelectorAll('.skel-grid').forEach(r => r.remove());
-    c.querySelectorAll('.skel-card').forEach(r => r.remove());
-    c.querySelectorAll('.skel-bar').forEach(r => r.remove());
+    try {
+        const c = document.getElementById(containerId);
+        if (!c)
+            return;
+        c.querySelectorAll('.skel-row').forEach(r => r.remove());
+        c.querySelectorAll('.skel-grid').forEach(r => r.remove());
+        c.querySelectorAll('.skel-card').forEach(r => r.remove());
+        c.querySelectorAll('.skel-bar').forEach(r => r.remove());
+    }
+    catch (err) {
+        ErrLog.log('[table-utils]', String(err), null, 'TABLE_ERROR');
+    }
 }
 // Paints the table shell + 4 pulsing skeleton rows immediately on 'started'
 export function showSkeleton(section, containerId, tableId, headerHTML, colCount) {
-    if (_sectionTbodies[section])
-        return;
-    const skelCols = Array.from({ length: colCount }, (_, i) => `<td><span class="skel-bar skel-w-${i % 6}"></span></td>`).join('');
-    const skelRows = Array.from({ length: 4 }, () => `<tr class="skel-row">${skelCols}</tr>`).join('');
-    const container = document.getElementById(containerId);
-    if (container) {
-        container.innerHTML = `<table id="${tableId}">${headerHTML}<tbody>${skelRows}</tbody></table>`;
+    try {
+        if (_sectionTbodies[section])
+            return;
+        const skelCols = Array.from({ length: colCount }, (_, i) => `<td><span class="skel-bar skel-w-${i % 6}"></span></td>`).join('');
+        const skelRows = Array.from({ length: 4 }, () => `<tr class="skel-row">${skelCols}</tr>`).join('');
+        const container = document.getElementById(containerId);
+        if (container) {
+            container.innerHTML = `<table id="${tableId}">${headerHTML}<tbody>${skelRows}</tbody></table>`;
+        }
+        const tbl = document.getElementById(tableId);
+        if (tbl)
+            requestAnimationFrame(() => { makeColumnsResizable(tbl); makeColumnsSortable(tbl); });
     }
-    const tbl = document.getElementById(tableId);
-    if (tbl)
-        requestAnimationFrame(() => { makeColumnsResizable(tbl); makeColumnsSortable(tbl); });
+    catch (err) {
+        ErrLog.log('[table-utils]', String(err), null, 'TABLE_ERROR');
+    }
 }
 //# sourceMappingURL=table-utils.js.map

@@ -34,21 +34,23 @@ export const DuplicatesModel = {
    * @returns {{ hash: string, files: FileRecord[] } | null}
    */
   parse(row) {
-    const d = row.data ?? row.Data;
-    if (!d) return null;
+    try {
+      const d = row.data ?? row.Data;
+      if (!d) return null;
 
-    const hash  = d.hash  ?? d.Hash;
-    const files = d.files ?? d.Files;
-    if (!hash || !Array.isArray(files) || files.length < 2) return null;
+      const hash  = d.hash  ?? d.Hash;
+      const files = d.files ?? d.Files;
+      if (!hash || !Array.isArray(files) || files.length < 2) return null;
 
-    return {
-      hash,
-      files: files.map(f => ({
-        path:     f.path     ?? f.Path     ?? '',
-        size:     f.size     ?? f.Size     ?? 0,
-        modified: f.modified ?? f.Modified ?? '',
-      }))
-    };
+      return {
+        hash,
+        files: files.map(f => ({
+          path:     f.path     ?? f.Path     ?? '',
+          size:     f.size     ?? f.Size     ?? 0,
+          modified: f.modified ?? f.Modified ?? '',
+        }))
+      };
+    } catch (err) { ErrLog.log('[duplicates-model]', String(err), null, 'MODEL_ERROR'); return null; }
   },
 
   /**
@@ -57,7 +59,9 @@ export const DuplicatesModel = {
    * @returns {string[]}
    */
   copyPaths(group) {
-    return group.files.slice(1).map(f => f.path).filter(Boolean);
+    try {
+      return group.files.slice(1).map(f => f.path).filter(Boolean);
+    } catch (err) { ErrLog.log('[duplicates-model]', String(err), null, 'MODEL_ERROR'); return []; }
   },
 
   /**
@@ -66,10 +70,12 @@ export const DuplicatesModel = {
    * @returns {string[]}
    */
   allCopyPaths(dataMap) {
-    const paths = [];
-    dataMap.forEach(group => {
-      group.files.slice(1).forEach(f => { if (f.path) paths.push(f.path); });
-    });
-    return paths;
+    try {
+      const paths = [];
+      dataMap.forEach(group => {
+        group.files.slice(1).forEach(f => { if (f.path) paths.push(f.path); });
+      });
+      return paths;
+    } catch (err) { ErrLog.log('[duplicates-model]', String(err), null, 'MODEL_ERROR'); return []; }
   }
 };

@@ -1,3 +1,4 @@
+import { ErrLog } from '../js/error-logger.js';
 // ═══════════════════════════════════════════════════════════════════════════
 //  SCAN TOOLBAR MODEL — pure config, no DOM, no state, no side effects.
 //
@@ -41,6 +42,12 @@ export const SCAN_TOOLBAR_CONFIGS = [
  * @returns {ScanToolbarConfig|null}
  */
 export function getToolbarConfig(section) {
-    return SCAN_TOOLBAR_CONFIGS.find(c => c.section === section) ?? null;
+    try {
+        return SCAN_TOOLBAR_CONFIGS.find(c => c.section === section) ?? null;
+    }
+    catch (err) {
+        ErrLog.log('[scan-toolbar-model]', String(err), null, 'MODEL_ERROR');
+        return null;
+    }
 }
 //# sourceMappingURL=scan-toolbar-model.js.map

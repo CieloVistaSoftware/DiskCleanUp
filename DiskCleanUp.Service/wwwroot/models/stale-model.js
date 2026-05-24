@@ -1,10 +1,10 @@
+import { ErrLog } from '../js/error-logger.js';
 // ═══════════════════════════════════════════════════════════════════════════
 //  STALE FILE MODEL — data contract
 //
 //  Defines: field names, column layout, JSONL row parsing.
 //  Pure data description — no DOM, no state, no side effects.
 // ═══════════════════════════════════════════════════════════════════════════
-import { ErrLog } from '../js/error-logger.js';
 export const StaleModel = {
     section: 'stale',
     keyField: 'path', // rows keyed by file path
@@ -40,8 +40,9 @@ export const StaleModel = {
                 size: d.size ?? d.Size ?? 0,
                 modified: d.modified ?? d.Modified ?? '',
             };
-        } catch (e) {
-            ErrLog.log('[stale-model]', e?.message || String(e), e?.stack || null, 'PARSE_ERROR');
+        }
+        catch (err) {
+            ErrLog.log('[stale-model]', String(err), null, 'MODEL_ERROR');
             return null;
         }
     },

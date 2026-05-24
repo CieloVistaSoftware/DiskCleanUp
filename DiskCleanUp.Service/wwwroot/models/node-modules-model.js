@@ -1,10 +1,10 @@
+import { ErrLog } from '../js/error-logger.js';
 // ═══════════════════════════════════════════════════════════════════════════
 //  NODE MODULES MODEL — data contract
 //
 //  Defines: field names, column layout, JSONL row parsing.
 //  Pure data description — no DOM, no state, no side effects.
 // ═══════════════════════════════════════════════════════════════════════════
-import { ErrLog } from '../js/error-logger.js';
 export const NodeModulesModel = {
     section: 'node-modules',
     keyField: 'path', // rows keyed by folder path
@@ -38,8 +38,9 @@ export const NodeModulesModel = {
                 path,
                 size: d.size ?? d.Size ?? 0,
             };
-        } catch (e) {
-            ErrLog.log('[node-modules-model]', e?.message || String(e), e?.stack || null, 'PARSE_ERROR');
+        }
+        catch (err) {
+            ErrLog.log('[node-modules-model]', String(err), null, 'MODEL_ERROR');
             return null;
         }
     },

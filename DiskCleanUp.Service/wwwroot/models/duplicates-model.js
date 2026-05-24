@@ -1,10 +1,10 @@
+import { ErrLog } from '../js/error-logger.js';
 // ═══════════════════════════════════════════════════════════════════════════
 //  DUPLICATES MODEL — data contract
 //
 //  Defines:  field names, types, column layout, JSONL row parsing.
 //  No DOM, no state, no side effects. Pure data description.
 // ═══════════════════════════════════════════════════════════════════════════
-import { ErrLog } from '../js/error-logger.js';
 export const DuplicatesModel = {
     section: 'duplicates',
     keyField: 'hash', // groups keyed by content hash
@@ -45,8 +45,9 @@ export const DuplicatesModel = {
                     modified: f.modified ?? f.Modified ?? '',
                 }))
             };
-        } catch (e) {
-            ErrLog.log('[duplicates-model]', e?.message || String(e), e?.stack || null, 'PARSE_ERROR');
+        }
+        catch (err) {
+            ErrLog.log('[duplicates-model]', String(err), null, 'MODEL_ERROR');
             return null;
         }
     },
@@ -56,7 +57,13 @@ export const DuplicatesModel = {
      * @returns {string[]}
      */
     copyPaths(group) {
-        return group.files.slice(1).map(f => f.path).filter(Boolean);
+        try {
+            return group.files.slice(1).map(f => f.path).filter(Boolean);
+        }
+        catch (err) {
+            ErrLog.log('[duplicates-model]', String(err), null, 'MODEL_ERROR');
+            return [];
+        }
     },
     /**
      * Extract all copy paths from all groups.
@@ -64,12 +71,18 @@ export const DuplicatesModel = {
      * @returns {string[]}
      */
     allCopyPaths(dataMap) {
-        const paths = [];
-        dataMap.forEach(group => {
-            group.files.slice(1).forEach(f => { if (f.path)
-                paths.push(f.path); });
-        });
-        return paths;
+        try {
+            const paths = [];
+            dataMap.forEach(group => {
+                group.files.slice(1).forEach(f => { if (f.path)
+                    paths.push(f.path); });
+            });
+            return paths;
+        }
+        catch (err) {
+            ErrLog.log('[duplicates-model]', String(err), null, 'MODEL_ERROR');
+            return [];
+        }
     }
 };
 //# sourceMappingURL=duplicates-model.js.map

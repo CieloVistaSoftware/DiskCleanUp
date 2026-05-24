@@ -1,10 +1,10 @@
+import { ErrLog } from '../js/error-logger.js';
 // ═══════════════════════════════════════════════════════════════════════════
 //  LARGE FILES MODEL — data contract
 //
 //  Defines: field names, column layout, JSONL row parsing.
 //  Pure data description — no DOM, no state, no side effects.
 // ═══════════════════════════════════════════════════════════════════════════
-import { ErrLog } from '../js/error-logger.js';
 export const LargeModel = {
     section: 'large',
     keyField: 'path', // rows keyed by file path
@@ -38,8 +38,9 @@ export const LargeModel = {
                 path,
                 size: d.size ?? d.Size ?? 0,
             };
-        } catch (e) {
-            ErrLog.log('[large-model]', e?.message || String(e), e?.stack || null, 'PARSE_ERROR');
+        }
+        catch (err) {
+            ErrLog.log('[large-model]', String(err), null, 'MODEL_ERROR');
             return null;
         }
     },

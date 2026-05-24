@@ -33,16 +33,18 @@ export const StaleModel = {
    * @returns {{ path: string, size: number, modified: string } | null}
    */
   parse(row) {
-    const d = row.data ?? row.Data;
-    if (!d) return null;
+    try {
+      const d = row.data ?? row.Data;
+      if (!d) return null;
 
-    const path = d.path ?? d.Path;
-    if (!path) return null;
+      const path = d.path ?? d.Path;
+      if (!path) return null;
 
-    return {
-      path,
-      size:     d.size     ?? d.Size     ?? 0,
-      modified: d.modified ?? d.Modified ?? '',
-    };
+      return {
+        path,
+        size:     d.size     ?? d.Size     ?? 0,
+        modified: d.modified ?? d.Modified ?? '',
+      };
+    } catch (err) { ErrLog.log('[stale-model]', String(err), null, 'MODEL_ERROR'); return null; }
   },
 };

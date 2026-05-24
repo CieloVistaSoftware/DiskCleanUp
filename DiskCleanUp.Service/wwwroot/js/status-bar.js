@@ -25,8 +25,9 @@ export const SB = {
             _sbTimers[section] = setInterval(() => {
                 _set(section, 'time', ((Date.now() - _sbStarts[section]) / 1000).toFixed(1) + 's');
             }, 200);
-        } catch (e) {
-            ErrLog.log('[status-bar]', e?.message || String(e), e?.stack || null, 'BEGIN_ERROR');
+        }
+        catch (err) {
+            ErrLog.log('[status-bar]', String(err), null, 'STATUS_BAR_ERROR');
         }
     },
     progress(section, data) {
@@ -37,8 +38,9 @@ export const SB = {
                 _set(section, 'results', data.results.toLocaleString());
             if (data.folder !== undefined)
                 _folder(section, data.folder);
-        } catch (e) {
-            ErrLog.log('[status-bar]', e?.message || String(e), e?.stack || null, 'PROGRESS_ERROR');
+        }
+        catch (err) {
+            ErrLog.log('[status-bar]', String(err), null, 'STATUS_BAR_ERROR');
         }
     },
     done(section, label) {
@@ -53,42 +55,40 @@ export const SB = {
                 _removeStopBtn(bar);
             }
             _folder(section, `Completed in ${t}s`);
-        } catch (e) {
-            ErrLog.log('[status-bar]', e?.message || String(e), e?.stack || null, 'DONE_ERROR');
+        }
+        catch (err) {
+            ErrLog.log('[status-bar]', String(err), null, 'STATUS_BAR_ERROR');
         }
     },
     error(section, msg) {
-        clearInterval(_sbTimers[section]);
-        _set(section, 'status', 'Error');
-        const bar = document.getElementById(`sb-${section}`);
-        if (bar) {
-            bar.className = 'section-sb';
-            _removeStopBtn(bar);
+        try {
+            clearInterval(_sbTimers[section]);
+            _set(section, 'status', 'Error');
+            const bar = document.getElementById(`sb-${section}`);
+            if (bar) {
+                bar.className = 'section-sb';
+                _removeStopBtn(bar);
+            }
+            _folder(section, msg || 'Scan failed');
+            ErrLog.log(`[${section}]`, msg || 'Scan failed', null, 'SCAN_ERROR');
         }
-        _folder(section, msg || 'Scan failed');
-        ErrLog.log(`[${section}]`, msg || 'Scan failed', null, 'SCAN_ERROR');
+        catch (err) {
+            ErrLog.log('[status-bar]', String(err), null, 'STATUS_BAR_ERROR');
+        }
     }
 };
 function _addStopBtn(bar, section) {
-    try {
-        _removeStopBtn(bar); // no dupes
-        const btn = document.createElement('button');
-        btn.className = 'sb-stop-btn';
-        btn.textContent = '⛔ STOP';
-        btn.title = 'Cancel this scan';
-        btn.addEventListener('click', () => {
-            try {
-                wsSend({ type: 'cancel', section });
-                btn.disabled = true;
-                btn.textContent = 'Stopping…';
-            } catch (e) {
-                ErrLog.log('[status-bar]', e?.message || String(e), e?.stack || null, 'STOP_BTN_ERROR');
-            }
-        });
-        bar.appendChild(btn);
-    } catch (e) {
-        ErrLog.log('[status-bar]', e?.message || String(e), e?.stack || null, 'ADD_STOP_BTN_ERROR');
-    }
+    _removeStopBtn(bar); // no dupes
+    const btn = document.createElement('button');
+    btn.className = 'sb-stop-btn';
+    btn.textContent = '⛔ STOP';
+    btn.title = 'Cancel this scan';
+    btn.addEventListener('click', () => {
+        wsSend({ type: 'cancel', section });
+        btn.disabled = true;
+        btn.textContent = 'Stopping…';
+    });
+    bar.appendChild(btn);
 }
 function _removeStopBtn(bar) {
     const btn = bar.querySelector('.sb-stop-btn');
@@ -96,18 +96,34 @@ function _removeStopBtn(bar) {
         btn.remove();
 }
 export function _set(section, key, val) {
-    const el = document.getElementById(`sbv-${section}-${key}`);
-    if (el)
-        el.textContent = val;
+    try {
+        const el = document.getElementById(`sbv-${section}-${key}`);
+        if (el)
+            el.textContent = val;
+    }
+    catch (err) {
+        ErrLog.log('[status-bar]', String(err), null, 'STATUS_BAR_ERROR');
+    }
 }
 export function _folder(section, txt) {
-    const el = document.getElementById(`sbf-${section}`);
-    if (el)
-        el.textContent = txt;
+    try {
+        const el = document.getElementById(`sbf-${section}`);
+        if (el)
+            el.textContent = txt;
+    }
+    catch (err) {
+        ErrLog.log('[status-bar]', String(err), null, 'STATUS_BAR_ERROR');
+    }
 }
 export function _getVal(section, key) {
-    const el = document.getElementById(`sbv-${section}-${key}`);
-    return el ? el.textContent : '0';
+    try {
+        const el = document.getElementById(`sbv-${section}-${key}`);
+        return el ? el.textContent : '0';
+    }
+    catch (err) {
+        ErrLog.log('[status-bar]', String(err), null, 'STATUS_BAR_ERROR');
+        return '0';
+    }
 }
 // Expose for plain scripts (duplicates.js)
 window.SB = SB;
