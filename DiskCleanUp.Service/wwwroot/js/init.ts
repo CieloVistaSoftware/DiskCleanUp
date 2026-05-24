@@ -32,6 +32,7 @@ import './section-handlers.js';
 import './events.js?v=2';
 import './keep-list.js';
 import './recycle-bin.js?v=2';
+import './docs-audit.js';
 import './task-manager.js?v=2';
 
 import { wsConnect }               from './websocket.js';

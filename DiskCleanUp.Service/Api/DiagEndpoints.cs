@@ -130,6 +130,40 @@ public static class DiagEndpoints
             catch (Exception ex) { return Results.Ok(new { fixes = Array.Empty<object>(), error = ex.Message }); }
         });
 
+        // ── Docs Audit ────────────────────────────────────────────────
+        app.MapGet("/api/docs-audit", (HttpContext ctx) =>
+        {
+            ctx.Response.Headers.CacheControl = "no-store";
+            var searchRoots = new[]
+            {
+                Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..")),
+                Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..")),
+                Directory.GetCurrentDirectory(),
+            };
+
+            string? auditFile = null;
+            foreach (var root in searchRoots)
+            {
+                var docsDir = Path.Combine(root, "docs");
+                if (!Directory.Exists(docsDir)) continue;
+                var files = Directory.GetFiles(docsDir, "audit-orphans-*.md");
+                if (files.Length > 0) { auditFile = files.OrderByDescending(f => f).First(); break; }
+            }
+
+            if (auditFile == null)
+                return Results.Ok(new { orphans = Array.Empty<object>(), count = 0, source = (string?)null });
+
+            var orphans = new List<object>();
+            foreach (var line in File.ReadAllLines(auditFile))
+            {
+                var m = System.Text.RegularExpressions.Regex.Match(line, @"^- `(.+?)`");
+                if (!m.Success) continue;
+                var p = m.Groups[1].Value;
+                orphans.Add(new { path = p, exists = File.Exists(p) || Directory.Exists(p) });
+            }
+            return Results.Ok(new { orphans, count = orphans.Count, source = Path.GetFileName(auditFile) });
+        });
+
         // ── Export ────────────────────────────────────────────────────
         app.MapGet("/api/export", async (ConfigService cfgService) =>
         {

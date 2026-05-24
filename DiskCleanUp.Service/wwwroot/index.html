@@ -77,6 +77,7 @@ window._T = (tag, msg) => {
     <option value="ext-search" title="Find files by extension fragment — type 'log', 'tmp', 'bak', 'cs', etc. Uses its own root field (separate from the global root) so you can target a specific folder. Scans as you type (debounced). Results stream via WebSocket. Use Commands menu to delete or keep all matches.">Extension Finder</option>
     <option value="tasks" title="View all currently running background scan tasks. Shows task name, start time, elapsed time, and status. Use Cancel to stop a stuck or long-running scan. Tasks are managed by BackgroundScanService and the ScanOrchestrator channel pipeline.">Tasks</option>
     <option value="savings" title="Review cumulative cleanup history. Shows every file sent to the Recycle Bin: timestamp, path, size, and which scan section triggered it. Sourced from C:\ProgramData\DiskCleanUp\savings_log.jsonl. Useful for auditing what was cleaned and when.">Savings Log</option>
+    <option value="docs-audit" title="Shows orphaned documentation files — docs not linked from any index. Sourced from the most recent docs/audit-orphans-*.md file in the repository.">Docs Audit</option>
     <option value="settings" title="Configure scan behavior: root folders, file size thresholds, stale days, scheduled scan time, and recurring scan interval. Changes are saved to C:\ProgramData\DiskCleanUp\config.json and take effect immediately — no service restart needed.">Settings</option>
   </select>
 </nav>
@@ -391,6 +392,18 @@ window._T = (tag, msg) => {
       <span id="rbStatus" class="savings-meta"></span>
     </div>
     <div id="rbResult"></div>
+  </div>
+</div>
+
+<!-- DOCS AUDIT -->
+<div id="section-docs-audit">
+  <div class="panel">
+    <h2>📄 Orphaned Docs Audit</h2>
+    <div class="toolbar">
+      <button class="btn" onclick="window.loadDocsAudit()">🔄 Refresh</button>
+    </div>
+    <div id="docsAuditSummary"><span class="muted">Click Refresh to load audit data.</span></div>
+    <div id="docsAuditList"></div>
   </div>
 </div>
 
