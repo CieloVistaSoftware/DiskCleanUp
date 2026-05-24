@@ -83,6 +83,9 @@ interface Window {
   rbSelectNone?:     () => void;
   restoreSelected?:  () => void;
 
+  // ── Docs Audit (docs-audit.ts) ───────────────────────────────────────
+  loadDocsAudit?: () => Promise<void>;
+
   // ── Savings (savings.ts) ──────────────────────────────────────────────
   filterSavings?:           () => void;
   savingsSelectAll?:        () => void;

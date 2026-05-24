@@ -61,23 +61,24 @@ window._T = (tag, msg) => {
 </header>
 
 <nav id="mainNav">
-  <select id="sectionMenu" class="filter-select" title="Choose a section">
-    <option value="duplicates" title="Find exact duplicate files">Duplicates</option>
-    <option value="smart-dedup" title="Find numbered copy variants">Smart Dedup</option>
-    <option value="stale" title="Find files older than threshold">Stale Files</option>
-    <option value="large" title="Find large files by size">Large Files</option>
-    <option value="node-modules" title="Find node_modules folders">node_modules</option>
-    <option value="venvs" title="Find Python virtual environments">Venvs</option>
-    <option value="empty" title="Find empty folders">Empty Folders</option>
-    <option value="images" title="Find duplicate images">Dup Images</option>
-    <option value="backups" title="Find backup/archive folders">Backup Folders</option>
-    <option value="tiny-files" title="Find tiny files">Tiny Files</option>
-    <option value="html-files" title="Find HTML files">HTML Files</option>
-    <option value="css-files" title="Find CSS files">CSS Files</option>
-    <option value="ext-search" title="Find files by extension characters">Extension Finder</option>
-    <option value="tasks" title="View and manage running tasks">Tasks</option>
-    <option value="savings" title="Review cleanup savings">Savings Log</option>
-    <option value="settings" title="Configure scan behavior">Settings</option>
+  <select id="sectionMenu" class="filter-select" title="Jump to a scan section. Each section targets a different category of cleanup candidate. The active section is highlighted in the nav row. Your last-visited section is restored on reload.">
+    <option value="duplicates" title="Find exact duplicate files. Uses SHA-256 hashing to compare content byte-for-byte across all files under the root. Groups matches — keep the original, delete the copies. Works on all file types. Scans the full directory tree recursively.">Duplicates</option>
+    <option value="smart-dedup" title="Detect auto-numbered copies like 'report (1).pdf' or 'photo (2).jpg'. Uses filename pattern matching — no hashing. Keeps the cleanest-named original and flags numbered variants for removal. Very fast. Best used on Downloads and Desktop folders.">Smart Dedup</option>
+    <option value="stale" title="Find files not modified in over N days (default 90 days, configurable in Settings → Stale Days). Sorted oldest-first. Great for clearing Downloads, temp folders, and forgotten project files. The age threshold is compared against the file's LastWriteTime.">Stale Files</option>
+    <option value="large" title="List files exceeding the size threshold (default 10 MB, set in Settings → Large File Min Size). Sorted by size descending. Quickly spot disk hogs: ISOs, videos, crash dumps, archives, and log files. Delete directly from the row actions or select multiple and use Delete Selected.">Large Files</option>
+    <option value="node-modules" title="Find node_modules folders anywhere under the root. These can be safely deleted and recreated with 'npm install'. Typically 100 MB–2 GB each. Sorted by total folder size. Deletes only the node_modules directory — your package.json and source files are untouched.">node_modules</option>
+    <option value="venvs" title="Find Python virtual environment folders (venv, .venv, env, .env patterns). Safe to delete and recreate with 'python -m venv'. Often 300 MB–1 GB each. Sorted by size. Only the venv folder is removed — your Python source files are not touched.">Venvs</option>
+    <option value="empty" title="Find completely empty folders (zero files, no subfolders) anywhere under the root. Common leftover artifacts from uninstalls, git operations, or build tools. Very fast scan — no file content reading. Safe to bulk-delete all results.">Empty Folders</option>
+    <option value="images" title="Find visually similar or duplicate images using perceptual hashing (pHash). Catches near-identical images even if resized, cropped, or lightly re-saved. More CPU-intensive than SHA-256. Groups matches by similarity — keep one, send duplicates to Recycle Bin. Best for Photos and Downloads.">Dup Images</option>
+    <option value="backups" title="Find backup and archive folders matching patterns like '_backup', '_bak', 'archive', 'old', and compressed archives (.zip, .7z, .tar). Sorted by size. These are often manual backup copies that pile up over time. Review carefully before deleting — contents are not previewed.">Backup Folders</option>
+    <option value="tiny-files" title="Find very small files under N bytes (default 1 KB, set in Settings → Tiny File Max Size). Often placeholder files, empty configs, leftover build artifacts, and zero-byte temp files. Sorted by size ascending. Safe to bulk-delete results that look like build noise.">Tiny Files</option>
+    <option value="html-files" title="Find all HTML files under the root. Useful for cleaning up saved web pages, documentation exports, leftover build output, and Playwright report files. Each row shows path and size. Row actions include Open in Browser.">HTML Files</option>
+    <option value="css-files" title="Find all CSS files under the root. Useful for auditing generated stylesheets, old build outputs, and orphaned style files from removed projects. Sorted by size.">CSS Files</option>
+    <option value="ext-search" title="Find files by extension fragment — type 'log', 'tmp', 'bak', 'cs', etc. Uses its own root field (separate from the global root) so you can target a specific folder. Scans as you type (debounced). Results stream via WebSocket. Use Commands menu to delete or keep all matches.">Extension Finder</option>
+    <option value="tasks" title="View all currently running background scan tasks. Shows task name, start time, elapsed time, and status. Use Cancel to stop a stuck or long-running scan. Tasks are managed by BackgroundScanService and the ScanOrchestrator channel pipeline.">Tasks</option>
+    <option value="savings" title="Review cumulative cleanup history. Shows every file sent to the Recycle Bin: timestamp, path, size, and which scan section triggered it. Sourced from C:\ProgramData\DiskCleanUp\savings_log.jsonl. Useful for auditing what was cleaned and when.">Savings Log</option>
+    <option value="docs-audit" title="Shows orphaned documentation files — docs not linked from any index. Sourced from the most recent docs/audit-orphans-*.md file in the repository.">Docs Audit</option>
+    <option value="settings" title="Configure scan behavior: root folders, file size thresholds, stale days, scheduled scan time, and recurring scan interval. Changes are saved to C:\ProgramData\DiskCleanUp\config.json and take effect immediately — no service restart needed.">Settings</option>
   </select>
 </nav>
 
@@ -390,6 +391,18 @@ window._T = (tag, msg) => {
       <span id="rbStatus" class="savings-meta"></span>
     </div>
     <div id="rbResult"></div>
+  </div>
+</div>
+
+<!-- DOCS AUDIT -->
+<div id="section-docs-audit">
+  <div class="panel">
+    <h2>📄 Orphaned Docs Audit</h2>
+    <div class="toolbar">
+      <button class="btn" onclick="window.loadDocsAudit()">🔄 Refresh</button>
+    </div>
+    <div id="docsAuditSummary"><span class="muted">Click Refresh to load audit data.</span></div>
+    <div id="docsAuditList"></div>
   </div>
 </div>
 
