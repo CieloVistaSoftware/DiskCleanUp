@@ -11,7 +11,7 @@
 //    clear()        — wipe DOM
 // ═══════════════════════════════════════════════════════════════════════════
 import { fmt } from '../js/ui-utils.js';
-import { ErrLog } from '/js/error-logger.js';
+import { ErrLog } from '../js/error-logger.js';
 const MAX_ROWS_PER_GROUP = 20;
 const MAX_RENDERED = 200;
 const GROUPS_PER_FRAME = 20;
@@ -53,73 +53,82 @@ export class GridView {
     // ── Public API ────────────────────────────────────────────
     render(data, model, opts = {}) {
         try {
-        this._model = model;
-        this._data = data;
-        if (opts.incremental && opts.key) {
-            this._renderIncremental(opts.key);
-            return;
+            this._model = model;
+            this._data = data;
+            if (opts.incremental && opts.key) {
+                this._renderIncremental(opts.key);
+                return;
+            }
+            this._fullRender(data, model);
         }
-        this._fullRender(data, model);
-        } catch (err) { ErrLog.log('[grid-view.js]', err?.message || String(err), err?.stack || null, 'GRID_VIEW_ERROR'); }
+        catch (err) {
+            ErrLog.log('[grid-view]', String(err), null, 'VIEW_ERROR');
+        }
     }
     renderBatch(data, model, keys) {
         try {
-        this._model = model;
-        this._data = data;
-        if (!this._rendered)
-            this._ensureContainer(model);
-        const list = document.getElementById(this._listId());
-        if (!list)
-            return;
-        const frag = document.createDocumentFragment();
-        let added = 0;
-        let updated = 0;
-        for (const key of keys) {
-            const group = data.get(key);
-            if (!group) {
-                const existing = this._domRows.get(key);
-                if (existing) {
-                    existing.all.forEach(el => el.remove());
-                    this._domRows.delete(key);
-                    this._renderedCount--;
+            this._model = model;
+            this._data = data;
+            if (!this._rendered)
+                this._ensureContainer(model);
+            const list = document.getElementById(this._listId());
+            if (!list)
+                return;
+            const frag = document.createDocumentFragment();
+            let added = 0;
+            let updated = 0;
+            for (const key of keys) {
+                const group = data.get(key);
+                if (!group) {
+                    const existing = this._domRows.get(key);
+                    if (existing) {
+                        existing.all.forEach(el => el.remove());
+                        this._domRows.delete(key);
+                        this._renderedCount--;
+                    }
+                    continue;
                 }
-                continue;
+                if (this._domRows.has(key)) {
+                    this._patchGroup(list, key);
+                    updated++;
+                    continue;
+                }
+                if (this._renderedCount >= MAX_RENDERED) {
+                    this._overflowKeys.push(key);
+                    continue;
+                }
+                const els = this._buildGroupEls(key, group);
+                this._domRows.set(key, els);
+                els.all.forEach(el => frag.appendChild(el));
+                this._renderedCount++;
+                added++;
             }
-            if (this._domRows.has(key)) {
-                this._patchGroup(list, key);
-                updated++;
-                continue;
-            }
-            if (this._renderedCount >= MAX_RENDERED) {
-                this._overflowKeys.push(key);
-                continue;
-            }
-            const els = this._buildGroupEls(key, group);
-            this._domRows.set(key, els);
-            els.all.forEach(el => frag.appendChild(el));
-            this._renderedCount++;
-            added++;
+            if (frag.childNodes.length)
+                list.appendChild(frag);
+            if (this._overflowKeys.length)
+                this._updateOverflowBanner();
+            window._T?.('VIEW', `batch: +${added} new, ${updated} patched, ${this._renderedCount} total`);
         }
-        if (frag.childNodes.length)
-            list.appendChild(frag);
-        if (this._overflowKeys.length)
-            this._updateOverflowBanner();
-        window._T?.('VIEW', `batch: +${added} new, ${updated} patched, ${this._renderedCount} total`);
-        } catch (err) { ErrLog.log('[grid-view.js]', err?.message || String(err), err?.stack || null, 'GRID_VIEW_ERROR'); }
+        catch (err) {
+            ErrLog.log('[grid-view]', String(err), null, 'VIEW_ERROR');
+        }
     }
     clear() {
         try {
-        this._cancelRaf();
-        this._removeOverflowBanner();
-        const container = document.getElementById(this._containerId);
-        if (container)
-            container.innerHTML = '';
-        this._domRows.clear();
-        this._renderedCount = 0;
-        this._overflowKeys.length = 0;
-        this._pendingKeys.length = 0;
-        this._rendered = false;
-        } catch (err) { ErrLog.log('[grid-view.js]', err?.message || String(err), err?.stack || null, 'GRID_VIEW_ERROR'); }
+            this._cancelRaf();
+            this._removeOverflowBanner();
+            const container = document.getElementById(this._containerId);
+            if (container)
+                container.innerHTML = '';
+            this._domRows.clear();
+            this._renderedCount = 0;
+            this._overflowKeys.length = 0;
+            this._pendingKeys.length = 0;
+            this._rendered = false;
+        }
+        catch (err) {
+            ErrLog.log('[grid-view]', String(err), null, 'VIEW_ERROR');
+        }
     }
     // ── Full render ───────────────────────────────────────────
     _fullRender(data, model) {
@@ -422,21 +431,24 @@ export class GridView {
     // ── Filter ────────────────────────────────────────────────
     filter(val) {
         try {
-        const lower = val.toLowerCase();
-        this._domRows.forEach(({ sep, preview, fileRows }) => {
-            let hit = false;
-            fileRows.forEach(row => {
-                const match = (row.textContent || '').toLowerCase().includes(lower);
-                row.classList.toggle('hidden', !match);
-                if (match)
-                    hit = true;
+            const lower = val.toLowerCase();
+            this._domRows.forEach(({ sep, preview, fileRows }) => {
+                let hit = false;
+                fileRows.forEach(row => {
+                    const match = (row.textContent || '').toLowerCase().includes(lower);
+                    row.classList.toggle('hidden', !match);
+                    if (match)
+                        hit = true;
+                });
+                if (sep)
+                    sep.classList.toggle('hidden', !hit);
+                if (preview)
+                    preview.classList.toggle('hidden', !hit);
             });
-            if (sep)
-                sep.classList.toggle('hidden', !hit);
-            if (preview)
-                preview.classList.toggle('hidden', !hit);
-        });
-        } catch (err) { ErrLog.log('[grid-view.js]', err?.message || String(err), err?.stack || null, 'GRID_VIEW_ERROR'); }
+        }
+        catch (err) {
+            ErrLog.log('[grid-view]', String(err), null, 'VIEW_ERROR');
+        }
     }
     // ── Helpers ───────────────────────────────────────────────
     _cancelRaf() {
