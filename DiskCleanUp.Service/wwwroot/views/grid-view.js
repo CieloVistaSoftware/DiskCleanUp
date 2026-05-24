@@ -11,7 +11,7 @@
 //    clear()        — wipe DOM
 // ═══════════════════════════════════════════════════════════════════════════
 import { fmt } from '../js/ui-utils.js';
-import { ErrLog } from '../js/error-logger.js';
+import { ErrLog } from '/js/error-logger.js';
 const MAX_ROWS_PER_GROUP = 20;
 const MAX_RENDERED = 200;
 const GROUPS_PER_FRAME = 20;
@@ -60,9 +60,7 @@ export class GridView {
             return;
         }
         this._fullRender(data, model);
-        } catch (e) {
-            ErrLog.log('[grid-view]', e?.message || String(e), e?.stack || null, 'RENDER_ERROR');
-        }
+        } catch (err) { ErrLog.log('[grid-view.js]', err?.message || String(err), err?.stack || null, 'GRID_VIEW_ERROR'); }
     }
     renderBatch(data, model, keys) {
         try {
@@ -107,11 +105,10 @@ export class GridView {
         if (this._overflowKeys.length)
             this._updateOverflowBanner();
         window._T?.('VIEW', `batch: +${added} new, ${updated} patched, ${this._renderedCount} total`);
-        } catch (e) {
-            ErrLog.log('[grid-view]', e?.message || String(e), e?.stack || null, 'RENDER_BATCH_ERROR');
-        }
+        } catch (err) { ErrLog.log('[grid-view.js]', err?.message || String(err), err?.stack || null, 'GRID_VIEW_ERROR'); }
     }
     clear() {
+        try {
         this._cancelRaf();
         this._removeOverflowBanner();
         const container = document.getElementById(this._containerId);
@@ -122,6 +119,7 @@ export class GridView {
         this._overflowKeys.length = 0;
         this._pendingKeys.length = 0;
         this._rendered = false;
+        } catch (err) { ErrLog.log('[grid-view.js]', err?.message || String(err), err?.stack || null, 'GRID_VIEW_ERROR'); }
     }
     // ── Full render ───────────────────────────────────────────
     _fullRender(data, model) {
@@ -423,6 +421,7 @@ export class GridView {
     }
     // ── Filter ────────────────────────────────────────────────
     filter(val) {
+        try {
         const lower = val.toLowerCase();
         this._domRows.forEach(({ sep, preview, fileRows }) => {
             let hit = false;
@@ -437,6 +436,7 @@ export class GridView {
             if (preview)
                 preview.classList.toggle('hidden', !hit);
         });
+        } catch (err) { ErrLog.log('[grid-view.js]', err?.message || String(err), err?.stack || null, 'GRID_VIEW_ERROR'); }
     }
     // ── Helpers ───────────────────────────────────────────────
     _cancelRaf() {

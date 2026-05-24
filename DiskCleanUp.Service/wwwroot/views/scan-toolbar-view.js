@@ -7,7 +7,7 @@
 //  ONE-TIME-ONE-PLACE: the MCD toolbar HTML lives here and only here.
 //  Specialty buttons are added via the config.specialty array.
 // ═══════════════════════════════════════════════════════════════════════════
-import { ErrLog } from '../js/error-logger.js';
+import { ErrLog } from '/js/error-logger.js';
 export class ScanToolbarView {
     constructor(config, callbacks = {}) {
         this._config = config;
@@ -17,7 +17,7 @@ export class ScanToolbarView {
     }
     // ── Initial render ────────────────────────────────────────
     mount() {
-        try {
+      try {
         const { section, tableId, specialty } = this._config;
         const container = document.getElementById(`toolbar-${section}`);
         if (!container)
@@ -239,11 +239,12 @@ export class ScanToolbarView {
             container.appendChild(this._els.fullView);
         container.appendChild(this._els.trace);
         this._rendered = true;
-        } catch (e) {
-            ErrLog.log('[scan-toolbar-view]', e?.message || String(e), e?.stack || null, 'MOUNT_ERROR');
-        }
         return;
-        const order = [
+      } catch (err) {
+        ErrLog.log('[scan-toolbar-view.js]', err?.message || String(err), err?.stack || null, 'SCAN_TOOLBAR_VIEW_ERROR');
+      }
+      return;
+      const order = [
             'scan', 'cancel', 'deleteSelected',
             'keepSelected', 'deleteAllCopies', 'applyAll',
             'utilities', 'whiteBg', 'loadMore', 'fullView', 'trace',
@@ -261,9 +262,9 @@ export class ScanToolbarView {
     }
     // ── State-driven update ───────────────────────────────────
     update(state) {
+        try {
         if (!this._rendered)
             return;
-        try {
         const { scanning, hasRows, hasSelection } = state;
         const e = this._els;
         this._setDisabled(e.scan, scanning);
@@ -298,15 +299,15 @@ export class ScanToolbarView {
             if (more)
                 more.disabled = !!e.loadMore?.disabled;
         }
-        } catch (e) {
-            ErrLog.log('[scan-toolbar-view]', e?.message || String(e), e?.stack || null, 'UPDATE_ERROR');
-        }
+        } catch (err) { ErrLog.log('[scan-toolbar-view.js]', err?.message || String(err), err?.stack || null, 'SCAN_TOOLBAR_VIEW_ERROR'); }
     }
     exposeDeleteAllAsLegacyId() {
+        try {
         const el = this._els.deleteAllCopies;
         if (el && this._config.section === 'images') {
             el.id = 'imgDeleteAllBtn';
         }
+        } catch (err) { ErrLog.log('[scan-toolbar-view.js]', err?.message || String(err), err?.stack || null, 'SCAN_TOOLBAR_VIEW_ERROR'); }
     }
     // ── Helpers ───────────────────────────────────────────────
     _btn(className, text, handler) {
