@@ -1,102 +1,72 @@
-# README
-
----
-docid: 300.7
-dewey: 300.7
-id: diskcleanup
-title: DiskCleanUp
-project: DiskCleanUp
-description: ASP.NET Core 8 Worker Service + browser dashboard for reclaiming disk space. Scans duplicates, stale files, large files, empty folders, and more.
-status: active
-tags: [readme, diskcleanup, quick]
-category: 300.7 — Getting Started
-created: 2026-02-21
-updated: 2026-05-18
-version: 2.2.0
-author: CieloVista Software
-relativepath: README.md
----
 # DiskCleanUp
 
-ASP.NET Core 8 Worker Service + browser dashboard for reclaiming disk space.
-Scans duplicates, stale files, large files, empty folders, and additional cleanup categories with real-time WebSocket updates.
+Disk cleanup dashboard with Windows Service backend and SignalR real-time scanning.
 
-## Quick Start
-
-**Run in console mode (development):**
-```powershell
-dotnet build DiskCleanUp.sln
-dotnet run --project DiskCleanUp.Service -- --console
-# Dashboard: http://localhost:5000
-```
-
-**Headless scan mode (Task Scheduler / CI):**
-```powershell
-dotnet run --project DiskCleanUp.Service -- --scan
-```
-
-**MCP Server (for Claude Desktop):**
-```powershell
-cd mcp-server
-npm install
-node server.js
-```
+A .NET 8 web service + Windows tray app that scans your drives for disk waste — duplicate files, empty folders, large images, backup files, tiny files, HTML files, CSS files, and more — and lets you delete them from a web dashboard at `http://localhost:5100`.
 
 ## Architecture
 
-- **Backend:** ASP.NET Core 8 Worker Service (Generic Host), Minimal API, WebSocket
-- **Scan engine:** `IScanRule` plugin pipeline (13 rules, no switch statements)
-- **Frontend:** Vanilla HTML/JS, ES modules, no frameworks
-- **Data:** `C:\ProgramData\DiskCleanUp\` (single location, both modes)
-- **Tray App:** WinForms NotifyIcon
+| Component | Tech | Purpose |
+|---|---|---|
+| `DiskCleanUp.Service` | ASP.NET Core 8 + SignalR | REST API + real-time scan events, serves the web dashboard |
+| `DiskCleanUp.Shared` | C# class library | Shared models, scanner logic |
+| `DiskCleanUp.Tray` | WinForms | Windows system tray icon — start/stop service |
+| `others/` | Node.js | Scripts, Playwright tests, MCP server |
 
-## Notes
+## Quick Start
 
-- **Ports:** service mode uses `5100`, console mode uses `5000`.
-- **Extension Finder:** users can set a per-section root path directly in the UI and pick a folder; that path is used for subsequent Extension Finder scans until changed.
-- **Deletes:** file deletes are routed to the Windows Recycle Bin.
+```powershell
+# Start the service (port 5100)
+dotnet run --project DiskCleanUp.Service
 
-## Troubleshooting
+# Or via npm scripts
+cd others
+npm start
+```
 
-- WebSocket stuck at "⚡ Connecting...": see [docs/TROUBLESHOOTING-WebSocket-Connecting-vs-Live.md](docs/TROUBLESHOOTING-WebSocket-Connecting-vs-Live.md)
+Open `http://localhost:5100` in a browser to use the dashboard.
+
+## Commands (via CieloVista Tools)
+
+| Command | Action |
+|---|---|
+| **DiskCleanUp — Start Service** | `dotnet run` in the service project |
+| **DiskCleanUp — Console Mode** | Starts with console output |
+| **DiskCleanUp — Build** | `dotnet build DiskCleanUp.sln` |
+| **DiskCleanUp — Open Dashboard** | Opens dashboard in browser |
+
+## Development
+
+```powershell
+# Build the solution
+dotnet build others/DiskCleanUp.sln
+
+# Run tests
+cd others && npm test
+
+# Run Playwright UI tests
+cd others && npx playwright test
+
+# Audit JS errors
+cd others && npm run audit:errors
+```
 
 ## Project Structure
 
-```text
-DiskCleanUp.Service/    The app (service + console mode)
-DiskCleanUp.Shared/     Constants + Models
-DiskCleanUp.Tray/       System tray app
-mcp-server/             MCP server for Claude Desktop
-scripts/                Dev utilities (kill-port, trace-viewer)
-tests/                  Playwright tests
-```text
-All repository PowerShell scripts (`*.ps1`) are kept under `scripts/`.
-
-## Common Commands
-
-```powershell
-# Build solution
-dotnet build DiskCleanUp.sln
-
-# Run dashboard in dev mode
-dotnet run --project DiskCleanUp.Service -- --console
-
-# Run nav dropdown regression test
-cd tests
-npm run test:nav
-```text
-## Prerequisites
-
-- .NET 8 SDK
-- Node.js (for MCP server only)
-- Windows 10/11
+```
+DiskCleanUp.Service/    ← ASP.NET Core web service
+  Api/                  ← REST controllers
+  Scanning/             ← scanner implementations
+  wwwroot/              ← web dashboard (HTML/JS/CSS)
+DiskCleanUp.Shared/     ← shared models and utilities
+DiskCleanUp.Tray/       ← Windows tray application
+others/                 ← Node.js scripts and tests
+  scripts/              ← start, tray, build scripts
+  tests/                ← Playwright tests
+mcp-server/             ← MCP server for AI integration
+data/                   ← runtime scan data
+```
 
 ## License
 
-Cielo Vista Software
-
----
-
-## What it does
-
-_TODO: 2–5 sentences describing what problem this project solves and who uses it._
+Proprietary — CieloVista Software. See [LICENSE](others/LICENSE).
