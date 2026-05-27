@@ -882,6 +882,10 @@
 .root-edit-input:focus { outline: none; box-shadow: 0 0 0 2px #4c72f5; }
 
 /* ═══ Docs Audit (#43/#44) ═══ */
+#docsAuditCount { display: inline-flex; align-items: center; font-size: .72rem; font-weight: 600; padding: 2px 8px; border-radius: 10px; vertical-align: middle; margin-left: 4px; }
+#docsAuditCount:empty { display: none; }
+#docsAuditCount.has-orphans { background: rgba(251,146,60,.15); color: #fb923c; border: 1px solid rgba(251,146,60,.4); }
+#docsAuditCount.no-orphans  { background: rgba(74,222,128,.12); color: #4ade80; border: 1px solid rgba(74,222,128,.35); }
 .docs-audit-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding: 10px 14px; background: rgba(255,255,255,.04); border-radius: 6px; border: 1px solid var(--border,#444); }
 .docs-audit-badge { font-size: .9rem; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
 .docs-audit-badge.has-orphans { background: rgba(251,146,60,.15); color: #fb923c; border: 1px solid rgba(251,146,60,.4); }

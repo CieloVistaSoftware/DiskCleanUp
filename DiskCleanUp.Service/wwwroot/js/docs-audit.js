@@ -6,15 +6,21 @@ import { ErrLog } from './error-logger.js';
 export async function loadDocsAudit() {
     const summary = document.getElementById('docsAuditSummary');
     const list = document.getElementById('docsAuditList');
+    const countEl = document.getElementById('docsAuditCount');
     if (!summary || !list)
         return;
     summary.innerHTML = '<span class="muted">Loading…</span>';
     list.innerHTML = '';
+    if (countEl) { countEl.textContent = ''; countEl.className = ''; }
     try {
         const data = await apiFetch('/api/docs-audit', {}, { timeout: 10000 });
         const orphans = data.orphans || [];
         const count = data.count ?? orphans.length;
         const source = data.source ?? '';
+        if (countEl) {
+            countEl.textContent = count > 0 ? `${count} orphaned` : 'clean';
+            countEl.className = count > 0 ? 'has-orphans' : 'no-orphans';
+        }
         summary.innerHTML = `
       <div class="docs-audit-header">
         <span class="docs-audit-badge ${count > 0 ? 'has-orphans' : 'no-orphans'}">

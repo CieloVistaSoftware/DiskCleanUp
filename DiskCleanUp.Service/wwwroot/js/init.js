@@ -32,7 +32,7 @@ import './section-handlers.js';
 import './events.js?v=2';
 import './keep-list.js';
 import './recycle-bin.js?v=2';
-import './docs-audit.js';
+import { loadDocsAudit } from './docs-audit.js';
 import './task-manager.js?v=2';
 import { wsConnect } from './websocket.js';
 import { registerHandler } from './event-queue.js';
@@ -65,6 +65,7 @@ _T('INIT', 'all imports resolved');
 registerHandler('duplicates', DuplicatesSection.onEvent);
 registerSectionModule('duplicates', DuplicatesSection);
 registerSectionModule('tasks', { onShow: loadTasks });
+registerSectionModule('docs-audit', { onShow: loadDocsAudit });
 // ── Cache restore (paged, 40KB rule) ─────────────────────────────────────
 // Backend sends 40KB chunks. We load the first page, render it,
 // and show a "Load More" button if there's more data. The .NET
