@@ -113,112 +113,6 @@ export class ScanToolbarView {
             window.open(`/trace-viewer.html?filter=${encodeURIComponent(tag)}`, '_blank');
         });
         this._els.trace.title = `Open trace log filtered to ${section}`;
-        // Unified command dropdown for all scan sections.
-        const commandMenu = document.createElement('select');
-        commandMenu.className = 'filter-select';
-        commandMenu.id = `commandMenu-${section}`;
-        const defs = [
-            { value: '', label: 'Commands...', tip: 'Choose a command for this section' },
-            { value: 'scan', label: 'Scan', tip: 'Start scan for this section' },
-            { value: 'cancel', label: 'Cancel', tip: 'Cancel the running scan' },
-            { value: 'delete-selected', label: 'Delete Selected', tip: 'Delete selected rows to Recycle Bin' },
-            { value: 'keep-selected', label: 'Keep Selected', tip: 'Keep selected rows for future scans' },
-            { value: 'load-more', label: 'Load More Results', tip: 'Load more cached rows if available' },
-            { value: 'trace', label: 'Open Trace', tip: 'Open trace logs for this section' },
-        ];
-        if (this._els.deleteAllCopies)
-            defs.push({ value: 'delete-all-copies', label: 'Delete All Copies', tip: 'Delete all duplicate copies in this section' });
-        if (this._els.applyAll)
-            defs.push({ value: 'apply-all', label: 'Apply All', tip: 'Apply all queued cleanup actions' });
-        if (this._els.fullView)
-            defs.push({ value: 'full-view', label: 'Full View', tip: 'Open full page view for this section' });
-        if (specialty.includes('html-utilities')) {
-            defs.push({ value: 'extract-svg', label: 'HTML Utility: Extract SVG', tip: 'Extract SVG assets from selected HTML files' }, { value: 'extract-css', label: 'HTML Utility: Extract CSS', tip: 'Extract inline CSS to stylesheet files' }, { value: 'extract-js', label: 'HTML Utility: Extract JS', tip: 'Extract inline JS to script files' });
-        }
-        for (const d of defs) {
-            const opt = document.createElement('option');
-            opt.value = d.value;
-            opt.textContent = d.label;
-            opt.title = d.tip;
-            commandMenu.appendChild(opt);
-        }
-        const updateTip = () => {
-            const selected = commandMenu.selectedOptions?.[0];
-            commandMenu.title = selected?.title || 'Choose a command for this section';
-        };
-        commandMenu.addEventListener('change', () => {
-            const v = commandMenu.value;
-            // Reset to "Commands..." immediately so the browser paints it
-            // before the action fires — otherwise the selected value sticks.
-            commandMenu.value = '';
-            updateTip();
-            if (!v)
-                return;
-            // Defer the action one tick so the reset renders first
-            setTimeout(() => {
-                switch (v) {
-                    case 'scan':
-                        this._callbacks.onScan?.();
-                        break;
-                    case 'cancel':
-                        this._callbacks.onCancel?.();
-                        break;
-                    case 'delete-selected':
-                        this._callbacks.onDeleteSelected?.();
-                        break;
-                    case 'keep-selected':
-                        this._callbacks.onKeepSelected?.();
-                        break;
-                    case 'load-more':
-                        this._els.loadMore?.click();
-                        break;
-                    case 'trace':
-                        this._els.trace?.click();
-                        break;
-                    case 'delete-all-copies':
-                        this._callbacks.onDeleteAllCopies?.();
-                        break;
-                    case 'apply-all':
-                        this._callbacks.onApplyAll?.();
-                        break;
-                    case 'full-view':
-                        this._callbacks.onFullView?.();
-                        break;
-                    case 'extract-svg':
-                        this._callbacks.onHtmlUtility?.('extract-svg');
-                        break;
-                    case 'extract-css':
-                        this._callbacks.onHtmlUtility?.('extract-css');
-                        break;
-                    case 'extract-js':
-                        this._callbacks.onHtmlUtility?.('extract-js');
-                        break;
-                }
-            }, 0);
-        });
-        commandMenu.addEventListener('mouseenter', updateTip);
-        commandMenu.addEventListener('focus', updateTip);
-        commandMenu.addEventListener('mousemove', updateTip);
-        this._els.commandMenu = commandMenu;
-        updateTip();
-        // Keep buttons in DOM for existing callbacks/state wiring, but hide UI.
-        const hide = (el) => { if (el)
-            el.style.display = 'none'; };
-        hide(this._els.scan);
-        hide(this._els.cancel);
-        hide(this._els.deleteSelected);
-        hide(this._els.keepSelected);
-        hide(this._els.deleteAllCopies);
-        hide(this._els.applyAll);
-        hide(this._els.utilities);
-        if (this._els.utilityItems?.length)
-            for (const btn of this._els.utilityItems)
-                hide(btn);
-        hide(this._els.whiteBg);
-        hide(this._els.loadMore);
-        hide(this._els.fullView);
-        hide(this._els.trace);
-        container.appendChild(this._els.commandMenu);
         container.appendChild(this._els.scan);
         container.appendChild(this._els.cancel);
         container.appendChild(this._els.deleteSelected);
@@ -242,22 +136,6 @@ export class ScanToolbarView {
         } catch (e) {
             ErrLog.log('[scan-toolbar-view]', e?.message || String(e), e?.stack || null, 'MOUNT_ERROR');
         }
-        return;
-        const order = [
-            'scan', 'cancel', 'deleteSelected',
-            'keepSelected', 'deleteAllCopies', 'applyAll',
-            'utilities', 'whiteBg', 'loadMore', 'fullView', 'trace',
-        ];
-        for (const key of order) {
-            const el = this._els[key];
-            if (el)
-                container.appendChild(el);
-        }
-        if (this._els.utilityItems?.length) {
-            for (const btn of this._els.utilityItems)
-                container.appendChild(btn);
-        }
-        this._rendered = true;
     }
     // ── State-driven update ───────────────────────────────────
     update(state) {
