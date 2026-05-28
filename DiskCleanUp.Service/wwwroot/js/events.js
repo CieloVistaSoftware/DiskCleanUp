@@ -168,13 +168,6 @@ document.getElementById('mainNav')?.addEventListener('click', (e) => {
         return;
     showSection(btn.dataset.section, btn);
 });
-document.getElementById('sectionMenu')?.addEventListener('change', (e) => {
-    const select = e.target;
-    const section = select?.value;
-    if (!section)
-        return;
-    showSection(section);
-});
 // ── Extension Finder root initialization + picker ────────────────────────
 async function _initExtRoot() {
     const input = document.getElementById('extSearchRootInput');

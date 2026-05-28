@@ -8,6 +8,14 @@
 #copyGithubChatBtn:hover { opacity: .9; background: rgba(88,166,255,.12); }
 .toolbar + .toolbar { margin-top: 4px; }
 
+/* Nav pill bar — wraps when narrow */
+#mainNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px 8px;
+}
+
 /* Status lights on nav buttons */
 .btn[data-section] {
   display: inline-flex;

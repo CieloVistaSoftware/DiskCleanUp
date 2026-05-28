@@ -73,10 +73,6 @@ export function showSection(name, btn) {
         if (navBtn)
             navBtn.classList.add('active');
     }
-    // Keep section dropdown synced with the active section.
-    const sectionMenu = document.getElementById('sectionMenu');
-    if (sectionMenu && sectionMenu.value !== name)
-        sectionMenu.value = name;
     _activeSection = name;
     // Persist active tab so page refresh stays on this tab
     try {

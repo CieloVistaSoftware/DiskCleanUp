@@ -76,12 +76,6 @@ async function restoreCachedResults() {
   crumb('init', 'restoreCache:start');
   _T('CACHE', 'restoreCachedResults START');
 
-  // Cache restore is intentionally disabled to prevent stale UI state
-  // and avoid cache-related regressions during active development.
-  crumb('init', 'restoreCache:disabled');
-  _T('CACHE', 'restoreCachedResults DISABLED');
-  return;
-
   // Fetch keep-list ONCE so we can filter out kept files from cache
   let keepSet = new Set();
   try {
@@ -138,6 +132,8 @@ async function restoreCachedResults() {
 
         const bar = document.getElementById(`sb-${section}`);
         if (bar) bar.className = 'section-sb done';
+        _sectionStatusMap.set(section, 'done');
+        _updateNavButtonStatus(section);
         _set(section, 'status', '♻ Restored');
         _set(section, 'time', '—');
 
@@ -383,44 +379,36 @@ function _wireGithubChatCopyButton(): void {
   });
 }
 
-function _ensureLegacyNavButtons() {
-  const nav = document.getElementById('mainNav');
-  if (!nav) return;
-  if (nav.querySelector('button[data-section]')) return;
+// ── Background scan driver ───────────────────────────────────────────────
+// After cache restore, trigger scans for sections with no cached data.
+// Runs sequentially (one at a time) to avoid hammering I/O.
+// 2s delay after boot so WS connection and UI are ready first.
+const SCAN_SECTIONS = ['duplicates','smart-dedup','stale','large','node-modules',
+                       'venvs','empty','images','backups','tiny-files',
+                       'html-files','css-files','ext-search'] as const;
 
-  const menu = document.getElementById('sectionMenu') as HTMLSelectElement | null;
-  if (!menu) return;
-
-  const proxy = document.createElement('div');
-  proxy.id = 'legacyNavProxy';
-  proxy.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin-top:8px';
-
-  for (const opt of Array.from(menu.options)) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.dataset.section = opt.value;
-    btn.className = 'btn muted btn-xs';
-    
-    // Add status light
-    const light = document.createElement('span');
-    light.className = 'btn-status-light status-idle';
-    light.title = 'Scan status: idle';
-    btn.appendChild(light);
-    
-    // Add text
-    const text = document.createElement('span');
-    text.textContent = opt.text;
-    btn.appendChild(text);
-    
-    btn.title = opt.title || opt.text;
-    btn.addEventListener('click', () => (window as any).showSection?.(opt.value, btn));
-    proxy.appendChild(btn);
-    
-    // Initialize status for this section
-    _sectionStatusMap.set(opt.value, 'idle');
+async function _startBackgroundScans() {
+  await new Promise(r => setTimeout(r, 2000));
+  for (const section of SCAN_SECTIONS) {
+    if (_sectionStatusMap.get(section) === 'done') continue; // already has cached results
+    _T('BG_SCAN', `auto-starting ${section}`);
+    startScan(section);
+    // Wait for section to finish (or 5 min timeout) before starting next
+    await new Promise<void>(resolve => {
+      const CHECK_INTERVAL = 1000;
+      const MAX_WAIT = 5 * 60 * 1000;
+      let waited = 0;
+      const timer = setInterval(() => {
+        waited += CHECK_INTERVAL;
+        const status = _sectionStatusMap.get(section);
+        if (status === 'done' || status === 'error' || waited >= MAX_WAIT) {
+          clearInterval(timer);
+          resolve();
+        }
+      }, CHECK_INTERVAL);
+    });
   }
-
-  nav.appendChild(proxy);
+  _T('BG_SCAN', 'all background scans complete');
 }
 
 // Kick everything off
@@ -432,12 +420,14 @@ try {
   _mountScanToolbars();
   _T('INIT', 'wireGithubChatCopyButton');
   _wireGithubChatCopyButton();
-  _T('INIT', 'ensureLegacyNavButtons');
-  _ensureLegacyNavButtons();
+  _T('INIT', 'initNavButtons');
+  for (const btn of Array.from(document.querySelectorAll('nav button[data-section]')) as HTMLButtonElement[]) {
+    _sectionStatusMap.set(btn.dataset.section!, 'idle');
+  }
   _T('INIT', 'restoreActiveTab');
   restoreActiveTab();
   _T('INIT', 'restoreCachedResults');
-  restoreCachedResults();
+  restoreCachedResults().then(() => _startBackgroundScans());
   crumb('init', 'wsConnect');
   _T('INIT', 'wsConnect');
   wsConnect();

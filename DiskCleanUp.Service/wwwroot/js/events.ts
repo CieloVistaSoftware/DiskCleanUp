@@ -32,7 +32,9 @@ function _wireFolderChoices(input: HTMLInputElement | null, listId = 'folderChoi
         opt.value = p;
         list.appendChild(opt);
       }
-    } catch {}
+    } catch (e: any) {
+      ErrLog.log('[EVENTS]', e.message, e.stack, 'CAUGHT_ERROR');
+    }
   };
 
   input.addEventListener('focus', refresh);
@@ -170,13 +172,6 @@ document.getElementById('mainNav')?.addEventListener('click', (e) => {
   showSection(btn.dataset.section, btn);
 });
 
-document.getElementById('sectionMenu')?.addEventListener('change', (e) => {
-  const select = e.target as HTMLSelectElement;
-  const section = select?.value;
-  if (!section) return;
-  showSection(section);
-});
-
 // ── Extension Finder root initialization + picker ────────────────────────
 async function _initExtRoot() {
   const input = document.getElementById('extSearchRootInput') as HTMLInputElement | null;
@@ -196,7 +191,9 @@ async function _initExtRoot() {
       input.value = root;
       localStorage.setItem('dcu_ext_search_root', root);
     }
-  } catch {}
+  } catch (e: any) {
+    ErrLog.log('[EVENTS]', e.message, e.stack, 'CAUGHT_ERROR');
+  }
 }
 _initExtRoot();
 
@@ -215,7 +212,9 @@ document.getElementById('extSearchPickFolderBtn')?.addEventListener('click', asy
     const input = document.getElementById('extSearchRootInput') as HTMLInputElement | null;
     if (input) input.value = res.path;
     localStorage.setItem('dcu_ext_search_root', res.path);
-  } catch {}
+  } catch (e: any) {
+    ErrLog.log('[EVENTS]', e.message, e.stack, 'CAUGHT_ERROR');
+  }
 });
 
 // ── Input delegation (filter) ────────────────────────────────────────────
