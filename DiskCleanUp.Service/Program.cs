@@ -14,6 +14,7 @@ using DiskCleanup;
 using DiskCleanup.Api;
 using DiskCleanup.Scanning;
 using DiskCleanup.Scanning.Rules;
+using DiskCleanup.Hubs;
 using DiskCleanup.Services;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
@@ -136,6 +137,7 @@ builder.Services.AddSingleton<DiagService>(_ => new DiagService(dataDir));
 builder.Services.AddSingleton<AnswerArtifactService>();
 builder.Services.AddSingleton<RollingFileLogger>(_ =>
     new RollingFileLogger(Path.Combine(logDir, "service.log")));
+builder.Services.AddSignalR();
 
 // Background scan services — only in console (dev) mode
 if (isConsoleMode)
@@ -198,6 +200,7 @@ app.MapFileEndpoints();
 app.MapHtmlUtilityEndpoints();
 app.MapTaskEndpoints();
 app.MapScanLogEndpoints();
+app.MapHub<ScanHub>("/scanhub");
 
 app.MapGet("/api/service/info", () => Results.Ok(new
 {
