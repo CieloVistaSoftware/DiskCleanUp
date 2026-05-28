@@ -238,9 +238,13 @@ export function addRow(section, data) {
             }
             case 'checkbox': {
                 cell.innerHTML = `<input type="checkbox" data-path="${_esc(path)}">`;
+                break;
+            }
+            case 'keepbtn': {
+                cell.classList.add('sg-keepbtn');
                 const kb = document.createElement('button');
                 kb.className = 'btn-keep';
-                kb.textContent = '\uD83D\uDD12';
+                kb.textContent = '🔒';
                 kb.title = 'Keep — exclude from future scans';
                 kb.onclick = () => window.keepPaths?.([path]);
                 cell.appendChild(kb);

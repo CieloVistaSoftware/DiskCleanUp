@@ -646,6 +646,7 @@
     100% { background: rgba(46, 204, 113, 0); opacity: 0; transform: translateX(20px); }
   }
 
+  .sg-keepbtn { display: flex; align-items: center; justify-content: center; padding: 2px; }
   .btn-keep {
     background: transparent;
     border: 1px solid #2ecc71;

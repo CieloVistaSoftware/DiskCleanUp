@@ -86,7 +86,7 @@ try {
     _registerStandardSection({
         section: 'stale',
         containerId: 'staleResult',
-        columns: [COL.check, COL.path, COL.size, COL.modified, COL.open],
+        columns: [COL.check, COL.keepBtn, COL.path, COL.size, COL.modified, COL.open],
         doneMsg: (msg) => `Done — ${msg.results} stale files`,
         mapRow: (msg) => ({ path: msg.path, size: msg.size, modified: msg.modified || '' }),
     });
@@ -94,7 +94,7 @@ try {
     _registerStandardSection({
         section: 'large',
         containerId: 'largeResult',
-        columns: [COL.check, COL.path, COL.size, COL.open],
+        columns: [COL.check, COL.keepBtn, COL.path, COL.size, COL.open],
         doneMsg: (msg) => `Done — ${msg.results} large files`,
         mapRow: (msg) => ({ path: msg.path, size: msg.size }),
     });
@@ -102,7 +102,7 @@ try {
     _registerStandardSection({
         section: 'node-modules',
         containerId: 'nmResult',
-        columns: [COL.check, { key: 'path', label: 'Path', flex: 3, minWidth: 150, type: 'path' }, COL.size, COL.open],
+        columns: [COL.check, COL.keepBtn, { key: 'path', label: 'Path', flex: 3, minWidth: 150, type: 'path' }, COL.size, COL.open],
         doneMsg: (msg) => `Done — ${msg.results} found`,
         progressMap: (msg) => ({ results: msg.results, folder: msg.folder }),
         mapRow: (msg) => ({ path: msg.path, size: msg.size }),
@@ -111,7 +111,7 @@ try {
     _registerStandardSection({
         section: 'empty',
         containerId: 'emptyResult',
-        columns: [COL.check, { key: 'path', label: 'Path', flex: 3, minWidth: 200, type: 'path' }, COL.open],
+        columns: [COL.check, COL.keepBtn, { key: 'path', label: 'Path', flex: 3, minWidth: 200, type: 'path' }, COL.open],
         doneMsg: (msg) => `Done — ${msg.results} empty folders`,
         progressMap: (msg) => ({ files: msg.scanned, results: msg.results, folder: msg.folder }),
         mapRow: (msg) => ({ path: msg.path }),
@@ -119,7 +119,7 @@ try {
     _registerStandardSection({
         section: 'venvs',
         containerId: 'venvResult',
-        columns: [COL.check, { key: 'path', label: 'Venv Path', flex: 2, minWidth: 150, type: 'path' }, COL.project, COL.size, COL.open],
+        columns: [COL.check, COL.keepBtn, { key: 'path', label: 'Venv Path', flex: 2, minWidth: 150, type: 'path' }, COL.project, COL.size, COL.open],
         doneMsg: (msg) => `Done — ${msg.results} venvs`,
         progressMap: (msg) => ({ results: msg.results, folder: msg.folder }),
         mapRow: (msg) => ({ path: msg.path, project: msg.project || '', size: msg.size }),
@@ -128,7 +128,7 @@ try {
     _registerStandardSection({
         section: 'backups',
         containerId: 'backupsResult',
-        columns: [COL.check, COL.dirName, { key: 'path', label: 'Path', flex: 2, minWidth: 150, type: 'path' }, COL.files, COL.size, COL.open],
+        columns: [COL.check, COL.keepBtn, COL.dirName, { key: 'path', label: 'Path', flex: 2, minWidth: 150, type: 'path' }, COL.files, COL.size, COL.open],
         doneMsg: (msg) => `Done — ${msg.results} backup folders (${fmt(msg.totalBytes)} total)`,
         progressMap: (msg) => ({ files: msg.scanned, results: msg.results, folder: msg.folder }),
         mapRow: (msg) => ({
@@ -142,28 +142,28 @@ try {
     _registerStandardSection({
         section: 'tiny-files',
         containerId: 'tinyResult',
-        columns: [COL.check, COL.path, COL.size, COL.modified, COL.open],
+        columns: [COL.check, COL.keepBtn, COL.path, COL.size, COL.modified, COL.open],
         doneMsg: (msg) => `Done — ${msg.results} tiny files`,
         mapRow: (msg) => ({ path: msg.path, size: msg.size, modified: msg.modified || '' }),
     });
     _registerStandardSection({
         section: 'html-files',
         containerId: 'htmlResult',
-        columns: [COL.check, COL.path, COL.size, COL.modified, COL.open],
+        columns: [COL.check, COL.keepBtn, COL.path, COL.size, COL.modified, COL.open],
         doneMsg: (msg) => `Done — ${msg.results} HTML files`,
         mapRow: (msg) => ({ path: msg.path, size: msg.size, modified: msg.modified || '' }),
     });
     _registerStandardSection({
         section: 'css-files',
         containerId: 'cssResult',
-        columns: [COL.check, COL.path, COL.size, COL.modified, COL.open],
+        columns: [COL.check, COL.keepBtn, COL.path, COL.size, COL.modified, COL.open],
         doneMsg: (msg) => `Done — ${msg.results} CSS files`,
         mapRow: (msg) => ({ path: msg.path, size: msg.size, modified: msg.modified || '' }),
     });
     _registerStandardSection({
         section: 'ext-search',
         containerId: 'extResult',
-        columns: [COL.check, COL.path, COL.ext, COL.size, COL.modified, COL.open],
+        columns: [COL.check, COL.keepBtn, COL.path, COL.ext, COL.size, COL.modified, COL.open],
         doneMsg: (msg) => `Done — ${msg.results} matching files`,
         mapRow: (msg) => ({
             path: msg.path,
