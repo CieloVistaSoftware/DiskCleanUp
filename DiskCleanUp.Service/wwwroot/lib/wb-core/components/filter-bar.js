@@ -205,11 +205,13 @@ export const FilterBar = {
         state.options.set(value, label);
         // Keep options sorted
         const options = Array.from(state.elements.dropdown.options).sort((a, b) => {
-            if (a.value === '*')
+            const aOpt = a;
+            const bOpt = b;
+            if (aOpt.value === '*')
                 return -1;
-            if (b.value === '*')
+            if (bOpt.value === '*')
                 return 1;
-            return a.textContent.localeCompare(b.textContent);
+            return (aOpt.textContent || '').localeCompare(bOpt.textContent || '');
         });
         state.elements.dropdown.innerHTML = '';
         options.forEach((opt) => {

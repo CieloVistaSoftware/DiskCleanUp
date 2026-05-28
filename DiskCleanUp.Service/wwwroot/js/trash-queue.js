@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 //  DELETE QUEUE — one fire-and-forget call, server handles the rest
 // ═══════════════════════════════════════════════════════════════════════════
-import { ErrLog } from '/js/error-logger.js';
+import { ErrLog } from './error-logger.js';
 import { updateTotalSaved } from './savings.js';
 import { crumb } from './breadcrumb.js';
 export const TrashQ = (() => {

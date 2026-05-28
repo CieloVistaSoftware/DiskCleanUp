@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 import { apiFetch, fmt } from './ui-utils.js';
 import { escHtml as _esc } from '/lib/wb-core/utils/format.js';
-import { ErrLog } from '/js/error-logger.js';
+import { ErrLog } from './error-logger.js';
 let _rbItems = []; // cached recycle bin items
 export async function loadRecycleBin() {
     const panel = document.getElementById('recycleBinPanel');

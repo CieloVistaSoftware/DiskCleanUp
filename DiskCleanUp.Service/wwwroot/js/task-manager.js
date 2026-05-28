@@ -199,50 +199,85 @@ function _getParentAppTitle(proc) {
 // ─── TASK MANAGER MODULE ────────────────────────────────────────
 let _allProcs = [];
 let _displayed = [];
-
 // ── Column sort state ──────────────────────────────────────────
+// Persisted via localStorage so sort survives auto-refresh.
 const _SORT_KEY = 'dcu_task_sort';
-let _sortCol = '';
-let _sortDir = 1;
+let _sortCol = ''; // '' = default (tier+mem)
+let _sortDir = 1; // 1 = asc, -1 = desc
 try {
     const saved = JSON.parse(localStorage.getItem(_SORT_KEY) || '{}');
-    if (saved.col) { _sortCol = saved.col; _sortDir = saved.dir ?? 1; }
-} catch { /* ignore */ }
-
+    if (saved.col) {
+        _sortCol = saved.col;
+        _sortDir = saved.dir ?? 1;
+    }
+}
+catch { /* ignore */ }
 function setSort(col) {
     if (_sortCol === col) {
         _sortDir = -_sortDir;
-    } else {
+    }
+    else {
         _sortCol = col;
         _sortDir = 1;
     }
-    try { localStorage.setItem(_SORT_KEY, JSON.stringify({ col: _sortCol, dir: _sortDir })); } catch { /* ignore */ }
+    try {
+        localStorage.setItem(_SORT_KEY, JSON.stringify({ col: _sortCol, dir: _sortDir }));
+    }
+    catch { /* ignore */ }
     render();
 }
-
 function _sortDisplayed() {
-    if (!_sortCol) return;
+    if (!_sortCol)
+        return; // default order preserved from load()
     const tierOrder = { safe: 0, caution: 1, critical: 2 };
     _displayed.sort((a, b) => {
         let av, bv;
         switch (_sortCol) {
-            case 'safety':  av = tierOrder[a.tier] ?? 0;            bv = tierOrder[b.tier] ?? 0;            break;
-            case 'pid':     av = a.pid;                              bv = b.pid;                              break;
-            case 'name':    av = (a.name || '').toLowerCase();       bv = (b.name || '').toLowerCase();       break;
-            case 'title':   av = (a.title || '').toLowerCase();      bv = (b.title || '').toLowerCase();      break;
-            case 'mem':     av = a._memNum;                          bv = b._memNum;                          break;
-            case 'threads': av = a.threads ?? 0;                     bv = b.threads ?? 0;                     break;
-            case 'company': av = (a.company || '').toLowerCase();    bv = (b.company || '').toLowerCase();    break;
-            case 'desc':    av = (a.description || '').toLowerCase(); bv = (b.description || '').toLowerCase(); break;
-            case 'path':    av = (a.path || '').toLowerCase();       bv = (b.path || '').toLowerCase();       break;
-            default:        return 0;
+            case 'safety':
+                av = tierOrder[a.tier] ?? 0;
+                bv = tierOrder[b.tier] ?? 0;
+                break;
+            case 'pid':
+                av = a.pid;
+                bv = b.pid;
+                break;
+            case 'name':
+                av = (a.name || '').toLowerCase();
+                bv = (b.name || '').toLowerCase();
+                break;
+            case 'title':
+                av = (a.title || '').toLowerCase();
+                bv = (b.title || '').toLowerCase();
+                break;
+            case 'mem':
+                av = a._memNum;
+                bv = b._memNum;
+                break;
+            case 'threads':
+                av = a.threads ?? 0;
+                bv = b.threads ?? 0;
+                break;
+            case 'company':
+                av = (a.company || '').toLowerCase();
+                bv = (b.company || '').toLowerCase();
+                break;
+            case 'desc':
+                av = (a.description || '').toLowerCase();
+                bv = (b.description || '').toLowerCase();
+                break;
+            case 'path':
+                av = (a.path || '').toLowerCase();
+                bv = (b.path || '').toLowerCase();
+                break;
+            default: return 0;
         }
-        if (av < bv) return -_sortDir;
-        if (av > bv) return  _sortDir;
+        if (av < bv)
+            return -_sortDir;
+        if (av > bv)
+            return _sortDir;
         return 0;
     });
 }
-
 function _thHtml(col, cls, label) {
     const active = _sortCol === col;
     const indicator = active ? (_sortDir === 1 ? ' ▲' : ' ▼') : '';
@@ -315,15 +350,15 @@ function render() {
     let html = `<table class="task-table">
     <thead><tr>
       <th class="task-th-cb"><input type="checkbox" id="taskSelectAll" onchange="window._taskMgr?.toggleAll(this.checked)"></th>
-      ${_thHtml('safety',  'task-th-safety',  '⚡')}
-      ${_thHtml('pid',     'task-th-pid',     'PID')}
-      ${_thHtml('name',    'task-th-name',    'Name')}
-      ${_thHtml('title',   'task-th-title',   'Window Title')}
-      ${_thHtml('mem',     'task-th-mem',     'Memory')}
+      ${_thHtml('safety', 'task-th-safety', '⚡')}
+      ${_thHtml('pid', 'task-th-pid', 'PID')}
+      ${_thHtml('name', 'task-th-name', 'Name')}
+      ${_thHtml('title', 'task-th-title', 'Window Title')}
+      ${_thHtml('mem', 'task-th-mem', 'Memory')}
       ${_thHtml('threads', 'task-th-threads', 'Threads')}
       ${_thHtml('company', 'task-th-company', 'Company')}
-      ${_thHtml('desc',    'task-th-desc',    'Description')}
-      ${_thHtml('path',    'task-th-path',    'Path')}
+      ${_thHtml('desc', 'task-th-desc', 'Description')}
+      ${_thHtml('path', 'task-th-path', 'Path')}
     </tr></thead><tbody>`;
     for (const p of _displayed) {
         const isCrit = p.tier === 'critical';

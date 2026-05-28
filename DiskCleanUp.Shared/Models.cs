@@ -88,6 +88,20 @@ public record SavingsEntry(
     [property: JsonPropertyName("session_id")] string SessionId = ""
 );
 
+// ── Savings Pagination ────────────────────────────────────────
+public record SavingsPage(
+    [property: JsonPropertyName("entries")]  List<SavingsEntry> Entries,
+    [property: JsonPropertyName("total")]    int  Total,
+    [property: JsonPropertyName("offset")]   int  Offset,
+    [property: JsonPropertyName("limit")]    int  Limit
+);
+
+public record SavingsSummary(
+    [property: JsonPropertyName("totalBytes")]   long TotalBytes,
+    [property: JsonPropertyName("sessionBytes")] long SessionBytes,
+    [property: JsonPropertyName("totalCount")]   int  TotalCount
+);
+
 // ── Session ───────────────────────────────────────────────────
 public record SessionInfo(
     [property: JsonPropertyName("id")]         string Id,

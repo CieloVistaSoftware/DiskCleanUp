@@ -1,5 +1,10 @@
-import { ErrLog } from '/js/error-logger.js';
-
+import { ErrLog } from '../js/error-logger.js';
+// ═══════════════════════════════════════════════════════════════════════════
+//  DUPLICATES MODEL — data contract
+//
+//  Defines:  field names, types, column layout, JSONL row parsing.
+//  No DOM, no state, no side effects. Pure data description.
+// ═══════════════════════════════════════════════════════════════════════════
 export const DuplicatesModel = {
     section: 'duplicates',
     keyField: 'hash', // groups keyed by content hash
@@ -40,39 +45,23 @@ export const DuplicatesModel = {
                     modified: f.modified ?? f.Modified ?? '',
                 }))
             };
-        } catch (err) {
-            ErrLog.log('[duplicates-model.js]', err?.message || String(err), err?.stack || null, 'DUPLICATES_MODEL_ERROR');
+        }
+        catch (err) {
+            ErrLog.log('[duplicates-model]', String(err), null, 'MODEL_ERROR');
             return null;
         }
     },
     /**
-     * Sort a group's files so the shortest filename is first (the "Keep").
-     * Copies have suffixes like " (1)", " (1) (1)" making them longer.
-     * @param {{ path: string }[]} files
-     * @returns {{ path: string }[]}
-     */
-    _sortedFiles(files) {
-        try {
-            return [...files].sort((a, b) => {
-                const nameA = (a.path || '').replace(/.*[\/\\]/, '');
-                const nameB = (b.path || '').replace(/.*[\/\\]/, '');
-                return nameA.length - nameB.length || nameA.localeCompare(nameB);
-            });
-        } catch (err) {
-            ErrLog.log('[duplicates-model.js]', err?.message || String(err), err?.stack || null, 'DUPLICATES_MODEL_ERROR');
-            return [];
-        }
-    },
-    /**
-     * Extract all "copy" paths from a group (everything except the shortest filename).
+     * Extract all "copy" paths from a group (everything except index 0).
      * @param {{ files: FileRecord[] }} group
      * @returns {string[]}
      */
     copyPaths(group) {
         try {
-            return this._sortedFiles(group.files).slice(1).map(f => f.path).filter(Boolean);
-        } catch (err) {
-            ErrLog.log('[duplicates-model.js]', err?.message || String(err), err?.stack || null, 'DUPLICATES_MODEL_ERROR');
+            return group.files.slice(1).map(f => f.path).filter(Boolean);
+        }
+        catch (err) {
+            ErrLog.log('[duplicates-model]', String(err), null, 'MODEL_ERROR');
             return [];
         }
     },
@@ -85,12 +74,13 @@ export const DuplicatesModel = {
         try {
             const paths = [];
             dataMap.forEach(group => {
-                this._sortedFiles(group.files).slice(1).forEach(f => { if (f.path)
+                group.files.slice(1).forEach(f => { if (f.path)
                     paths.push(f.path); });
             });
             return paths;
-        } catch (err) {
-            ErrLog.log('[duplicates-model.js]', err?.message || String(err), err?.stack || null, 'DUPLICATES_MODEL_ERROR');
+        }
+        catch (err) {
+            ErrLog.log('[duplicates-model]', String(err), null, 'MODEL_ERROR');
             return [];
         }
     }

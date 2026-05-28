@@ -23,6 +23,7 @@ import './savings.js?v=2';
 import './settings.js';
 import './trash-queue.js';
 import './websocket.js';
+// @ts-ignore — ?v=2 cache-busting is valid at runtime; TS can't resolve query strings
 import { startScan, cancelScan } from './actions.js?v=2';
 import './ext-colors.js';
 import './scan-filter.js';
@@ -31,25 +32,32 @@ import './section-handlers.js';
 import './events.js?v=2';
 import './keep-list.js';
 import './recycle-bin.js?v=2';
+import './docs-audit.js';
 import './task-manager.js?v=2';
 
 import { wsConnect }               from './websocket.js';
 import { registerHandler }         from './event-queue.js';
 import { registerSectionModule, restoreActiveTab } from './ui-utils.js';
 import { loadSettings }            from './settings.js';
+// @ts-ignore — ?v=2 cache-busting
 import { updateTotalSaved, loadSavings } from './savings.js?v=2';
 import { apiFetch }                from './ui-utils.js';
 import { pushEvent, pushEventSync } from './event-queue.js';
 import { _set, _folder }           from './status-bar.js';
+// @ts-ignore — ?v=2 cache-busting
 import { loadPage, hasMore, resetPaging, getCacheAge } from './page-loader.js?v=2';
 import { DuplicatesSection }       from '../sections/duplicates.js';
+// @ts-ignore — ?v=4 cache-busting
 import { SCAN_TOOLBAR_CONFIGS }    from '../models/scan-toolbar-model.js?v=4';
+// @ts-ignore — ?v=4 cache-busting
 import { ScanToolbarVM }           from '../viewmodels/scan-toolbar-vm.js?v=4';
+// @ts-ignore — ?v=4 cache-busting
 import { ScanToolbarView }         from '../views/scan-toolbar-view.js?v=4';
 // stale-unified, large-unified, node-modules-unified disabled — crash on top-level DOM access before DOM ready
 // section-handlers.js handles these sections instead
 import { initKeepList }             from './keep-list.js';
 import { crumb }                    from './breadcrumb.js';
+// @ts-ignore — ?v=2 cache-busting
 import { loadTasks }                from './task-manager.js?v=2';
 // import { initAiPanel }              from './ai-panel.js'; // file does not exist
 
@@ -169,7 +177,7 @@ async function restoreCachedResults() {
 // We enable/disable it and toggle the green/red dot based on hasMore().
 
 function _updateLoadMoreBtn(section) {
-  const btn = document.getElementById(`loadMore-${section}`);
+  const btn = document.getElementById(`loadMore-${section}`) as HTMLButtonElement | null;
   if (!btn) return;
   const dot = btn.querySelector('.lm-dot');
   const more = hasMore(section);
@@ -189,6 +197,36 @@ function _makeDot(isGreen) {
   dot.className = `lm-dot ${isGreen ? 'green' : 'red'}`;
   return dot;
 }
+
+// ── On-Navigate Cache Restore ────────────────────────────────────────────
+// When the user navigates to a section whose background scan finished while
+// it wasn't visible, the scan-grid is empty even though the cache has rows.
+// This restores the first cache page if the grid is empty and scan is done.
+async function _restoreSectionIfEmpty(section: string) {
+  if (_sectionStatusMap.get(section) !== 'done') return;
+  if ((window._scanGrid?.rowCount?.(section) ?? 0) > 0) return;
+  _T('CACHE', `onShow restore: ${section}`);
+  try {
+    const { rows } = await loadPage(section);
+    if (!rows.length) return;
+    let count = 0;
+    for (const evt of rows) {
+      if (evt.type === 'started' || evt.type === 'progress' || evt.type === 'done') continue;
+      pushEventSync(section, evt.type, evt.data || {});
+      count++;
+      if (count % 200 === 0) await new Promise(r => setTimeout(r, 0));
+    }
+    if (count > 0) {
+      (window as any)._scanFilter?.rebuild?.(section);
+      _folder(section, `Restored · ${count} results`);
+      _updateLoadMoreBtn(section);
+    }
+    _T('CACHE', `onShow restore: ${section} → ${count} rows`);
+  } catch (e: any) {
+    _T('CACHE', `onShow restore error: ${section}: ${e.message}`);
+  }
+}
+(window as any)._restoreSectionIfEmpty = _restoreSectionIfEmpty;
 
 // ── Section scan status tracker ─────────────────────────────────────────
 // Tracks the current scan state for each section (idle, scanning, done, error)
@@ -215,7 +253,7 @@ function _updateNavButtonStatus(section: string) {
 function _wireLoadMoreButtons() {
   const sections = ['duplicates','smart-dedup','stale','large','node-modules','venvs','empty','images','backups','tiny-files','html-files','css-files','ext-search'];
   for (const section of sections) {
-    const btn = document.getElementById(`loadMore-${section}`);
+    const btn = document.getElementById(`loadMore-${section}`) as HTMLButtonElement | null;
     if (!btn) continue;
     btn.addEventListener('click', async () => {
       if (btn.disabled) return;
@@ -255,7 +293,15 @@ function _mountScanToolbars() {
       onCancel:          () => cancelScan(config.section),
       onSelectAll:       () => window._selectAll?.(config.tableId),
       onSelectNone:      () => window._selectNone?.(config.tableId),
-      onDeleteSelected:  () => window._trashSelected?.(config.tableId),
+      onDeleteSelected: () => {
+        const sgPaths = ((window as any)._scanGrid?.getChecked?.(config.section) as string[]) ?? [];
+        if (sgPaths.length) {
+          (window as any)._scanGrid.removeByPaths(sgPaths);
+          (window as any).TrashQ?.enqueue(sgPaths);
+        } else {
+          window._trashSelected?.(config.tableId);
+        }
+      },
       onKeepSelected:    () => window.keepSelected?.(config.tableId),
       onDeleteAllCopies: () => window._deleteAllCopies?.(config.section),
       onApplyAll:        () => window._applySmartDedup?.(),
@@ -367,6 +413,7 @@ function _ensureLegacyNavButtons() {
     text.textContent = opt.text;
     btn.appendChild(text);
     
+    btn.title = opt.title || opt.text;
     btn.addEventListener('click', () => (window as any).showSection?.(opt.value, btn));
     proxy.appendChild(btn);
     

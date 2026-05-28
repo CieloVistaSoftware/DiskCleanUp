@@ -18,7 +18,7 @@ setupGlobalErrorHandler();
 // wb-core uses:
 //   logError(prefix, errorOrString, { type, context })
 export const ErrLog = {
-  log(prefix, message, detail, type) {
+  log(prefix, message, detail?, type?) {
     // If detail is an Error, pass it (has .message + .stack);
     // otherwise pass the message string
     const err = detail instanceof Error ? detail : (message || 'Unknown error');

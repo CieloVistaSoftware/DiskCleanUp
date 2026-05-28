@@ -26,6 +26,7 @@ export class ScanToolbarView {
   // ── Initial render ────────────────────────────────────────
 
   mount() {
+    try {
     const { section, tableId, specialty } = this._config;
     const container = document.getElementById(`toolbar-${section}`);
     if (!container) return;
@@ -237,27 +238,13 @@ export class ScanToolbarView {
     container.appendChild(this._els.trace);
 
     this._rendered = true;
-    return;
-
-    const order = [
-      'scan', 'cancel', 'deleteSelected',
-      'keepSelected', 'deleteAllCopies', 'applyAll',
-      'utilities', 'whiteBg', 'loadMore', 'fullView', 'trace',
-    ];
-    for (const key of order) {
-      const el = this._els[key];
-      if (el) container.appendChild(el);
-    }
-    if (this._els.utilityItems?.length) {
-      for (const btn of this._els.utilityItems) container.appendChild(btn);
-    }
-
-    this._rendered = true;
+    } catch (err) { ErrLog.log('[scan-toolbar-view]', String(err), null, 'VIEW_ERROR'); }
   }
 
   // ── State-driven update ───────────────────────────────────
 
   update(state: { scanning: boolean; hasRows: boolean; hasSelection: boolean }) {
+    try {
     if (!this._rendered) return;
 
     const { scanning, hasRows, hasSelection } = state;
@@ -289,13 +276,16 @@ export class ScanToolbarView {
       if (keep) keep.disabled = !!scanning || !hasSelection;
       if (more) more.disabled = !!e.loadMore?.disabled;
     }
+    } catch (err) { ErrLog.log('[scan-toolbar-view]', String(err), null, 'VIEW_ERROR'); }
   }
 
   exposeDeleteAllAsLegacyId() {
-    const el = this._els.deleteAllCopies;
-    if (el && this._config.section === 'images') {
-      el.id = 'imgDeleteAllBtn';
-    }
+    try {
+      const el = this._els.deleteAllCopies;
+      if (el && this._config.section === 'images') {
+        el.id = 'imgDeleteAllBtn';
+      }
+    } catch (err) { ErrLog.log('[scan-toolbar-view]', String(err), null, 'VIEW_ERROR'); }
   }
 
   // ── Helpers ───────────────────────────────────────────────

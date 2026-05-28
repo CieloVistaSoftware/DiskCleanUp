@@ -25,7 +25,7 @@ const FLUSH_MS = 500;
 /**
  * Drop a breadcrumb. Goes to ring buffer + queued for trace log flush.
  */
-export function crumb(module, fn, detail) {
+export function crumb(module, fn, detail?) {
   const ms = (performance.now() - _T0) | 0;
   const entry = { seq: _count++, ms, module, fn, detail: detail || null };
   _ring[_idx] = entry;

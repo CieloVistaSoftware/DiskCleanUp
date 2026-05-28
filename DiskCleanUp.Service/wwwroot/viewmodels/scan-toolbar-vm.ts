@@ -31,24 +31,26 @@ export class ScanToolbarVM {
 
   /** @param {import('../views/scan-toolbar-view.js').ScanToolbarView} view */
   bindView(view) {
-    this._view = view;
-    this._notify();
+    try { this._view = view; this._notify(); }
+    catch (err) { ErrLog.log('[scan-toolbar-vm]', String(err), null, 'VM_ERROR'); }
   }
 
   // ── State transitions (called by section controllers) ─────
 
   /** Call when scan starts. Disables Scan, enables Cancel. */
   scanStarted() {
-    this.scanning     = true;
-    this.hasRows      = false;
-    this.hasSelection = false;
-    this._notify();
+    try {
+      this.scanning     = true;
+      this.hasRows      = false;
+      this.hasSelection = false;
+      this._notify();
+    } catch (err) { ErrLog.log('[scan-toolbar-vm]', String(err), null, 'VM_ERROR'); }
   }
 
   /** Call when scan finishes or is cancelled. Re-enables Scan. */
   scanDone() {
-    this.scanning = false;
-    this._notify();
+    try { this.scanning = false; this._notify(); }
+    catch (err) { ErrLog.log('[scan-toolbar-vm]', String(err), null, 'VM_ERROR'); }
   }
 
   /**
@@ -57,36 +59,42 @@ export class ScanToolbarVM {
    * @param {number} selectedCount  — checked rows
    */
   rowsChanged(rowCount, selectedCount = 0) {
-    this.hasRows      = rowCount > 0;
-    this.hasSelection = selectedCount > 0;
-    this._notify();
+    try {
+      this.hasRows      = rowCount > 0;
+      this.hasSelection = selectedCount > 0;
+      this._notify();
+    } catch (err) { ErrLog.log('[scan-toolbar-vm]', String(err), null, 'VM_ERROR'); }
   }
 
   // ── Internal ──────────────────────────────────────────────
 
   _notify() {
-    if (!this._view) return;
-    this._view.update({
-      scanning:     this.scanning,
-      hasRows:      this.hasRows,
-      hasSelection: this.hasSelection,
-    });
+    try {
+      if (!this._view) return;
+      this._view.update({
+        scanning:     this.scanning,
+        hasRows:      this.hasRows,
+        hasSelection: this.hasSelection,
+      });
+    } catch (err) { ErrLog.log('[scan-toolbar-vm]', String(err), null, 'VM_ERROR'); }
   }
 
   /** Derive enabled/disabled state for every button from current state. */
   getButtonStates() {
-    const { scanning, hasRows, hasSelection } = this;
-    return {
-      scan:             !scanning,
-      cancel:           scanning,
-      selectAll:        !scanning && hasRows,
-      selectNone:       !scanning && hasRows,
-      deleteSelected:   !scanning && hasSelection,
-      keepSelected:     !scanning && hasSelection,
-      loadMore:         false,             // managed separately by page-loader
-      deleteAllCopies:  !scanning && hasRows,
-      applyAll:         !scanning && hasRows,
-      fullView:         true,              // always enabled
-    };
+    try {
+      const { scanning, hasRows, hasSelection } = this;
+      return {
+        scan:             !scanning,
+        cancel:           scanning,
+        selectAll:        !scanning && hasRows,
+        selectNone:       !scanning && hasRows,
+        deleteSelected:   !scanning && hasSelection,
+        keepSelected:     !scanning && hasSelection,
+        loadMore:         false,             // managed separately by page-loader
+        deleteAllCopies:  !scanning && hasRows,
+        applyAll:         !scanning && hasRows,
+        fullView:         true,              // always enabled
+      };
+    } catch (err) { ErrLog.log('[scan-toolbar-vm]', String(err), null, 'VM_ERROR'); return {}; }
   }
 }

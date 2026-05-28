@@ -30,8 +30,10 @@ const EXCLUDE_FILES = new Set([
 
 // Files where "no try/catch" is intentional (pure data/config modules)
 const INTENTIONAL_NO_CATCH = new Set([
-  'ext-colors.js',   // pure lookup table
-  'breadcrumb.js',   // tiny ring buffer, no I/O
+  'error-logger.js',     // pure module — excluded via JS Error Audit
+  'ext-colors.js',       // pure lookup table
+  'breadcrumb.js',       // tiny ring buffer, no I/O
+  'scan-toolbar-model.js', // pure config array + array.find — nothing can throw
 ]);
 
 const MODE_AUDIT = !process.argv.includes('--fix') && !process.argv.includes('--ci');

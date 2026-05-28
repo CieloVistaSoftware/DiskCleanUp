@@ -24,10 +24,6 @@
 export class PubSub {
     constructor() {
         this._memDropCount = 0;
-        // ── TIME-BUDGETED DRAIN ─────────────────────────────────────────────
-        // Process events until wall-clock budget is exhausted.
-        // 8ms normal = fits inside 16ms frame with room for paint.
-        // 4ms under pressure = even more conservative.
         this._drainCount = 0;
         this._backoffLogged = false;
         this.events = new Map();
@@ -88,6 +84,10 @@ export class PubSub {
             requestAnimationFrame(() => this._drain());
         }
     }
+    // ── TIME-BUDGETED DRAIN ─────────────────────────────────────────────
+    // Process events until wall-clock budget is exhausted.
+    // 8ms normal = fits inside 16ms frame with room for paint.
+    // 4ms under pressure = even more conservative.
     _drain() {
         this._drainCount++;
         const cpu = window._cpuPct || 0;

@@ -213,7 +213,7 @@ export const StatusBar = {
         });
         // Update row count if provided
         if (typeof data.rowCount === 'number') {
-            state.segments.rows.textContent = data.rowCount;
+            state.segments.rows.textContent = String(data.rowCount);
         }
     },
     /**

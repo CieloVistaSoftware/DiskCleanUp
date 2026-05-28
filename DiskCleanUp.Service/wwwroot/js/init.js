@@ -23,6 +23,7 @@ import './savings.js?v=2';
 import './settings.js';
 import './trash-queue.js';
 import './websocket.js';
+// @ts-ignore — ?v=2 cache-busting is valid at runtime; TS can't resolve query strings
 import { startScan, cancelScan } from './actions.js?v=2';
 import './ext-colors.js';
 import './scan-filter.js';
@@ -31,158 +32,40 @@ import './section-handlers.js';
 import './events.js?v=2';
 import './keep-list.js';
 import './recycle-bin.js?v=2';
+import { loadDocsAudit } from './docs-audit.js';
 import './task-manager.js?v=2';
 import { wsConnect } from './websocket.js';
 import { registerHandler } from './event-queue.js';
 import { registerSectionModule, restoreActiveTab } from './ui-utils.js';
 import { loadSettings } from './settings.js';
+// @ts-ignore — ?v=2 cache-busting
 import { updateTotalSaved } from './savings.js?v=2';
 import { apiFetch } from './ui-utils.js';
 import { pushEvent, pushEventSync } from './event-queue.js';
 import { _set, _folder } from './status-bar.js';
+// @ts-ignore — ?v=2 cache-busting
 import { loadPage, hasMore, resetPaging, getCacheAge } from './page-loader.js?v=2';
 import { DuplicatesSection } from '../sections/duplicates.js';
+// @ts-ignore — ?v=4 cache-busting
 import { SCAN_TOOLBAR_CONFIGS } from '../models/scan-toolbar-model.js?v=4';
+// @ts-ignore — ?v=4 cache-busting
 import { ScanToolbarVM } from '../viewmodels/scan-toolbar-vm.js?v=4';
+// @ts-ignore — ?v=4 cache-busting
 import { ScanToolbarView } from '../views/scan-toolbar-view.js?v=4';
 // stale-unified, large-unified, node-modules-unified disabled — crash on top-level DOM access before DOM ready
 // section-handlers.js handles these sections instead
 import { initKeepList } from './keep-list.js';
 import { crumb } from './breadcrumb.js';
+// @ts-ignore — ?v=2 cache-busting
 import { loadTasks } from './task-manager.js?v=2';
 // import { initAiPanel }              from './ai-panel.js'; // file does not exist
 const _T = window._T || ((tag, msg) => console.log(`[${tag}] ${msg}`));
 _T('INIT', 'all imports resolved');
-
-// ── Diagnostic function for connection troubleshooting ──────────────────
-window._runDiagnostics = async function() {
-  const results = {
-    timestamp: new Date().toISOString(),
-    checks: [],
-    summary: ''
-  };
-
-  console.log('🔍 DiskCleanUp Diagnostics Starting...\n');
-
-  // Check 1: HTTP endpoint
-  const currentPort = parseInt(location.port || '5100', 10);
-  console.log(`Current port: localhost:${currentPort}`);
-  
-  let httpOk = false;
-  let httpStatus = 'unknown';
-  try {
-    const r = await fetch('/api/service/info', { signal: AbortSignal.timeout(4000) });
-    httpOk = r.ok;
-    httpStatus = `${r.status} ${r.statusText}`;
-    const json = await r.json();
-    results.checks.push({
-      name: 'HTTP Service Endpoint',
-      status: 'PASS',
-      detail: `${httpStatus} | Uptime: ${json.uptime}`
-    });
-    console.log('✅ HTTP Service Endpoint: PASS\n   Detail:', json);
-  } catch (e) {
-    httpStatus = String(e.message);
-    results.checks.push({
-      name: 'HTTP Service Endpoint',
-      status: 'FAIL',
-      detail: httpStatus
-    });
-    console.log('❌ HTTP Service Endpoint: FAIL\n   Error:', httpStatus);
-  }
-
-  // Check 2: WebSocket connection status
-  const wsStatus = window._ws ? `ReadyState: ${window._ws.readyState} (0=connecting, 1=open, 2=closing, 3=closed)` : 'No connection object';
-  const wsConnected = window._ws?.readyState === WebSocket.OPEN;
-  results.checks.push({
-    name: 'WebSocket Connection',
-    status: wsConnected ? 'PASS' : 'CONNECTING/FAILED',
-    detail: wsStatus
-  });
-  console.log(`${wsConnected ? '✅' : '⏳'} WebSocket Connection: ${wsStatus}\n`);
-
-  // Check 3: Alternate port
-  const altPort = currentPort === 5100 ? 5000 : 5100;
-  let altPortOk = false;
-  try {
-    const r = await fetch(`http://localhost:${altPort}/api/service/info`, 
-                          { signal: AbortSignal.timeout(3000) });
-    altPortOk = r.ok;
-    results.checks.push({
-      name: `Alternate Port (${altPort})`,
-      status: 'REACHABLE',
-      detail: `Service running on wrong port? Try http://localhost:${altPort}`
-    });
-    console.log(`⚠️  Alternate Port ${altPort}: REACHABLE (possible port mismatch)\n`);
-  } catch (e) {
-    results.checks.push({
-      name: `Alternate Port (${altPort})`,
-      status: 'UNREACHABLE',
-      detail: 'Both ports unavailable'
-    });
-    console.log(`✅ Alternate Port ${altPort}: UNREACHABLE (correct)\n`);
-  }
-
-  // Check 4: Event queue
-  const eventQueueInfo = window._eventQueue ? 
-    { 
-      size: window._eventQueue.length || 0,
-      isProcessing: window._processingQueue ? true : false 
-    } : 
-    { size: 'unknown', isProcessing: 'unknown' };
-  
-  results.checks.push({
-    name: 'Event Queue',
-    status: 'INFO',
-    detail: `Queue length: ${eventQueueInfo.size}, Processing: ${eventQueueInfo.isProcessing}`
-  });
-  console.log(`📊 Event Queue: ${JSON.stringify(eventQueueInfo)}\n`);
-
-  // Check 5: Page connectivity
-  const isOnline = navigator.onLine;
-  results.checks.push({
-    name: 'Browser Connectivity',
-    status: isOnline ? 'ONLINE' : 'OFFLINE',
-    detail: isOnline ? 'Browser can reach network' : 'Browser is offline'
-  });
-  console.log(`${isOnline ? '✅' : '❌'} Browser Connectivity: ${isOnline ? 'ONLINE' : 'OFFLINE'}\n`);
-
-  // Summary
-  const passCount = results.checks.filter(c => c.status === 'PASS' || c.status === 'ONLINE').length;
-  const failCount = results.checks.filter(c => c.status === 'FAIL' || c.status === 'OFFLINE').length;
-  
-  if (passCount === results.checks.length) {
-    results.summary = '✅ All checks passed!';
-  } else if (failCount > 0) {
-    results.summary = `❌ ${failCount} check(s) failed`;
-  } else {
-    results.summary = '⏳ Connection in progress (auto-reconnecting)';
-  }
-
-  console.log('════════════════════════════════════════');
-  console.log(results.summary);
-  console.log('════════════════════════════════════════\n');
-  
-  // Show results in alert
-  const alertText = [
-    '🔍 DiskCleanUp Diagnostics Results',
-    '',
-    ...results.checks.map(c => `${c.name}: ${c.status}`),
-    '',
-    results.summary,
-    '',
-    'Full details in browser console (F12)'
-  ].join('\n');
-  
-  alert(alertText);
-  
-  return results;
-};
-
 // ── Register DuplicatesSection ──────────────────────────────────────────
 registerHandler('duplicates', DuplicatesSection.onEvent);
 registerSectionModule('duplicates', DuplicatesSection);
 registerSectionModule('tasks', { onShow: loadTasks });
+registerSectionModule('docs-audit', { onShow: loadDocsAudit });
 // ── Cache restore (paged, 40KB rule) ─────────────────────────────────────
 // Backend sends 40KB chunks. We load the first page, render it,
 // and show a "Load More" button if there's more data. The .NET
@@ -315,28 +198,61 @@ function _makeDot(isGreen) {
     dot.className = `lm-dot ${isGreen ? 'green' : 'red'}`;
     return dot;
 }
-// ─────────────────────────────────────────────────────────────────────────
-// Section scan status tracker
+// ── On-Navigate Cache Restore ────────────────────────────────────────────
+// When the user navigates to a section whose background scan finished while
+// it wasn't visible, the scan-grid is empty even though the cache has rows.
+// This restores the first cache page if the grid is empty and scan is done.
+async function _restoreSectionIfEmpty(section) {
+    if (_sectionStatusMap.get(section) !== 'done')
+        return;
+    if ((window._scanGrid?.rowCount?.(section) ?? 0) > 0)
+        return;
+    _T('CACHE', `onShow restore: ${section}`);
+    try {
+        const { rows } = await loadPage(section);
+        if (!rows.length)
+            return;
+        let count = 0;
+        for (const evt of rows) {
+            if (evt.type === 'started' || evt.type === 'progress' || evt.type === 'done')
+                continue;
+            pushEventSync(section, evt.type, evt.data || {});
+            count++;
+            if (count % 200 === 0)
+                await new Promise(r => setTimeout(r, 0));
+        }
+        if (count > 0) {
+            window._scanFilter?.rebuild?.(section);
+            _folder(section, `Restored · ${count} results`);
+            _updateLoadMoreBtn(section);
+        }
+        _T('CACHE', `onShow restore: ${section} → ${count} rows`);
+    }
+    catch (e) {
+        _T('CACHE', `onShow restore error: ${section}: ${e.message}`);
+    }
+}
+window._restoreSectionIfEmpty = _restoreSectionIfEmpty;
+// ── Section scan status tracker ─────────────────────────────────────────
 // Tracks the current scan state for each section (idle, scanning, done, error)
 const _sectionStatusMap = new Map();
-
 window._setSectionStatus = (section, status) => {
     const validStatuses = ['idle', 'scanning', 'done', 'error'];
-    if (!validStatuses.includes(status)) return;
+    if (!validStatuses.includes(status))
+        return;
     _sectionStatusMap.set(section, status);
     _updateNavButtonStatus(section);
 };
-
 function _updateNavButtonStatus(section) {
     const btn = document.querySelector(`button[data-section="${section}"]`);
-    if (!btn) return;
+    if (!btn)
+        return;
     const light = btn.querySelector('.btn-status-light');
-    if (!light) return;
-    
+    if (!light)
+        return;
     const status = _sectionStatusMap.get(section) || 'idle';
     light.className = `btn-status-light status-${status}`;
 }
-
 // Wire up click handlers for all static Load More buttons
 function _wireLoadMoreButtons() {
     const sections = ['duplicates', 'smart-dedup', 'stale', 'large', 'node-modules', 'venvs', 'empty', 'images', 'backups', 'tiny-files', 'html-files', 'css-files', 'ext-search'];
@@ -381,7 +297,16 @@ function _mountScanToolbars() {
             onCancel: () => cancelScan(config.section),
             onSelectAll: () => window._selectAll?.(config.tableId),
             onSelectNone: () => window._selectNone?.(config.tableId),
-            onDeleteSelected: () => window._trashSelected?.(config.tableId),
+            onDeleteSelected: () => {
+                const sgPaths = window._scanGrid?.getChecked?.(config.section) ?? [];
+                if (sgPaths.length) {
+                    window._scanGrid.removeByPaths(sgPaths);
+                    window.TrashQ?.enqueue(sgPaths);
+                }
+                else {
+                    window._trashSelected?.(config.tableId);
+                }
+            },
             onKeepSelected: () => window.keepSelected?.(config.tableId),
             onDeleteAllCopies: () => window._deleteAllCopies?.(config.section),
             onApplyAll: () => window._applySmartDedup?.(),
@@ -475,21 +400,18 @@ function _ensureLegacyNavButtons() {
         btn.type = 'button';
         btn.dataset.section = opt.value;
         btn.className = 'btn muted btn-xs';
-        
         // Add status light
         const light = document.createElement('span');
         light.className = 'btn-status-light status-idle';
         light.title = 'Scan status: idle';
         btn.appendChild(light);
-        
         // Add text
         const text = document.createElement('span');
         text.textContent = opt.text;
         btn.appendChild(text);
-        
+        btn.title = opt.title || opt.text;
         btn.addEventListener('click', () => window.showSection?.(opt.value, btn));
         proxy.appendChild(btn);
-        
         // Initialize status for this section
         _sectionStatusMap.set(opt.value, 'idle');
     }

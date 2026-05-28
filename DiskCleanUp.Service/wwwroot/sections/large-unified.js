@@ -27,7 +27,7 @@ const _allData = new Map(); // path → full record for queued operations
 let _sortKey = 'size'; // default sort by size descending
 let _sortDir = 'desc';
 // ── Component instances ────────────────────────────────────────────────────
-const _grid = GridShell.create('large', { container: 'large-grid-container' });
+const _grid = GridShell.create('large', [], { container: 'large-grid-container' });
 const _statusBar = StatusBar.create('large', {
     container: 'large-status-container',
     segments: ['FILES', 'RESULTS', 'ROWS'],

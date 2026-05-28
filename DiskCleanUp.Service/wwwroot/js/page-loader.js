@@ -1,12 +1,24 @@
-import { crumb } from './breadcrumb.js';
+// ═══════════════════════════════════════════════════════════════════════════
+//  PAGE-LOADER — 40KB paged data fetching
+//
+//  Backend sends scan cache in 40KB chunks (under .NET LOH threshold).
+//  Frontend requests one page, renders it, clears the buffer.
+//  When the user clicks "Load More", the next page is fetched using the
+//  stored byte offset. The .NET heap never holds more than 40KB at a time.
+//
+//  Usage:
+//    import { loadPage, hasMore } from './page-loader.js';
+//    const { rows, loaded } = await loadPage('duplicates');  // first page
+//    if (hasMore('duplicates')) { ... show "Load More" button ... }
+//    const { rows: more } = await loadPage('duplicates');     // next page
+// ═══════════════════════════════════════════════════════════════════════════
 import { ErrLog } from './error-logger.js';
-
+import { crumb } from './breadcrumb.js';
 // Per-section state: tracks the next byte offset for paging
 const _offsets = {}; // section → nextOffset (null = no more data)
 const _loaded = {}; // section → total rows loaded so far
 const _cachedAt = {}; // section → Date when cache file was last written
 const _resumeOffsets = {}; // section → byte position at EOF (for live-scan resume)
-
 /**
  * Load the next 40KB page of cached results for a section.
  * Returns { rows: [...], loaded: totalSoFar }
@@ -41,20 +53,18 @@ export async function loadPage(section) {
         crumb('page', 'loaded', { section, rows: rows.length, total: _loaded[section], more: _offsets[section] != null });
         return { rows, loaded: _loaded[section] };
     }
-    catch (err) {
-        ErrLog.log('[page-loader.js]', err?.message || String(err), err?.stack || null, 'PAGE_LOADER_ERROR');
+    catch (e) {
+        ErrLog.log('[page-loader]', e?.message || String(e), e?.stack || null, 'LOAD_PAGE_ERROR');
         _offsets[section] = null;
         return { rows: [], loaded: _loaded[section] || 0 };
     }
 }
-
 /**
  * Returns true if the section has more pages to load.
  */
 export function hasMore(section) {
     return _offsets[section] != null;
 }
-
 /**
  * Reset paging state for a section (e.g., when a new scan starts).
  */
@@ -64,7 +74,6 @@ export function resetPaging(section) {
     delete _cachedAt[section];
     delete _resumeOffsets[section];
 }
-
 /**
  * Resume reading from the last known byte position after hitting EOF.
  * During a live scan, the cache file keeps growing. When _fetchBatch
@@ -76,7 +85,6 @@ export function resumeFromEof(section) {
         _offsets[section] = _resumeOffsets[section];
     }
 }
-
 /**
  * Get cache age in minutes for a section. Returns null if unknown.
  */
@@ -86,14 +94,12 @@ export function getCacheAge(section) {
         return null;
     return (Date.now() - ts.getTime()) / 60000;
 }
-
 /**
  * Get how many rows have been loaded so far for a section.
  */
 export function loadedCount(section) {
     return _loaded[section] || 0;
 }
-
 // Expose to non-module scripts (e.g., duplicates.js IIFE)
 window._pageLoader = { loadPage, hasMore, resetPaging, resumeFromEof, loadedCount, getCacheAge };
 //# sourceMappingURL=page-loader.js.map

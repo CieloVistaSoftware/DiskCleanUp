@@ -22,6 +22,10 @@ import { ErrLog } from './error-logger.js';
 
 const _grids = {};
 
+function _dgErr(err: unknown) {
+  ErrLog.log('[data-grid]', (err as Error)?.message || String(err), (err as Error)?.stack || null, 'DATA_GRID_ERROR');
+}
+
 // ── Public API ───────────────────────────────────────────────────────────
 
 /**
@@ -32,7 +36,8 @@ const _grids = {};
  * @param {Object} opts      - Options: { rowClass, onRowClick, actions }
  *   actions: Array of { icon, title, className, onClick(rowData, rowEl) }
  */
-export function create(id, containerId, columns, opts = {}) {
+export function create(id, containerId, columns, opts: Record<string, any> = {}) {
+  try {
   const container = document.getElementById(containerId);
   if (!container) return;
 
@@ -70,13 +75,13 @@ export function create(id, containerId, columns, opts = {}) {
     cell.className = 'sg-hcell';
     cell.textContent = c.label || '';
     cell.title = c.label || '';
-    cell.dataset.colIdx = i;
+    cell.dataset.colIdx = String(i);
 
     // Sortable (skip checkbox, lineNo, actions)
     if (c.type !== 'checkbox' && c.type !== 'lineNo' && c.type !== 'actions') {
       cell.classList.add('sg-sortable');
       cell.addEventListener('click', (e) => {
-        if (e.target.classList.contains('sg-resize-handle')) return;
+        if ((e.target as Element).classList.contains('sg-resize-handle')) return;
         _sortColumn(id, i);
       });
     }
@@ -107,6 +112,7 @@ export function create(id, containerId, columns, opts = {}) {
   };
 
   return _grids[id];
+  } catch (err) { _dgErr(err); }
 }
 
 /**
@@ -116,6 +122,7 @@ export function create(id, containerId, columns, opts = {}) {
  * @returns {HTMLElement} The row element
  */
 export function addRow(id, data) {
+  try {
   const g = _grids[id];
   if (!g) return null;
 
@@ -126,12 +133,12 @@ export function addRow(id, data) {
   const rowNum = g.rows.length + 1;
 
   // Store raw data for sorting + callbacks
-  row._dgData = data;
+  (row as any)._dgData = data;
 
   // Copy data-* attributes from data object
   if (data._dataAttrs) {
     for (const [k, v] of Object.entries(data._dataAttrs)) {
-      row.dataset[k] = v;
+      row.dataset[k] = String(v);
     }
   }
 
@@ -201,7 +208,7 @@ export function addRow(id, data) {
   if (g.opts.onRowClick) {
     row.style.cursor = 'pointer';
     row.addEventListener('click', (e) => {
-      if (e.target.closest('button') || e.target.closest('input')) return;
+      if ((e.target as Element).closest('button') || (e.target as Element).closest('input')) return;
       g.opts.onRowClick(data, row);
     });
   }
@@ -225,64 +232,75 @@ export function addRow(id, data) {
   }
 
   return row;
+  } catch (err) { _dgErr(err); return null; }
 }
 
 /**
  * Add multiple rows at once (convenience wrapper).
  */
 export function addRows(id, dataArray) {
-  for (const data of dataArray) addRow(id, data);
+  try {
+    for (const data of dataArray) addRow(id, data);
+  } catch (err) { _dgErr(err); }
 }
 
 /**
  * Clear all rows from a grid.
  */
 export function clear(id) {
-  const g = _grids[id];
-  if (!g) return;
-  g.body.innerHTML = '';
-  g.rows = [];
-  g.rowData = [];
-  g._frag = null;
-  g._flushScheduled = false;
+  try {
+    const g = _grids[id];
+    if (!g) return;
+    g.body.innerHTML = '';
+    g.rows = [];
+    g.rowData = [];
+    g._frag = null;
+    g._flushScheduled = false;
+  } catch (err) { _dgErr(err); }
 }
 
 /**
  * Destroy grid entirely (remove from DOM + registry).
  */
 export function destroy(id) {
-  const g = _grids[id];
-  if (!g) return;
-  const container = document.getElementById(g.containerId);
-  if (container) container.innerHTML = '';
-  delete _grids[id];
+  try {
+    const g = _grids[id];
+    if (!g) return;
+    const container = document.getElementById(g.containerId);
+    if (container) container.innerHTML = '';
+    delete _grids[id];
+  } catch (err) { _dgErr(err); }
 }
 
 /**
  * Show skeleton loading rows.
  */
 export function showSkeleton(id, containerId, columns, opts = {}) {
-  create(id, containerId, columns, opts);
-  const g = _grids[id];
-  if (!g) return;
-  for (let i = 0; i < 5; i++) {
-    const row = document.createElement('div');
-    row.className = 'sg-row sg-skel-row';
-    row.style.gridTemplateColumns = g.header.style.gridTemplateColumns;
-    g.columns.forEach(() => {
-      const cell = document.createElement('div');
-      cell.className = 'sg-cell';
-      cell.innerHTML = `<span class="skel-bar skel-w-${i % 6}"></span>`;
-      row.appendChild(cell);
-    });
-    g.body.appendChild(row);
-  }
+  try {
+    create(id, containerId, columns, opts);
+    const g = _grids[id];
+    if (!g) return;
+    for (let i = 0; i < 5; i++) {
+      const row = document.createElement('div');
+      row.className = 'sg-row sg-skel-row';
+      row.style.gridTemplateColumns = g.header.style.gridTemplateColumns;
+      g.columns.forEach(() => {
+        const cell = document.createElement('div');
+        cell.className = 'sg-cell';
+        cell.innerHTML = `<span class="skel-bar skel-w-${i % 6}"></span>`;
+        row.appendChild(cell);
+      });
+      g.body.appendChild(row);
+    }
+  } catch (err) { _dgErr(err); }
 }
 
 export function removeSkeleton(id) {
-  const g = _grids[id];
-  if (!g) return;
-  g.body.querySelectorAll('.sg-skel-row').forEach(r => r.remove());
+  try {
+    const g = _grids[id];
+    if (!g) return;
+    g.body.querySelectorAll('.sg-skel-row').forEach(r => r.remove());
+  } catch (err) { _dgErr(err); }
 }
 
 /**
@@ -292,31 +310,37 @@ export function removeSkeleton(id) {
  * @returns {string[]}
  */
 export function getChecked(id, dataKey = 'value') {
-  const g = _grids[id];
-  if (!g) return [];
-  return [...g.body.querySelectorAll('input[type=checkbox]:checked')]
-    .map(cb => cb.dataset[dataKey])
-    .filter(Boolean);
+  try {
+    const g = _grids[id];
+    if (!g) return [];
+    return [...g.body.querySelectorAll('input[type=checkbox]:checked')]
+      .map(cb => cb.dataset[dataKey])
+      .filter(Boolean);
+  } catch (err) { _dgErr(err); return []; }
 }
 
 /**
  * Select/deselect all visible checkboxes.
  */
 export function selectAll(id, checked) {
-  const g = _grids[id];
-  if (!g) return;
-  g.body.querySelectorAll('input[type=checkbox]:not(:disabled)').forEach(cb => {
-    if (checked && cb.closest('.sg-row')?.style.display === 'none') return;
-    cb.checked = checked;
-  });
+  try {
+    const g = _grids[id];
+    if (!g) return;
+    g.body.querySelectorAll('input[type=checkbox]:not(:disabled)').forEach(cb => {
+      if (checked && cb.closest('.sg-row')?.style.display === 'none') return;
+      cb.checked = checked;
+    });
+  } catch (err) { _dgErr(err); }
 }
 
 /**
  * Get row count.
  */
 export function rowCount(id) {
-  const g = _grids[id];
-  return g ? g.rows.length : 0;
+  try {
+    const g = _grids[id];
+    return g ? g.rows.length : 0;
+  } catch (err) { _dgErr(err); return 0; }
 }
 
 /**
@@ -326,28 +350,32 @@ export function rowCount(id) {
  * @returns {{ shown: number, total: number }}
  */
 export function filter(id, predicate) {
-  const g = _grids[id];
-  if (!g) return { shown: 0, total: 0 };
+  try {
+    const g = _grids[id];
+    if (!g) return { shown: 0, total: 0 };
 
-  let shown = 0;
-  g.rows.forEach((row, i) => {
-    const vis = predicate(g.rowData[i]);
-    row.style.display = vis ? '' : 'none';
-    if (vis) shown++;
-  });
+    let shown = 0;
+    g.rows.forEach((row, i) => {
+      const vis = predicate(g.rowData[i]);
+      row.style.display = vis ? '' : 'none';
+      if (vis) shown++;
+    });
 
-  return { shown, total: g.rows.length };
+    return { shown, total: g.rows.length };
+  } catch (err) { _dgErr(err); return { shown: 0, total: 0 }; }
 }
 
 /**
  * Remove a specific row by index.
  */
 export function removeRow(id, index) {
+  try {
   const g = _grids[id];
   if (!g || index < 0 || index >= g.rows.length) return;
   g.rows[index].remove();
   g.rows.splice(index, 1);
   g.rowData.splice(index, 1);
+  } catch (err) { _dgErr(err); }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -373,7 +401,7 @@ function _startResize(e, id, colIdx) {
   handle.classList.add('sg-dragging');
 
   const hCells = g.header.children;
-  const widths = Array.from(hCells).map(c => c.getBoundingClientRect().width);
+  const widths = Array.from(hCells).map(c => (c as Element).getBoundingClientRect().width);
 
   _resizeState = { id, colIdx, startX: e.clientX, widths: [...widths], handle };
   document.addEventListener('mousemove', _onResizeMove);
@@ -394,7 +422,7 @@ function _onResizeMove(e) {
   const template = updated.map(w => `${Math.round(w)}px`).join(' ');
   g.header.style.gridTemplateColumns = template;
   for (const row of g.body.children) {
-    row.style.gridTemplateColumns = template;
+    (row as HTMLElement).style.gridTemplateColumns = template;
   }
 }
 
@@ -406,7 +434,7 @@ function _onResizeEnd() {
   const g = _grids[id];
   if (g) {
     const hCells = g.header.children;
-    const widths = Array.from(hCells).map(c => `${Math.round(c.getBoundingClientRect().width)}px`);
+    const widths = Array.from(hCells).map(c => `${Math.round((c as Element).getBoundingClientRect().width)}px`);
     const template = widths.join(' ');
     g.header.style.gridTemplateColumns = template;
     g.gridTemplate = template;

@@ -2,7 +2,7 @@
 //  STATUS BAR — per-section scanning status, timers, folder display
 //  Includes a red ⛔ STOP button that appears during scans.
 // ═══════════════════════════════════════════════════════════════════════════
-import { ErrLog } from '/js/error-logger.js';
+import { ErrLog } from './error-logger.js';
 import { wsSend } from './websocket.js';
 const _sbStarts = {};
 const _sbTimers = {};
@@ -25,8 +25,9 @@ export const SB = {
             _sbTimers[section] = setInterval(() => {
                 _set(section, 'time', ((Date.now() - _sbStarts[section]) / 1000).toFixed(1) + 's');
             }, 200);
-        } catch (err) {
-            ErrLog.log('[status-bar.js]', err?.message || String(err), err?.stack || null, 'STATUS_BAR_ERROR');
+        }
+        catch (err) {
+            ErrLog.log('[status-bar]', String(err), null, 'STATUS_BAR_ERROR');
         }
     },
     progress(section, data) {
@@ -37,8 +38,9 @@ export const SB = {
                 _set(section, 'results', data.results.toLocaleString());
             if (data.folder !== undefined)
                 _folder(section, data.folder);
-        } catch (err) {
-            ErrLog.log('[status-bar.js]', err?.message || String(err), err?.stack || null, 'STATUS_BAR_ERROR');
+        }
+        catch (err) {
+            ErrLog.log('[status-bar]', String(err), null, 'STATUS_BAR_ERROR');
         }
     },
     done(section, label) {
@@ -53,8 +55,9 @@ export const SB = {
                 _removeStopBtn(bar);
             }
             _folder(section, `Completed in ${t}s`);
-        } catch (err) {
-            ErrLog.log('[status-bar.js]', err?.message || String(err), err?.stack || null, 'STATUS_BAR_ERROR');
+        }
+        catch (err) {
+            ErrLog.log('[status-bar]', String(err), null, 'STATUS_BAR_ERROR');
         }
     },
     error(section, msg) {
@@ -68,48 +71,38 @@ export const SB = {
             }
             _folder(section, msg || 'Scan failed');
             ErrLog.log(`[${section}]`, msg || 'Scan failed', null, 'SCAN_ERROR');
-        } catch (err) {
-            ErrLog.log('[status-bar.js]', err?.message || String(err), err?.stack || null, 'STATUS_BAR_ERROR');
+        }
+        catch (err) {
+            ErrLog.log('[status-bar]', String(err), null, 'STATUS_BAR_ERROR');
         }
     }
 };
 function _addStopBtn(bar, section) {
-    try {
-        _removeStopBtn(bar); // no dupes
-        const btn = document.createElement('button');
-        btn.className = 'sb-stop-btn';
-        btn.textContent = '⛔ STOP';
-        btn.title = 'Cancel this scan';
-        btn.addEventListener('click', () => {
-            try {
-                wsSend({ type: 'cancel', section });
-                btn.disabled = true;
-                btn.textContent = 'Stopping…';
-            } catch (err) {
-                ErrLog.log('[status-bar.js]', err?.message || String(err), err?.stack || null, 'STATUS_BAR_ERROR');
-            }
-        });
-        bar.appendChild(btn);
-    } catch (err) {
-        ErrLog.log('[status-bar.js]', err?.message || String(err), err?.stack || null, 'STATUS_BAR_ERROR');
-    }
+    _removeStopBtn(bar); // no dupes
+    const btn = document.createElement('button');
+    btn.className = 'sb-stop-btn';
+    btn.textContent = '⛔ STOP';
+    btn.title = 'Cancel this scan';
+    btn.addEventListener('click', () => {
+        wsSend({ type: 'cancel', section });
+        btn.disabled = true;
+        btn.textContent = 'Stopping…';
+    });
+    bar.appendChild(btn);
 }
 function _removeStopBtn(bar) {
-    try {
-        const btn = bar.querySelector('.sb-stop-btn');
-        if (btn)
-            btn.remove();
-    } catch (err) {
-        ErrLog.log('[status-bar.js]', err?.message || String(err), err?.stack || null, 'STATUS_BAR_ERROR');
-    }
+    const btn = bar.querySelector('.sb-stop-btn');
+    if (btn)
+        btn.remove();
 }
 export function _set(section, key, val) {
     try {
         const el = document.getElementById(`sbv-${section}-${key}`);
         if (el)
             el.textContent = val;
-    } catch (err) {
-        ErrLog.log('[status-bar.js]', err?.message || String(err), err?.stack || null, 'STATUS_BAR_ERROR');
+    }
+    catch (err) {
+        ErrLog.log('[status-bar]', String(err), null, 'STATUS_BAR_ERROR');
     }
 }
 export function _folder(section, txt) {
@@ -117,16 +110,18 @@ export function _folder(section, txt) {
         const el = document.getElementById(`sbf-${section}`);
         if (el)
             el.textContent = txt;
-    } catch (err) {
-        ErrLog.log('[status-bar.js]', err?.message || String(err), err?.stack || null, 'STATUS_BAR_ERROR');
+    }
+    catch (err) {
+        ErrLog.log('[status-bar]', String(err), null, 'STATUS_BAR_ERROR');
     }
 }
 export function _getVal(section, key) {
     try {
         const el = document.getElementById(`sbv-${section}-${key}`);
         return el ? el.textContent : '0';
-    } catch (err) {
-        ErrLog.log('[status-bar.js]', err?.message || String(err), err?.stack || null, 'STATUS_BAR_ERROR');
+    }
+    catch (err) {
+        ErrLog.log('[status-bar]', String(err), null, 'STATUS_BAR_ERROR');
         return '0';
     }
 }

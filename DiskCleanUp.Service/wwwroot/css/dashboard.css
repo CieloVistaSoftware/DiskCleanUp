@@ -337,6 +337,8 @@
   }
   .btn-xs:hover { background: var(--accent); color: #000; }
   .sg-trash-btn:hover { background: var(--red) !important; color: #fff !important; }
+  .sg-trash-red { background: rgba(248,81,73,.15) !important; color: #f85149 !important; border: 1px solid rgba(248,81,73,.35) !important; }
+  .sg-trash-red:hover { background: var(--red) !important; color: #fff !important; border-color: var(--red) !important; }
   .btn-vscode:hover { background: #0078d4 !important; color: #fff !important; border-color: #0078d4 !important; }
   .btn-vscode { font-family: monospace; font-weight: 700; letter-spacing: -1px; }
 
@@ -570,6 +572,23 @@
   .savings-meta { color: var(--muted); font-size: 11px; }
   .stat-accent .val { color: var(--accent); }
 
+  /* Bin-status audit pills (appended to trash rows by auditBinStatus()) */
+  .bin-status { font-size: 10px; padding: 1px 6px; border-radius: 8px; margin-left: 6px; white-space: nowrap; }
+  .bin-status-in   { background: rgba(210,90,40,.18); color: #e07040; }
+  .bin-status-gone { background: rgba(63,185,80,.15);  color: var(--green); }
+  .bin-audit-summary {
+    padding: 8px 12px; margin-bottom: 12px; border-radius: 6px;
+    background: rgba(210,90,40,.12); border: 1px solid rgba(210,90,40,.3);
+    font-size: 13px; color: var(--text);
+  }
+  .bin-audit-summary strong { color: #e07040; }
+  .savings-load-more {
+    display: block; width: 100%; margin: 12px 0; padding: 8px;
+    background: transparent; border: 1px dashed var(--border);
+    color: var(--muted); cursor: pointer; border-radius: 6px; font-size: 12px;
+  }
+  .savings-load-more:hover { border-color: var(--accent); color: var(--accent); }
+
   /* Image duplicate results */
   .img-group { margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
   .img-group .img-grid { margin-top: 10px; }
@@ -627,6 +646,7 @@
     100% { background: rgba(46, 204, 113, 0); opacity: 0; transform: translateX(20px); }
   }
 
+  .sg-keepbtn { display: flex; align-items: center; justify-content: center; padding: 2px; }
   .btn-keep {
     background: transparent;
     border: 1px solid #2ecc71;
@@ -863,3 +883,22 @@
 .root-display-editable:hover { opacity: .75; }
 .root-edit-input { background: #1a1a2e; border: 1px solid #4c72f5; border-radius: 4px; color: #e0e0ff; font-size: 13px; padding: 2px 8px; width: 320px; }
 .root-edit-input:focus { outline: none; box-shadow: 0 0 0 2px #4c72f5; }
+
+/* ═══ Docs Audit (#43/#44) ═══ */
+#docsAuditCount { display: inline-flex; align-items: center; font-size: .72rem; font-weight: 600; padding: 2px 8px; border-radius: 10px; vertical-align: middle; margin-left: 4px; }
+#docsAuditCount:empty { display: none; }
+#docsAuditCount.has-orphans { background: rgba(251,146,60,.15); color: #fb923c; border: 1px solid rgba(251,146,60,.4); }
+#docsAuditCount.no-orphans  { background: rgba(74,222,128,.12); color: #4ade80; border: 1px solid rgba(74,222,128,.35); }
+.docs-audit-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding: 10px 14px; background: rgba(255,255,255,.04); border-radius: 6px; border: 1px solid var(--border,#444); }
+.docs-audit-badge { font-size: .9rem; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
+.docs-audit-badge.has-orphans { background: rgba(251,146,60,.15); color: #fb923c; border: 1px solid rgba(251,146,60,.4); }
+.docs-audit-badge.no-orphans  { background: rgba(74,222,128,.12); color: #4ade80; border: 1px solid rgba(74,222,128,.35); }
+.docs-audit-source { font-size: .78rem; }
+.docs-audit-empty { padding: 20px; text-align: center; }
+.docs-audit-error  { color: #fb923c; }
+.docs-audit-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 5px; margin-bottom: 4px; border: 1px solid var(--border,#444); }
+.docs-audit-row.row-exists { background: rgba(251,146,60,.07); }
+.docs-audit-row.row-gone   { background: rgba(74,222,128,.06); }
+.docs-audit-icon   { font-size: 1rem; flex-shrink: 0; }
+.docs-audit-path   { flex: 1; font-family: 'Cascadia Code','Consolas',monospace; font-size: .8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--fg,#cdd6f4); }
+.docs-audit-status { flex-shrink: 0; font-size: .75rem; color: var(--muted,#888); }

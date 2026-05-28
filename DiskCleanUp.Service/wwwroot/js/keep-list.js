@@ -13,7 +13,7 @@
 //    - actions.js           →  "Keep Selected" toolbar button calls keepSelected()
 //    - settings.js          →  keep-list management panel (view/remove/clear)
 import { apiFetch } from './ui-utils.js';
-import { ErrLog } from '/js/error-logger.js';
+import { ErrLog } from './error-logger.js';
 // ── Cached count for badge ──────────────────────────────────────────────
 let _keepCount = 0;
 /** Initialize — fetch current count for badge + wire click handler */
@@ -203,7 +203,7 @@ async function _keepListRemoveChecked() {
         alert('Select files to un-keep first.');
         return;
     }
-    const paths = checked.map(cb => cb.dataset.path);
+    const paths = checked.map(cb => cb.dataset.path).filter(Boolean);
     await unkeepPaths(paths);
     // Refresh the modal
     await _openKeepListModal();

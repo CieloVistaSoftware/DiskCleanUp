@@ -497,7 +497,7 @@ async function runDiagnostics() {
   // Check 4: Event queue
   const eventQueueInfo = window._eventQueue ? 
     { 
-      size: window._eventQueue.length || 0,
+      size: (window._eventQueue as any)?.length || 0,
       isProcessing: window._processingQueue ? true : false 
     } : 
     { size: 'unknown', isProcessing: 'unknown' };

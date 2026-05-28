@@ -37,34 +37,34 @@ function _wireFolderChoices(input: HTMLInputElement | null, listId = 'folderChoi
 export async function loadSettings() {
   try {
     const cfg = await apiFetch('/api/config');
-    document.getElementById('cfgRoot').value          = cfg.root || '';
+    (document.getElementById('cfgRoot') as HTMLInputElement).value          = cfg.root || '';
     _wireFolderChoices(document.getElementById('cfgRoot') as HTMLInputElement | null);
-    document.getElementById('cfgExtraRoots').value    = (cfg.extra_roots || cfg.extraRoots || []).join('\n');
-    document.getElementById('cfgStaleDays').value     = cfg.stale_days || cfg.staleDays || 90;
-    document.getElementById('cfgLargeMb').value       = cfg.large_file_mb || cfg.largeFileMb || 50;
-    document.getElementById('cfgParallelism').value   = cfg.max_parallelism || cfg.maxParallelism || 4;
+    (document.getElementById('cfgExtraRoots') as HTMLInputElement).value    = (cfg.extra_roots || cfg.extraRoots || []).join('\n');
+    (document.getElementById('cfgStaleDays') as HTMLInputElement).value     = String(cfg.stale_days || cfg.staleDays || 90);
+    (document.getElementById('cfgLargeMb') as HTMLInputElement).value       = String(cfg.large_file_mb || cfg.largeFileMb || 50);
+    (document.getElementById('cfgParallelism') as HTMLInputElement).value   = String(cfg.max_parallelism || cfg.maxParallelism || 4);
     document.getElementById('rootDisplay').textContent = cfg.root || '';
     _wireRootEditable();
     const _rb = document.getElementById('rootOpenBtn');
     if (_rb) _rb.style.display = cfg.root ? '' : 'none';
     // Trace toggle (localStorage, not server config)
-    const traceEl = document.getElementById('cfgTrace');
+    const traceEl = document.getElementById('cfgTrace') as HTMLInputElement | null;
     if (traceEl) traceEl.checked = localStorage.getItem('dcu_trace') !== 'false';
   } catch {
-    document.getElementById('cfgStaleDays').value     = 90;
-    document.getElementById('cfgLargeMb').value       = 50;
-    document.getElementById('cfgParallelism').value   = 4;
+    (document.getElementById('cfgStaleDays') as HTMLInputElement).value     = '90';
+    (document.getElementById('cfgLargeMb') as HTMLInputElement).value       = '50';
+    (document.getElementById('cfgParallelism') as HTMLInputElement).value   = '4';
     document.getElementById('rootDisplay').textContent = '⚠️ Offline';
   }
 }
 
 export async function saveSettings() {
   const cfg = {
-    root:            document.getElementById('cfgRoot').value.trim(),
-    extra_roots:     document.getElementById('cfgExtraRoots').value.split('\n').map(s => s.trim()).filter(Boolean),
-    stale_days:      parseInt(document.getElementById('cfgStaleDays').value) || 90,
-    large_file_mb:   parseInt(document.getElementById('cfgLargeMb').value) || 50,
-    max_parallelism: parseInt(document.getElementById('cfgParallelism').value) || 4,
+    root:            (document.getElementById('cfgRoot') as HTMLInputElement).value.trim(),
+    extra_roots:     (document.getElementById('cfgExtraRoots') as HTMLInputElement).value.split('\n').map(s => s.trim()).filter(Boolean),
+    stale_days:      parseInt((document.getElementById('cfgStaleDays') as HTMLInputElement).value) || 90,
+    large_file_mb:   parseInt((document.getElementById('cfgLargeMb') as HTMLInputElement).value) || 50,
+    max_parallelism: parseInt((document.getElementById('cfgParallelism') as HTMLInputElement).value) || 4,
   };
   await apiFetch('/api/config', {
     method: 'POST',
@@ -77,7 +77,7 @@ export async function saveSettings() {
   const _rb2 = document.getElementById('rootOpenBtn');
   if (_rb2) _rb2.style.display = cfg.root ? '' : 'none';
   // Save trace toggle to localStorage (takes effect on next page load)
-  const traceEl = document.getElementById('cfgTrace');
+  const traceEl = document.getElementById('cfgTrace') as HTMLInputElement | null;
   if (traceEl) localStorage.setItem('dcu_trace', traceEl.checked ? 'true' : 'false');
 }
 
@@ -138,8 +138,8 @@ export async function loadSettingsHelp() {
     if (!res.ok) { el.textContent = '(help file not found)'; return; }
     const md = await res.text();
     // marked.js loaded via CDN <script> tag — available as window.marked
-    if (typeof marked !== 'undefined' && marked.parse) {
-      el.innerHTML = marked.parse(md);
+    if (typeof window.marked !== 'undefined' && window.marked?.parse) {
+      el.innerHTML = window.marked.parse(md) as string;
     } else {
       // Fallback: render as preformatted text
       el.innerHTML = '<pre style="white-space:pre-wrap">' + md.replace(/</g,'&lt;') + '</pre>';

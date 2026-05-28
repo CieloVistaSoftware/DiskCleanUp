@@ -65,15 +65,15 @@ function _renderTable() {
 }
 
 export function filterRecycleBin() {
-  const text = (document.getElementById('rbFilter')?.value || '').toLowerCase();
-  const type = document.getElementById('rbTypeFilter')?.value || '';
+  const text = ((document.getElementById('rbFilter') as HTMLInputElement | null)?.value || '').toLowerCase();
+  const type = (document.getElementById('rbTypeFilter') as HTMLInputElement | null)?.value || '';
   const rows = document.querySelectorAll('#rbTable tbody tr');
   let visible = 0;
   rows.forEach(tr => {
     const nameMatch = !text || tr.textContent.toLowerCase().includes(text);
-    const typeMatch = !type || tr.dataset.rbType === type;
+    const typeMatch = !type || (tr as HTMLElement).dataset.rbType === type;
     const show = nameMatch && typeMatch;
-    tr.style.display = show ? '' : 'none';
+    (tr as HTMLElement).style.display = show ? '' : 'none';
     if (show) visible++;
   });
   const status = document.getElementById('rbStatus');
@@ -82,22 +82,22 @@ export function filterRecycleBin() {
 
 export function rbSelectAll() {
   document.querySelectorAll('#rbTable tbody tr').forEach(tr => {
-    if (tr.style.display !== 'none') {
-      const cb = tr.querySelector('input[type=checkbox]');
+    if ((tr as HTMLElement).style.display !== 'none') {
+      const cb = tr.querySelector('input[type=checkbox]') as HTMLInputElement | null;
       if (cb) cb.checked = true;
     }
   });
 }
 
 export function rbSelectNone() {
-  document.querySelectorAll('#rbTable input[type=checkbox]').forEach(cb => cb.checked = false);
+  document.querySelectorAll('#rbTable input[type=checkbox]').forEach(cb => (cb as HTMLInputElement).checked = false);
 }
 
 export async function restoreSelected() {
   const checked = [...document.querySelectorAll('#rbTable input[type=checkbox]:checked')];
   if (!checked.length) { alert('No items selected'); return; }
 
-  const paths = checked.map(cb => cb.dataset.rbPath);
+  const paths = checked.map(cb => (cb as HTMLInputElement).dataset.rbPath);
   if (!confirm(`Restore ${paths.length} item(s) from Recycle Bin?`)) return;
 
   const status = document.getElementById('rbStatus');

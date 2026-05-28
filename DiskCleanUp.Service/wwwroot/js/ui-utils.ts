@@ -47,9 +47,9 @@ export function selectAllTable(id, val) {
     // Only select visible rows
     if (val) {
       const row = cb.closest('.sg-row, tr');
-      if (row?.style.display === 'none') return;
+      if ((row as HTMLElement)?.style.display === 'none') return;
     }
-    cb.checked = val;
+    (cb as HTMLInputElement).checked = val;
   });
 }
 
@@ -57,7 +57,7 @@ export function getCheckedPaths(tableId) {
   const el = _findContainer(tableId);
   if (!el) return [];
   return [...el.querySelectorAll('input[type=checkbox]:checked')]
-    .map(cb => cb.dataset.path).filter(Boolean);
+    .map(cb => (cb as HTMLInputElement).dataset.path).filter(Boolean);
 }
 
 // ── Section module registry (onShow / onHide) ──────────────────────────────
@@ -68,7 +68,7 @@ export function registerSectionModule(name, mod) {
   _sectionModules[name] = mod;
 }
 
-export function showSection(name, btn) {
+export function showSection(name, btn?) {
   if (_activeSection !== name && _sectionModules[_activeSection]?.onHide)
     _sectionModules[_activeSection].onHide();
 
@@ -94,6 +94,7 @@ export function showSection(name, btn) {
 }
 
   if (_sectionModules[name]?.onShow) _sectionModules[name].onShow();
+  (window as any)._restoreSectionIfEmpty?.(name);
 }
 
 // Restore last active tab on page load

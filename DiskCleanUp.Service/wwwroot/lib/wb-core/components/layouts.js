@@ -484,11 +484,23 @@ export function drawerLayout(element, options = {}) {
         element.dataset.prevBorder = element.style.border;
         element.style.border = 'none';
     }
+    // Arrow helper for toggle button
+    const getArrow = (collapsed) => {
+        if (config.position === 'left')
+            return collapsed ? '▶' : '◀';
+        if (config.position === 'right')
+            return collapsed ? '◀' : '▶';
+        if (config.position === 'top')
+            return collapsed ? '▼' : '▲';
+        if (config.position === 'bottom')
+            return collapsed ? '▲' : '▼';
+        return '?';
+    };
     // Toggle Logic
     const toggle = () => {
         isCollapsed = !isCollapsed;
         if (config.saveState)
-            localStorage.setItem(storageKeyCollapsed, isCollapsed);
+            localStorage.setItem(storageKeyCollapsed, String(isCollapsed));
         // Update arrow if using default button
         if (toggleBtn && !config.toggleSelector) {
             toggleBtn.innerHTML = getArrow(isCollapsed);
@@ -539,18 +551,6 @@ export function drawerLayout(element, options = {}) {
         // Create default toggle button
         toggleBtn = document.createElement('button');
         toggleBtn.className = 'wb-drawer-toggle';
-        // Arrow logic
-        const getArrow = (collapsed) => {
-            if (config.position === 'left')
-                return collapsed ? '▶' : '◀';
-            if (config.position === 'right')
-                return collapsed ? '◀' : '▶';
-            if (config.position === 'top')
-                return collapsed ? '▼' : '▲';
-            if (config.position === 'bottom')
-                return collapsed ? '▲' : '▼';
-            return '?';
-        };
         toggleBtn.innerHTML = getArrow(isCollapsed);
         // Button Styles
         let btnStyles = `

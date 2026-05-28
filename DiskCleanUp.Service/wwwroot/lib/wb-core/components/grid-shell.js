@@ -96,6 +96,9 @@ class FragmentBatcher {
     constructor() {
         this.pending = [];
         this.scheduled = false;
+        this.batchedFragment = null;
+        this.pending = [];
+        this.scheduled = false;
     }
     add(element) {
         this.pending.push(element);

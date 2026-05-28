@@ -1,38 +1,36 @@
 ---
 docid: 300.2.service-architecture
-id: diskcleanup-windows-service-architecture
-title: DiskCleanUp — Windows Service Architecture
+id: diskcleanup-worker-service-architecture
+title: DiskCleanUp — Worker Service Architecture
 project: DiskCleanUp
-description: Author: Claude + John Peters Date: 2026-02-27 Status: Design Phase Version: 1.0
+description: ASP.NET Core 8 Generic Host Worker Service + vanilla HTML/JS dashboard.
 status: active
 tags: [service, architecture, diskcleanup]
 category: 300.2 — Architecture
 created: 2026-02-28
-updated: 2026-04-27
-version: 1.0.0
+updated: 2026-05-18
+version: 2.2.0
 author: CieloVista Software
 relativepath: DiskCleanUp.Service/wwwroot/arch/SERVICE-ARCHITECTURE.md
 ---
-# DiskCleanUp — Windows Service Architecture
+# DiskCleanUp — Worker Service Architecture
 
-**Author:** Claude + John Peters
-**Date:** 2026-02-27
-**Status:** Design Phase
-**Version:** 1.0
+**Updated:** 2026-05-18 (Issue #18 — Worker Service + IScanRule pipeline)
+**Version:** 2.2.0
 
 ---
 
 ## 1. Executive Summary
 
-Migrate DiskCleanUp from a single ASP.NET Core process into a **two-process architecture**: a headless Windows Service that owns all business logic and file operations, and a lightweight system tray application that provides the dashboard UI on demand.
+DiskCleanUp is a **.NET 8 Generic Host Worker Service** (not a Windows Service) that provides a REST/WebSocket API and a vanilla HTML/JS dashboard. Scanning is done by an extensible **IScanRule plugin pipeline** — each scan section is an independent rule class, registered in DI, requiring no switch statements in the orchestrator.
 
 **Goals:**
 
-- Background scanning on schedule without a browser open
-- Survive user logoff (service runs as SYSTEM or a dedicated account)
-- Auto-start on boot
-- Dashboard becomes a disposable, stateless UI layer
-- Clean separation: service = engine, tray app = windshield
+- Scheduled background scanning (Task Scheduler or manual `--scan` invocation)
+- Lightweight IScanRule plugin pipeline — add a section by implementing one interface
+- Two-stage hashing: xxHash64 (fast grouping) + SHA-256 (confirmation only)
+- Bounded Channel backpressure — no unbounded memory growth during fast scans
+- Dashboard is a disposable, stateless UI layer; all state is on disk
 
 ---
 
@@ -43,21 +41,61 @@ Migrate DiskCleanUp from a single ASP.NET Core process into a **two-process arch
 │                    Windows OS                        │
 │                                                      │
 │  ┌──────────────────────┐  ┌──────────────────────┐ │
-│  │  DiskCleanUp.Service │  │  DiskCleanUp.Tray    │ │
-│  │  (Windows Service)   │  │  (System Tray App)   │ │
+│  │  DiskCleanUp.Service  │  │  DiskCleanUp.Tray    │ │
+│  │  (Worker Service /   │  │  (System Tray App)   │ │
+│  │   console app)       │  │                      │ │
+│  │                      │  │  NotifyIcon           │ │
+│  │  Kestrel :5000/5100  │◄─┤  ├─ Open Dashboard   │ │
+│  │  ├─ REST API          │  │  ├─ Start/Stop Scans │ │
+│  │  └─ WebSocket /ws     │  │  └─ Exit             │ │
 │  │                      │  │                      │ │
-│  │  Kestrel :5100       │  │  NotifyIcon          │ │
-│  │  ├─ REST API         │◄─┤  ├─ Open Dashboard   │ │
-│  │  ├─ WebSocket /ws    │  │  ├─ Start/Stop Scans │ │
-│  │  └─ SignalR (future) │  │  ├─ Status tooltip   │ │
-│  │                      │  │  └─ Exit             │ │
-│  │  ScanOrchestrator    │  │                      │ │
-│  │  ConfigService       │  │  Launches browser →  │ │
-│  │  WsManager           │  │  http://localhost:5100│ │
-│  │  MetricsService      │  │                      │ │
-│  │  BackgroundScans     │  │  Static files served  │ │
-│  │  JSONL Cache         │  │  by the Service       │ │
-│  │  Keep-List           │  │                      │ │
+│  │  ScanOrchestrator     │  │  Launches browser →   │ │
+│  │  └─ ScanPipeline       │  │  http://localhost:5100│ │
+│  │     └─ IScanRule[×13] │  │                      │ │
+│  │  ConfigService        │  └──────────────────────┘ │
+│  │  WsManager            │                           │
+│  │  MetricsService       │                           │
+│  │  BackgroundScans      │                           │
+│  │  JSONL Cache          │                           │
+│  └──────────────────────┘                           │
+└─────────────────────────────────────────────────────┘
+```
+
+## 3. IScanRule Plugin Pipeline
+
+Each scan section is an `IScanRule` implementation in `DiskCleanUp.Service/Scanning/Rules/`.
+`ScanPipeline` resolves rules by `section` name from the DI `IEnumerable<IScanRule>` registration.
+
+| Rule class | Section |
+|---|---|
+| `DuplicatesRule` | `duplicates` |
+| `SmartDedupRule` | `smart-dedup` |
+| `StaleRule` | `stale` |
+| `LargeRule` | `large` |
+| `TinyFilesRule` | `tiny-files` |
+| `HtmlFilesRule` | `html-files` |
+| `CssFilesRule` | `css-files` |
+| `EmptyRule` | `empty` |
+| `NodeModulesRule` | `node-modules` |
+| `VenvsRule` | `venvs` |
+| `ImagesRule` | `images` |
+| `BackupsRule` | `backups` |
+| `ExtSearchRule` | `ext-search` |
+
+Adding a new section: implement `IScanRule`, register `services.AddSingleton<IScanRule, MyRule>()` in Program.cs.
+
+## 4. Run Modes
+
+| Flag | Port | Description |
+|------|------|-------------|
+| `--console` | 5000 | Dev mode: HTTP + scans + opens browser |
+| `--serve` | ephemeral | HTTP only, no background scans |
+| `--scan` | none | Headless engine only (Task Scheduler) |
+| *(no args)* | 5000 | Same as `--console` |
+
+## 5. Data Directory
+
+All data in `C:\ProgramData\DiskCleanUp\` via `Constants.DataDir`.
 │  │  Savings/Errors      │  └──────────────────────┘ │
 │  │                      │                            │
 │  │  %ProgramData%\      │  ┌──────────────────────┐ │
@@ -68,7 +106,7 @@ Migrate DiskCleanUp from a single ASP.NET Core process into a **two-process arch
 │  │   └─ savings.jsonl   │  │  └─ All existing JS  │ │
 │  └──────────────────────┘  └──────────────────────┘ │
 └─────────────────────────────────────────────────────┘
-```
+```yaml
 
 ---
 
@@ -131,7 +169,7 @@ DiskCleanUp/
 │
 └── DiskCleanUp.Installer/            ← Optional: MSI/MSIX packaging
     └── (future)
-```
+```yaml
 
 ---
 
@@ -183,7 +221,7 @@ app.MapFileEndpoints();
 app.MapFallbackToFile("index.html");
 
 await app.RunAsync();
-```
+```yaml
 
 ### 4.2 Data Directory
 
@@ -201,7 +239,7 @@ await app.RunAsync();
 │   └── ...
 └── logs/
     └── service.log
-```
+```text
 
 **Why `%ProgramData%`?** Writable by SYSTEM and Administrators, survives app updates, standard for Windows services, not user-profile-specific.
 
@@ -220,7 +258,7 @@ public static class CacheEndpoints
         app.MapPost("/api/cache/{section}/remove", HandleRemovePaths);
     }
 }
-```
+```yaml
 
 ### 4.4 Service Installation
 
@@ -228,7 +266,7 @@ public static class CacheEndpoints
 DiskCleanUp.Service.exe --install     ← sc create + sc start
 DiskCleanUp.Service.exe --uninstall   ← sc stop + sc delete
 DiskCleanUp.Service.exe --console     ← Run as console app (dev mode)
-```
+```yaml
 
 ### 4.5 Service Account
 
@@ -270,7 +308,7 @@ Polls `GET /api/metrics` every 10 seconds. Updates icon + tooltip based on respo
 ```text
 HKCU\Software\Microsoft\Windows\CurrentVersion\Run
   DiskCleanUp.Tray = "C:\Program Files\DiskCleanUp\DiskCleanUp.Tray.exe"
-```
+```text
 
 Service = boot start. Tray app = login start. Independent lifecycles.
 
@@ -333,7 +371,7 @@ public static class Constants
     public static string ConfigPath   => Path.Combine(DataDir, "config.json");
     public static string KeepListPath => Path.Combine(DataDir, "keep-list.json");
 }
-```
+```yaml
 
 ---
 

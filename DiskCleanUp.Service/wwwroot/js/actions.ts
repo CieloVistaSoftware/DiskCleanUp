@@ -63,13 +63,14 @@ export function startScan(section) {
     const input = document.getElementById('extSearchInput') as HTMLInputElement | null;
     const query = (input?.value || '').trim().replace(/^\.+/, '');
     if (!query) return;
-    // Root comes from header #rootDisplay (global config root) — no per-scan override
-    msg.extensions = [query];
+    const rootInput = document.getElementById('extSearchRootInput') as HTMLInputElement | null;
+    const root = (rootInput?.value || '').trim();
+    (msg as any).extensions = root ? [query, root] : [query];
   } else if (SF && _extSections.has(section)) {
     const mode = SF.getMode(section);
     const included = SF.getIncluded(section);
     if (mode === 'include' && included) {
-      msg.extensions = [included];
+      (msg as any).extensions = [included];
     }
     // Exclude mode: don't pass to backend, filter client-side only
   }
@@ -100,7 +101,7 @@ export function cancelScan(section) {
   SB.done(section, 'Cancelled');
 }
 
-export function trashSelected(tableId, directPaths) {
+export function trashSelected(tableId, directPaths?) {
   crumb('actions', 'trashSelected', { tableId, directCount: directPaths?.length });
   let paths;
   if (directPaths && directPaths.length) {
@@ -119,7 +120,7 @@ export function trashSelected(tableId, directPaths) {
     if (!tbl) return;
     const checked = [...tbl.querySelectorAll('input[type=checkbox]:checked')];
     if (!checked.length) { alert('Select files first.'); return; }
-    paths = checked.map(cb => cb.dataset.path).filter(Boolean);
+    paths = checked.map(cb => (cb as HTMLInputElement).dataset.path).filter(Boolean);
     checked.forEach(cb => cb.closest('tr')?.remove());
   }
   if (!paths.length) { alert('Select files first.'); return; }
@@ -144,7 +145,7 @@ export async function applySmartDedup() {
   crumb('actions', 'applySmartDedup', { groups: data.length });
   if (!data.length) { alert('Scan first.'); return; }
   if (!confirm(`Delete numbered copies in ${data.length} groups? Files go to Recycle Bin.`)) return;
-  const total = data.reduce((n, d) => n + (d.delete?.length || 0), 0);
+  const total = data.reduce((n, d: any) => n + (d.delete?.length || 0), 0);
   window._T?.('TRASH', `SMART-DEDUP apply ${data.length} groups (${total} files)`);
   await _postAndRescan({
     endpoint: '/api/smart-dedup/apply',
@@ -197,7 +198,7 @@ function _selectedHtmlPaths() {
     const container = document.getElementById('htmlResult');
     if (container) {
       paths = [...container.querySelectorAll('input[type=checkbox]:checked[data-path]')]
-        .map(cb => cb.dataset.path)
+        .map(cb => (cb as HTMLInputElement).dataset.path)
         .filter(Boolean);
     }
   }
@@ -246,7 +247,7 @@ export async function extractSvgFromSelectedHtml() {
 
 export function renderImageGroups(resultEl, groups) {
   let html = '';
-  Object.values(groups).forEach(files => {
+  Object.values(groups).forEach((files: any) => {
     if (!files.length) return;
     html += `<div class="img-group">
       <span class="badge red">Duplicate Group</span>
@@ -289,7 +290,7 @@ export function trashAllImageCopies() {
   if (!confirm(`Delete ALL ${paths.length} duplicate image cop${paths.length===1?'y':'ies'}?\nOriginals are safe. Files go to Recycle Bin.`)) return;
 
   // Show spinner on button
-  const btn = document.getElementById('imgDeleteAllBtn');
+  const btn = document.getElementById('imgDeleteAllBtn') as HTMLButtonElement | null;
   if (btn) { btn.disabled = true; btn.textContent = '\u23f3 Deleting\u2026'; }
 
   // Clear the UI

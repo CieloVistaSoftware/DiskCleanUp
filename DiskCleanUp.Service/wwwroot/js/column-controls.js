@@ -4,7 +4,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 import { tableResize } from '/lib/wb-core/behaviors/table-resize.js';
 import { tableSort } from '/lib/wb-core/behaviors/table-sort.js';
-import { ErrLog } from '/js/error-logger.js';
+import { ErrLog } from './error-logger.js';
 // Re-export for direct use by other modules (e.g. table-utils.js)
 export { tableResize as makeColumnsResizable, tableSort as makeColumnsSortable };
 // ── MutationObserver REMOVED ─────────────────────────────────────────

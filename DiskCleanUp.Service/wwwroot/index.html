@@ -41,43 +41,44 @@ window._T = (tag, msg) => {
   <h1>🧹 Disk Cleanup Dashboard</h1>
   <span id="rootDisplay" title="Click to change root folder" class="root-display-editable"></span><input id="rootEditInput" class="root-edit-input hidden" type="text" placeholder="New root path..." list="folderChoicesList"><button id="rootOpenBtn" class="btn muted btn-xs hidden" title="Open root folder in Explorer" onclick="fetch('/api/open-folder',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:document.getElementById('rootDisplay').textContent.trim()})}).catch(()=>{})">📂</button>
   <datalist id="folderChoicesList"></datalist>
-  <a id="connStatus" class="disconnected" href="/ws-diagram.html" target="_blank">⚡ Connecting…</a>
-  <button id="diagBtn" class="btn muted" title="Run connection diagnostics" onclick="window._runDiagnostics()">🔍 Diagnose</button>
+  <a id="connStatus" class="disconnected" href="/ws-diagram.html" target="_blank" title="WebSocket status. ⚡ Live = real-time events are flowing from the service. If stuck on Connecting, check that the service is running on port 5000 (dev) or 5100 (service). The dashboard auto-reconnects every 3 s. Click to open the WebSocket architecture diagram.">⚡ Connecting…</a>
+  <button id="diagBtn" class="btn muted" title="Run connection diagnostics. Tests: WebSocket handshake, HTTP /api/config, and scan cache files. Use when the dashboard appears stuck, shows stale data, or WebSocket is perpetually Connecting. Results are shown in a popup overlay." onclick="window._runDiagnostics()">🔍 Diagnose</button>
 
-  <span id="totalSaved"></span>
-  <span id="queueBadge" title="Files queued for delete">🗑 0 queued</span>
-  <span id="keepBadgeBtn" title="Click to view kept files">🔒 <span id="keepCountBadge" class="keep-badge hidden">0</span></span>
-  <a id="traceLogBtn" href="/trace-viewer.html" target="_blank" title="Open trace log in new tab">📜 Trace</a>
-   <button id="copyGithubChatBtn" class="btn muted" title="Copy dashboard snapshot text for pasting into GitHub Chat">📋 Copy for Chat</button>
+  <span id="totalSaved" title="Total disk space freed by sending files to the Recycle Bin. Accumulated from all sections across sessions. Sourced from C:\ProgramData\DiskCleanUp\savings_log.jsonl. Click GC → to force .NET garbage collection and free server heap memory."></span>
+  <span id="queueBadge" title="Files staged for deletion but not yet sent to the Recycle Bin. These rows are highlighted in result grids. Use Delete Selected or Delete All in any section's Commands menu to process the queue. Queue resets after each delete action.">🗑 0 queued</span>
+  <span id="keepBadgeBtn" title="Keep List — paths excluded from all future scans. The number shows how many items are currently protected. Click to open the Keep List manager. Kept paths are saved to C:\ProgramData\DiskCleanUp\keep-list.json and survive service restarts.">🔒 <span id="keepCountBadge" class="keep-badge hidden">0</span></span>
+  <a id="traceLogBtn" href="/trace-viewer.html" target="_blank" title="Open the live trace log viewer in a new tab. Shows real-time breadcrumbs from the dashboard JS (page loads, WebSocket events, scan progress, errors) and service-side API calls. Breadcrumbs stored in C:\ProgramData\DiskCleanUp\trace.jsonl. Use to debug stuck scans or connection issues.">📜 Trace</a>
+   <button id="copyGithubChatBtn" class="btn muted" title="Copy a complete dashboard snapshot to clipboard for pasting into GitHub Copilot Chat. Captures: section statuses, scan result counts, current root, server CPU/memory, uptime, active errors, and WebSocket state. Use when filing a bug report or asking Copilot for help.">📋 Copy for Chat</button>
   <div id="metricsBar">
-    <span>CPU</span><canvas id="cpuCanvas" width="80" height="22" title="System-wide CPU usage %"></canvas><span id="cpuVal" class="metric-val">—</span>
-    <span>MEM</span><canvas id="memCanvas" width="80" height="22" title="System-wide memory usage"></canvas><span id="memVal" class="metric-val">—</span>
+    <span>CPU</span><canvas id="cpuCanvas" width="80" height="22" title="Real-time CPU usage graph (system-wide). Sampled every 5 s by MetricsService via Win32 PerformanceCounter. High CPU during scans is expected — the SHA-256 hasher and directory walker are CPU-intensive."></canvas><span id="cpuVal" class="metric-val">—</span>
+    <span>MEM</span><canvas id="memCanvas" width="80" height="22" title="Real-time memory usage graph (dotnet process heap). Sampled every 5 s. The orange warning banner appears when server memory exceeds 80%. Use GC → in the banner to force a garbage collection and reclaim heap."></canvas><span id="memVal" class="metric-val">—</span>
     <span class="metrics-sep">|</span>
-    <span id="threadVal" title="App thread count (dotnet process)">— threads</span>
+    <span id="threadVal" title="Current thread count for the DiskCleanUp.Service process. High values (>50) during active scans are normal — each section scan runs on the .NET thread pool. Monitored by MetricsService.">— threads</span>
     <span class="metrics-sep">|</span>
-    <span id="uptimePulse" class="pulse-dot green" title="System heartbeat — ticks every second"></span>
-    <span id="uptimeVal" class="metric-val" title="Uptime since page load">0:00</span>
+    <span id="uptimePulse" class="pulse-dot green" title="Service heartbeat indicator. Pulses every second when the backend is alive and the WebSocket is connected. A flat/dim dot means the connection is lost — check the ⚡ Live status indicator."></span>
+    <span id="uptimeVal" class="metric-val" title="Time elapsed since this browser tab was loaded. Resets on page refresh. This is dashboard uptime, not service uptime — the service may have been running longer.">0:00</span>
   </div>
 </header>
 
 <nav id="mainNav">
-  <select id="sectionMenu" class="filter-select" title="Choose a section">
-    <option value="duplicates" title="Find exact duplicate files">Duplicates</option>
-    <option value="smart-dedup" title="Find numbered copy variants">Smart Dedup</option>
-    <option value="stale" title="Find files older than threshold">Stale Files</option>
-    <option value="large" title="Find large files by size">Large Files</option>
-    <option value="node-modules" title="Find node_modules folders">node_modules</option>
-    <option value="venvs" title="Find Python virtual environments">Venvs</option>
-    <option value="empty" title="Find empty folders">Empty Folders</option>
-    <option value="images" title="Find duplicate images">Dup Images</option>
-    <option value="backups" title="Find backup/archive folders">Backup Folders</option>
-    <option value="tiny-files" title="Find tiny files">Tiny Files</option>
-    <option value="html-files" title="Find HTML files">HTML Files</option>
-    <option value="css-files" title="Find CSS files">CSS Files</option>
-    <option value="ext-search" title="Find files by extension characters">Extension Finder</option>
-    <option value="tasks" title="View and manage running tasks">Tasks</option>
-    <option value="savings" title="Review cleanup savings">Savings Log</option>
-    <option value="settings" title="Configure scan behavior">Settings</option>
+  <select id="sectionMenu" class="filter-select" title="Jump to a scan section. Each section targets a different category of cleanup candidate. The active section is highlighted in the nav row. Your last-visited section is restored on reload.">
+    <option value="duplicates" title="Find exact duplicate files. Uses SHA-256 hashing to compare content byte-for-byte across all files under the root. Groups matches — keep the original, delete the copies. Works on all file types. Scans the full directory tree recursively.">Duplicates</option>
+    <option value="smart-dedup" title="Detect auto-numbered copies like 'report (1).pdf' or 'photo (2).jpg'. Uses filename pattern matching — no hashing. Keeps the cleanest-named original and flags numbered variants for removal. Very fast. Best used on Downloads and Desktop folders.">Smart Dedup</option>
+    <option value="stale" title="Find files not modified in over N days (default 90 days, configurable in Settings → Stale Days). Sorted oldest-first. Great for clearing Downloads, temp folders, and forgotten project files. The age threshold is compared against the file's LastWriteTime.">Stale Files</option>
+    <option value="large" title="List files exceeding the size threshold (default 10 MB, set in Settings → Large File Min Size). Sorted by size descending. Quickly spot disk hogs: ISOs, videos, crash dumps, archives, and log files. Delete directly from the row actions or select multiple and use Delete Selected.">Large Files</option>
+    <option value="node-modules" title="Find node_modules folders anywhere under the root. These can be safely deleted and recreated with 'npm install'. Typically 100 MB–2 GB each. Sorted by total folder size. Deletes only the node_modules directory — your package.json and source files are untouched.">node_modules</option>
+    <option value="venvs" title="Find Python virtual environment folders (venv, .venv, env, .env patterns). Safe to delete and recreate with 'python -m venv'. Often 300 MB–1 GB each. Sorted by size. Only the venv folder is removed — your Python source files are not touched.">Venvs</option>
+    <option value="empty" title="Find completely empty folders (zero files, no subfolders) anywhere under the root. Common leftover artifacts from uninstalls, git operations, or build tools. Very fast scan — no file content reading. Safe to bulk-delete all results.">Empty Folders</option>
+    <option value="images" title="Find visually similar or duplicate images using perceptual hashing (pHash). Catches near-identical images even if resized, cropped, or lightly re-saved. More CPU-intensive than SHA-256. Groups matches by similarity — keep one, send duplicates to Recycle Bin. Best for Photos and Downloads.">Dup Images</option>
+    <option value="backups" title="Find backup and archive folders matching patterns like '_backup', '_bak', 'archive', 'old', and compressed archives (.zip, .7z, .tar). Sorted by size. These are often manual backup copies that pile up over time. Review carefully before deleting — contents are not previewed.">Backup Folders</option>
+    <option value="tiny-files" title="Find very small files under N bytes (default 1 KB, set in Settings → Tiny File Max Size). Often placeholder files, empty configs, leftover build artifacts, and zero-byte temp files. Sorted by size ascending. Safe to bulk-delete results that look like build noise.">Tiny Files</option>
+    <option value="html-files" title="Find all HTML files under the root. Useful for cleaning up saved web pages, documentation exports, leftover build output, and Playwright report files. Each row shows path and size. Row actions include Open in Browser.">HTML Files</option>
+    <option value="css-files" title="Find all CSS files under the root. Useful for auditing generated stylesheets, old build outputs, and orphaned style files from removed projects. Sorted by size.">CSS Files</option>
+    <option value="ext-search" title="Find files by extension fragment — type 'log', 'tmp', 'bak', 'cs', etc. Uses its own root field (separate from the global root) so you can target a specific folder. Scans as you type (debounced). Results stream via WebSocket. Use Commands menu to delete or keep all matches.">Extension Finder</option>
+    <option value="tasks" title="View all currently running background scan tasks. Shows task name, start time, elapsed time, and status. Use Cancel to stop a stuck or long-running scan. Tasks are managed by BackgroundScanService and the ScanOrchestrator channel pipeline.">Tasks</option>
+    <option value="savings" title="Review cumulative cleanup history. Shows every file sent to the Recycle Bin: timestamp, path, size, and which scan section triggered it. Sourced from C:\ProgramData\DiskCleanUp\savings_log.jsonl. Useful for auditing what was cleaned and when.">Savings Log</option>
+    <option value="docs-audit" title="Shows orphaned documentation files — docs not linked from any index. Sourced from the most recent docs/audit-orphans-*.md file in the repository.">Docs Audit</option>
+    <option value="settings" title="Configure scan behavior: root folders, file size thresholds, stale days, scheduled scan time, and recurring scan interval. Changes are saved to C:\ProgramData\DiskCleanUp\config.json and take effect immediately — no service restart needed.">Settings</option>
   </select>
 </nav>
 
@@ -311,19 +312,19 @@ window._T = (tag, msg) => {
     </div>
     <div class="toolbar">
       <label for="extSearchRootInput" style="font-size:12px;color:#9aa3b2;white-space:nowrap;">Root:</label>
-      <input type="text" id="extSearchRootInput" class="filter-input" placeholder="Scan root path..." list="folderChoicesList" style="min-width:320px;">
-      <button class="btn muted" id="extSearchPickFolderBtn" type="button" title="Pick root folder">📁 Pick Folder</button>
-      <input type="text" id="extSearchInput" class="filter-input" placeholder="Type extension chars... (example: js, cs, log, tmp)">
+      <input type="text" id="extSearchRootInput" class="filter-input" placeholder="Scan root path..." list="folderChoicesList" style="min-width:320px;" title="Root folder for Extension Finder scans. Overrides the global root shown in the header — so you can search a specific folder (e.g. C:\Users\jwpmi\Downloads) without changing the global setting. Saved to localStorage and restored on your next visit. Leave blank to fall back to the global config root.">
+      <button class="btn muted" id="extSearchPickFolderBtn" type="button" title="Open a folder picker to choose the Extension Finder scan root. The selected path is filled into the Root field and saved automatically. Only affects Extension Finder — the global root in the header is not changed.">📁 Pick Folder</button>
+      <input type="text" id="extSearchInput" class="filter-input" placeholder="Type extension chars... (example: js, cs, log, tmp)" title="Extension fragment to search for. Type 'log' to find all .log files, 'tmp' for .tmp, 'bak' for .bak, etc. Leading dots are stripped automatically. The scan starts as you type (debounced ~400 ms). Results stream in via WebSocket from the service.">
       <label for="extCommandMenu" style="font-size:12px;color:#9aa3b2;white-space:nowrap;">Commands:</label>
-      <select id="extCommandMenu" title="Choose a command for Extension Finder" style="display:inline-block !important; min-width:220px; height:34px; padding:6px 8px; border:1px solid #3a3f5a; border-radius:6px; background:#1e1e2e; color:#e0e0e0;">
-        <option value="" title="Choose a command for Extension Finder">Commands...</option>
-        <option value="scan" title="Start a scan for the current extension query">Scan</option>
-        <option value="cancel" title="Cancel the in-progress scan">Cancel</option>
-        <option value="delete-selected" title="Delete selected rows to Recycle Bin">Delete Selected</option>
-        <option value="keep-selected" title="Keep selected rows and exclude from future scans">Keep Selected</option>
-        <option value="delete-all" title="Delete all matching rows to Recycle Bin">Delete All Matches</option>
+      <select id="extCommandMenu" title="Commands for the current Extension Finder results. Scan re-runs the search manually. Cancel stops an in-progress scan. Delete Selected / Delete All send files to the Recycle Bin (no permanent deletion). Keep Selected adds files to the Keep List, excluding them from future scans." style="display:inline-block !important; min-width:220px; height:34px; padding:6px 8px; border:1px solid #3a3f5a; border-radius:6px; background:#1e1e2e; color:#e0e0e0;">
+        <option value="" title="Choose a command to apply to the current Extension Finder results.">Commands...</option>
+        <option value="scan" title="Manually re-run the extension search with the current query and root. Useful if you changed the root or want to refresh results.">Scan</option>
+        <option value="cancel" title="Cancel the currently running Extension Finder scan. Results collected so far remain visible.">Cancel</option>
+        <option value="delete-selected" title="Send the checked/selected rows to the Windows Recycle Bin. Files can be restored from the Recycle Bin if needed. Nothing is permanently deleted.">Delete Selected</option>
+        <option value="keep-selected" title="Add selected file paths to the Keep List. Kept files are excluded from all future Extension Finder scans. Saved to keep-list.json.">Keep Selected</option>
+        <option value="delete-all" title="Send all matching rows to the Windows Recycle Bin in one operation. Use with care — all files matching the current extension query will be recycled.">Delete All Matches</option>
       </select>
-      <span id="extSearchHint" class="td-muted">Scans automatically as you type</span>
+      <span id="extSearchHint" class="td-muted" title="Extension Finder scans automatically as you type after a short debounce delay (~400 ms). You can also trigger a scan manually via Commands → Scan.">Scans automatically as you type</span>
     </div>
     <div id="extResult"></div>
   </div>
@@ -372,6 +373,7 @@ window._T = (tag, msg) => {
       <button class="btn muted" onclick="window.savingsSelectAll()">Select All</button>
       <button class="btn muted" onclick="window.savingsSelectNone()">Select None</button>
       <button class="btn green" onclick="window.restoreSavingsSelected()">↩️ Restore Selected</button>
+      <button class="btn muted" id="binAuditBtn" onclick="window.auditBinStatus()" title="Check which trashed files are still in the Recycle Bin">🗑 Bin Status</button>
       <span id="savingsSelCount" class="savings-meta"></span>
       <span id="savingsFilterStatus" class="savings-meta"></span>
     </div>
@@ -390,6 +392,18 @@ window._T = (tag, msg) => {
       <span id="rbStatus" class="savings-meta"></span>
     </div>
     <div id="rbResult"></div>
+  </div>
+</div>
+
+<!-- DOCS AUDIT -->
+<div id="section-docs-audit">
+  <div class="panel">
+    <h2>📄 Orphaned Docs Audit <span id="docsAuditCount" class="section-count"></span></h2>
+    <div class="toolbar">
+      <button class="btn" onclick="window.loadDocsAudit()">🔄 Refresh</button>
+    </div>
+    <div id="docsAuditSummary"><span class="muted">Click Refresh to load audit data.</span></div>
+    <div id="docsAuditList"></div>
   </div>
 </div>
 

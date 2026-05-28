@@ -48,11 +48,15 @@ Routes messages by type:
 The scan engine. For each section:
 
 1. Clears the JSONL cache file for that section
-2. Creates a `Channel<ScanEvent>` (async producer/consumer queue)
-3. Spawns `Parallel.ForEachAsync` workers that enumerate files and write events to the channel
-4. Runs a drain loop that reads from the channel and calls both `BroadcastAsync` (→ browser) and `AppendAllTextAsync` (→ JSONL disk cache)
+2. Initialises `_hashGate` (SemaphoreSlim) once on first call via `lock(_hashGateInit)`
+3. Creates a `Channel<ScanEvent>(500)` with `FullMode.Wait` backpressure
+4. Creates a `ScanContext` carrying config, keep-set, channel writer, and gated hash delegates
+5. Calls `ScanPipeline.RunAsync(section, ctx, ct)` — the pipeline resolves the matching `IScanRule` by section name
+6. The drain loop reads from the channel: result events → JSONL disk; every 50 results sends one `batch-ready` WS signal
 
-The drain loop is the single point where all scan results flow — it serializes disk writes and WebSocket broadcasts to prevent contention.
+**Hash strategy:** Pass 1 = `FileUtilities.XxHash64Async` (fast grouping). Pass 2 = `FileUtilities.Sha256Async` (confirmation only on candidates). Both rate-limited by `_hashGate`.
+
+**Adding a section:** implement `IScanRule` (one file), register `services.AddSingleton<IScanRule, MyRule>()` in Program.cs. The orchestrator needs no changes.
 
 ## ⑧ WsManager.BroadcastAsync
 

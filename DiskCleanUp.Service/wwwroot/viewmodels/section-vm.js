@@ -141,14 +141,13 @@ export class SectionVM {
             return { removed: paths.length };
         }
         // Not scanning — full JSONL cycle
-        let data = null;
         try {
             const res = await fetch(`/api/cache/${section}/remove`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ paths, trash })
             });
-            data = await res.json();
+            const data = await res.json();
             window._T?.('VM', `removePaths(${section}) server removed ${data.removed}`);
         }
         catch (e) {
@@ -156,10 +155,6 @@ export class SectionVM {
             window._T?.('VM', `removePaths(${section}) API error: ${e.message}`);
         }
         await this.loadAndBind();
-        // Return backend deleteResults for UI feedback
-        if (data && data.deleteResults) {
-            return { removed: paths.length, deleteResults: data.deleteResults };
-        }
         return { removed: paths.length };
     }
     async removeAllCopies() {

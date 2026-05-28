@@ -32,15 +32,17 @@ export const LargeModel = {
    * @returns {{ path: string, size: number } | null}
    */
   parse(row) {
-    const d = row.data ?? row.Data;
-    if (!d) return null;
+    try {
+      const d = row.data ?? row.Data;
+      if (!d) return null;
 
-    const path = d.path ?? d.Path;
-    if (!path) return null;
+      const path = d.path ?? d.Path;
+      if (!path) return null;
 
-    return {
-      path,
-      size: d.size ?? d.Size ?? 0,
-    };
+      return {
+        path,
+        size: d.size ?? d.Size ?? 0,
+      };
+    } catch (err) { ErrLog.log('[large-model]', String(err), null, 'MODEL_ERROR'); return null; }
   },
 };

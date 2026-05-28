@@ -159,12 +159,14 @@ assert(chipInfo.allAreClickable, 'All chips have cursor:pointer', 'Some chips mi
 // ═══ 4. CHIP CLICK FILTERS ROWS ═══
 group('4. Clicking .js chip hides .css and .md rows');
 
-const clickResult = await page.evaluate(() => {
+const clickResult = await page.evaluate(async () => {
     const chips  = [...document.querySelectorAll('#grid-stale .sg-legend-chip')];
     const jsChip = chips.find(c => c.dataset.ext === '.js');
     if (!jsChip) { return { error: `No .js chip. Chips: ${chips.map(c=>c.dataset.ext).join(', ')}` }; }
 
     jsChip.click();
+    // chip click defers applyFilter to requestAnimationFrame — wait for it
+    await new Promise(r => setTimeout(r, 50));
 
     const rows = [...document.querySelectorAll('#grid-stale .sg-row.live-row')];
     return {
@@ -182,11 +184,13 @@ assert(clickResult.chipActive,         '.js chip gains .active CSS class',      
 // ═══ 5. CLEAR BUTTON ═══
 group('5. Clear button restores all rows and resets chip state');
 
-const clearResult = await page.evaluate(() => {
+const clearResult = await page.evaluate(async () => {
     const clearBtn = document.querySelector('#grid-stale .sg-legend-clear');
     if (!clearBtn) { return { error: 'No .sg-legend-clear button found' }; }
 
     clearBtn.click();
+    // clear also defers applyFilter to requestAnimationFrame — wait for it
+    await new Promise(r => setTimeout(r, 50));
 
     const rows  = [...document.querySelectorAll('#grid-stale .sg-row.live-row')];
     const chips = [...document.querySelectorAll('#grid-stale .sg-legend-chip')];
@@ -204,13 +208,15 @@ assert(!clearResult.anyChipActive,    'No chips remain .active after clear',    
 // ═══ 6. SECOND CLICK DESELECTS (TOGGLE OFF) ═══
 group('6. Second click on active chip deselects and shows all rows');
 
-const toggleResult = await page.evaluate(() => {
+const toggleResult = await page.evaluate(async () => {
     const chips   = [...document.querySelectorAll('#grid-stale .sg-legend-chip')];
     const cssChip = chips.find(c => c.dataset.ext === '.css');
     if (!cssChip) { return { error: 'No .css chip' }; }
 
     cssChip.click(); // select
     cssChip.click(); // deselect
+    // each click defers applyFilter to RAF — wait for both to settle
+    await new Promise(r => setTimeout(r, 50));
 
     const rows = [...document.querySelectorAll('#grid-stale .sg-row.live-row')];
     return {

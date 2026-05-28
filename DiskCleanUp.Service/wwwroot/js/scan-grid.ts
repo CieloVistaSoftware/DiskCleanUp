@@ -1,4 +1,4 @@
-﻿// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
 //  SCAN-GRID — Universal CSS-grid list for all scan sections
 //  Replaces all <table> usage. Resizable columns, extension colors,
 //  filter integration, skeleton loading.
@@ -261,9 +261,13 @@ g.columns.forEach(col => {
     }
     case 'checkbox': {
       cell.innerHTML = `<input type="checkbox" data-path="${_esc(path)}">`;
+      break;
+    }
+    case 'keepbtn': {
+      cell.classList.add('sg-keepbtn');
       const kb = document.createElement('button');
       kb.className = 'btn-keep';
-      kb.textContent = '\uD83D\uDD12';
+      kb.textContent = '🔒';
       kb.title = 'Keep — exclude from future scans';
       kb.onclick = () => (window.keepPaths as ((p: string[]) => void) | undefined)?.([path]);
       cell.appendChild(kb);
@@ -343,33 +347,39 @@ g.columns.forEach(col => {
     }
     case 'actions': {
       cell.classList.add('sg-actions');
-      // Trash button — sends to Recycle Bin + removes row
+      // Trash button — red SVG garbage can, confirm before delete
       const trashBtn = document.createElement('button');
-      trashBtn.className = 'btn muted btn-xs sg-trash-btn';
-      trashBtn.textContent = '\uD83D\uDDD1';
+      trashBtn.className = 'btn btn-xs sg-trash-btn sg-trash-red';
       trashBtn.title = 'Delete (Recycle Bin)';
-      trashBtn.onclick = () => _trashRow(section, path, row);
+      trashBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995H11Zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5h9.916Z"/></svg>';
+      trashBtn.onclick = () => {
+        if (!confirm('Send to Recycle Bin?\n\n' + path)) return;
+        _trashRow(section, path, row);
+      };
       cell.appendChild(trashBtn);
-      // Open File button
+      // Open File button — flashes green to confirm action sent
       const fileBtn = document.createElement('button');
       fileBtn.className = 'btn muted btn-xs';
-      fileBtn.textContent = '\uD83D\uDCC4';
+      fileBtn.textContent = '📄';
       fileBtn.title = 'Open file in VS Code';
-      fileBtn.onclick = () => { window.openInVSCode ? window.openInVSCode(path) : window.openFileInVSCode?.(path); };
+      fileBtn.onclick = () => {
+        window.openInVSCode ? window.openInVSCode(path) : window.openFileInVSCode?.(path);
+        _flashBtn(fileBtn);
+      };
       cell.appendChild(fileBtn);
       // Open Folder in Explorer button
       const folderBtn = document.createElement('button');
       folderBtn.className = 'btn muted btn-xs';
-      folderBtn.textContent = '\uD83D\uDCC2';
+      folderBtn.textContent = '📂';
       folderBtn.title = 'Open containing folder in Explorer';
-      folderBtn.onclick = () => _openFolder(path);
+      folderBtn.onclick = () => { _openFolder(path); _flashBtn(folderBtn); };
       cell.appendChild(folderBtn);
       // Open Folder in VS Code button
       const vscBtn = document.createElement('button');
       vscBtn.className = 'btn muted btn-xs btn-vscode';
       vscBtn.textContent = '</>';
       vscBtn.title = 'Open containing folder in VS Code';
-      vscBtn.onclick = () => _openFolderInVSCode(path);
+      vscBtn.onclick = () => { _openFolderInVSCode(path); _flashBtn(vscBtn); };
       cell.appendChild(vscBtn);
       break;
     }
@@ -762,6 +772,13 @@ fetch('/api/open-folder', {
 });
 }
 
+/** Briefly flash a button green to confirm an action was sent (open file / open folder). */
+function _flashBtn(btn: HTMLButtonElement) {
+  btn.style.background = 'var(--green, #4ade80)';
+  btn.style.color = '#000';
+  setTimeout(() => { btn.style.background = ''; btn.style.color = ''; }, 600);
+}
+
 // _esc is now imported from wb-core as escHtml (aliased to _esc for minimal churn)
 
 // ── Column Resize ────────────────────────────────────────────────────────
@@ -884,11 +901,14 @@ function _sortColumn(section, colIdx) {
  * If text looks like a bare extension shorthand (e.g. "exe", ".exe", "*.exe"),
  * returns the normalised extension with dot (e.g. ".exe").
  * Returns '' if the text looks like a path fragment or contains spaces.
+ * Words longer than 5 chars without a leading dot/star are treated as path
+ * fragments (fix for #41 — typing "backup", "downloads" hid all rows).
  */
 function _parseExtShorthand(text: string): string {
   if (!text) return '';
   const t = text.replace(/^\*/, '').toLowerCase();
-  if (t && !t.includes('/') && !t.includes('\\') && !t.includes(' ')) {
+  if (!t || t.includes('/') || t.includes('\\') || t.includes(' ')) return '';
+  if (t.startsWith('.') || t.length <= 5) {
     return t.startsWith('.') ? t : '.' + t;
   }
   return '';

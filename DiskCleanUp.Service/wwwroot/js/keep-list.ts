@@ -85,7 +85,7 @@ export async function keepSelected(tableId) {
     const tbl = document.getElementById(tableId);
     if (!tbl) return;
     const checked = [...tbl.querySelectorAll('input[type=checkbox]:checked')];
-    paths = checked.map(cb => cb.dataset.path).filter(Boolean);
+    paths = checked.map(cb => (cb as HTMLInputElement).dataset.path).filter(Boolean);
   }
   if (!paths.length) { alert('Select files first.'); return; }
   await keepPaths(paths);
@@ -210,7 +210,7 @@ async function _keepListRemoveChecked() {
   if (!body) return;
   const checked = [...body.querySelectorAll('.kl-cb:checked')];
   if (!checked.length) { alert('Select files to un-keep first.'); return; }
-  const paths = checked.map(cb => cb.dataset.path);
+  const paths = checked.map(cb => (cb as HTMLInputElement).dataset.path).filter(Boolean) as string[];
   await unkeepPaths(paths);
   // Refresh the modal
   await _openKeepListModal();

@@ -8,7 +8,7 @@ import { crumb } from './breadcrumb.js';
 
 export const TrashQ = (() => {
 
-  function enqueue(paths, onComplete) {
+  function enqueue(paths, onComplete?) {
     if (!paths.length) return;
     crumb('trash', 'enqueue', { count: paths.length });
 

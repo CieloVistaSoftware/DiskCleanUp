@@ -1,5 +1,13 @@
-import { ErrLog } from '/js/error-logger.js';
-
+import { ErrLog } from '../js/error-logger.js';
+// ═══════════════════════════════════════════════════════════════════════════
+//  SCAN TOOLBAR VIEW — pure DOM renderer for the MCD scan toolbar.
+//
+//  Renders into: <div id="toolbar-{section}"></div>
+//  Knows nothing about: JSONL, APIs, WebSockets, scan logic.
+//
+//  ONE-TIME-ONE-PLACE: the MCD toolbar HTML lives here and only here.
+//  Specialty buttons are added via the config.specialty array.
+// ═══════════════════════════════════════════════════════════════════════════
 export class ScanToolbarView {
     constructor(config, callbacks = {}) {
         this._config = config;
@@ -19,73 +27,33 @@ export class ScanToolbarView {
             filterBar.id = `sf-${section}`;
             filterBar.className = 'scan-filter-bar';
             container.appendChild(filterBar);
-            this._els.scan = this._btn('btn', `🔍 Scan`, () => {
-                try {
-                    this._callbacks.onScan?.();
-                } catch (err) {
-                    ErrLog.log('[scan-toolbar-view.js]', err?.message || String(err), err?.stack || null, 'SCAN_TOOLBAR_VIEW_ERROR');
-                }
-            });
+            this._els.scan = this._btn('btn', `🔍 Scan`, () => this._callbacks.onScan?.());
             this._els.scan.dataset.action = 'scan';
             this._els.scan.dataset.section = section;
-            this._els.cancel = this._btn('btn muted', `✖ Cancel`, () => {
-                try {
-                    this._callbacks.onCancel?.();
-                } catch (err) {
-                    ErrLog.log('[scan-toolbar-view.js]', err?.message || String(err), err?.stack || null, 'SCAN_TOOLBAR_VIEW_ERROR');
-                }
-            });
+            this._els.cancel = this._btn('btn muted', `✖ Cancel`, () => this._callbacks.onCancel?.());
             this._els.cancel.dataset.action = 'cancel';
             this._els.cancel.dataset.section = section;
-            this._els.deleteSelected = this._btn('btn danger', '🗑 Delete Selected', () => {
-                try {
-                    this._callbacks.onDeleteSelected?.();
-                } catch (err) {
-                    ErrLog.log('[scan-toolbar-view.js]', err?.message || String(err), err?.stack || null, 'SCAN_TOOLBAR_VIEW_ERROR');
-                }
-            });
+            this._els.deleteSelected = this._btn('btn danger', '🗑 Delete Selected', () => this._callbacks.onDeleteSelected?.());
             this._els.deleteSelected.dataset.action = 'trash-selected';
             this._els.deleteSelected.dataset.grid = section;
             this._els.deleteSelected.dataset.table = tableId;
-            this._els.keepSelected = this._btn('btn-keep', '🔒 Keep Selected', () => {
-                try {
-                    this._callbacks.onKeepSelected?.();
-                } catch (err) {
-                    ErrLog.log('[scan-toolbar-view.js]', err?.message || String(err), err?.stack || null, 'SCAN_TOOLBAR_VIEW_ERROR');
-                }
-            });
+            this._els.keepSelected = this._btn('btn-keep', '🔒 Keep Selected', () => this._callbacks.onKeepSelected?.());
             this._els.keepSelected.dataset.gridSection = section;
             this._els.keepSelected.disabled = true;
             if (specialty.includes('delete-all-copies')) {
-                this._els.deleteAllCopies = this._btn('btn danger hidden', '🗑 Delete All Copies', () => {
-                    try {
-                        this._callbacks.onDeleteAllCopies?.();
-                    } catch (err) {
-                        ErrLog.log('[scan-toolbar-view.js]', err?.message || String(err), err?.stack || null, 'SCAN_TOOLBAR_VIEW_ERROR');
-                    }
-                });
+                this._els.deleteAllCopies = this._btn('btn danger hidden', '🗑 Delete All Copies', () => this._callbacks.onDeleteAllCopies?.());
                 this._els.deleteAllCopies.id = `imgDeleteAllBtn-${section}`;
                 this._els.deleteAllCopies.dataset.action = 'trash-all-copies';
             }
             if (specialty.includes('apply-all')) {
-                this._els.applyAll = this._btn('btn danger', '⚡ Apply All (Delete Copies)', () => {
-                    try {
-                        this._callbacks.onApplyAll?.();
-                    } catch (err) {
-                        ErrLog.log('[scan-toolbar-view.js]', err?.message || String(err), err?.stack || null, 'SCAN_TOOLBAR_VIEW_ERROR');
-                    }
-                });
+                this._els.applyAll = this._btn('btn danger', '⚡ Apply All (Delete Copies)', () => this._callbacks.onApplyAll?.());
                 this._els.applyAll.dataset.action = 'apply-smart-dedup';
             }
             if (specialty.includes('html-utilities')) {
                 this._els.utilities = this._btn('btn muted', '🧰 UTILITIES', () => {
-                    try {
-                        const items = this._els.utilityItems || [];
-                        const anyVisible = items.some((btn) => !btn.classList.contains('hidden'));
-                        items.forEach((btn) => btn.classList.toggle('hidden', anyVisible));
-                    } catch (err) {
-                        ErrLog.log('[scan-toolbar-view.js]', err?.message || String(err), err?.stack || null, 'SCAN_TOOLBAR_VIEW_ERROR');
-                    }
+                    const items = this._els.utilityItems || [];
+                    const anyVisible = items.some((btn) => !btn.classList.contains('hidden'));
+                    items.forEach((btn) => btn.classList.toggle('hidden', anyVisible));
                 });
                 this._els.utilities.title = 'Show utility actions';
                 const utilityDefs = [
@@ -104,13 +72,7 @@ export class ScanToolbarView {
                     ['fingerprint-diff', 'HTML Fingerprint/Diff'],
                 ];
                 this._els.utilityItems = utilityDefs.map(([key, label]) => {
-                    const btn = this._btn('btn hidden', `🧩 ${label}`, () => {
-                        try {
-                            this._callbacks.onHtmlUtility?.(key);
-                        } catch (err) {
-                            ErrLog.log('[scan-toolbar-view.js]', err?.message || String(err), err?.stack || null, 'SCAN_TOOLBAR_VIEW_ERROR');
-                        }
-                    });
+                    const btn = this._btn('btn hidden', `🧩 ${label}`, () => this._callbacks.onHtmlUtility?.(key));
                     btn.dataset.action = 'run-html-utility';
                     btn.dataset.utility = key;
                     btn.dataset.section = section;
@@ -121,21 +83,17 @@ export class ScanToolbarView {
             if (specialty.includes('white-bg')) {
                 let _whiteBgOn = false;
                 this._els.whiteBg = this._btn('btn muted', '⬜ White BG', () => {
-                    try {
-                        _whiteBgOn = !_whiteBgOn;
-                        const resultId = section === 'duplicates' ? 'dupResult'
-                            : section === 'images' ? 'imageResult'
-                                : `${section}Result`;
-                        const cont = document.getElementById(resultId);
-                        if (!cont)
-                            return;
-                        cont.querySelectorAll('.dup-thumb, .img-card img')
-                            .forEach(img => { img.style.background = _whiteBgOn ? 'white' : ''; });
-                        this._els.whiteBg.textContent = _whiteBgOn ? '⬛ Dark BG' : '⬜ White BG';
-                        this._els.whiteBg.classList.toggle('active', _whiteBgOn);
-                    } catch (err) {
-                        ErrLog.log('[scan-toolbar-view.js]', err?.message || String(err), err?.stack || null, 'SCAN_TOOLBAR_VIEW_ERROR');
-                    }
+                    _whiteBgOn = !_whiteBgOn;
+                    const resultId = section === 'duplicates' ? 'dupResult'
+                        : section === 'images' ? 'imageResult'
+                            : `${section}Result`;
+                    const cont = document.getElementById(resultId);
+                    if (!cont)
+                        return;
+                    cont.querySelectorAll('.dup-thumb, .img-card img')
+                        .forEach(img => { img.style.background = _whiteBgOn ? 'white' : ''; });
+                    this._els.whiteBg.textContent = _whiteBgOn ? '⬛ Dark BG' : '⬜ White BG';
+                    this._els.whiteBg.classList.toggle('active', _whiteBgOn);
                 });
                 this._els.whiteBg.title = 'Toggle white background on all images';
             }
@@ -148,21 +106,11 @@ export class ScanToolbarView {
             this._els.loadMore.appendChild(dot);
             this._els.loadMore.appendChild(document.createTextNode(' Load More Results'));
             if (specialty.includes('full-view')) {
-                this._els.fullView = this._btn('btn muted', '🔎 Full View', () => {
-                    try {
-                        this._callbacks.onFullView?.();
-                    } catch (err) {
-                        ErrLog.log('[scan-toolbar-view.js]', err?.message || String(err), err?.stack || null, 'SCAN_TOOLBAR_VIEW_ERROR');
-                    }
-                });
+                this._els.fullView = this._btn('btn muted', '🔎 Full View', () => this._callbacks.onFullView?.());
             }
             this._els.trace = this._btn('btn muted', '📜 Trace', () => {
-                try {
-                    const tag = section.toUpperCase().replace(/-/g, '_');
-                    window.open(`/trace-viewer.html?filter=${encodeURIComponent(tag)}`, '_blank');
-                } catch (err) {
-                    ErrLog.log('[scan-toolbar-view.js]', err?.message || String(err), err?.stack || null, 'SCAN_TOOLBAR_VIEW_ERROR');
-                }
+                const tag = section.toUpperCase().replace(/-/g, '_');
+                window.open(`/trace-viewer.html?filter=${encodeURIComponent(tag)}`, '_blank');
             });
             this._els.trace.title = `Open trace log filtered to ${section}`;
             // Unified command dropdown for all scan sections.
@@ -199,8 +147,15 @@ export class ScanToolbarView {
                 commandMenu.title = selected?.title || 'Choose a command for this section';
             };
             commandMenu.addEventListener('change', () => {
-                try {
-                    const v = commandMenu.value;
+                const v = commandMenu.value;
+                // Reset to "Commands..." immediately so the browser paints it
+                // before the action fires — otherwise the selected value sticks.
+                commandMenu.value = '';
+                updateTip();
+                if (!v)
+                    return;
+                // Defer the action one tick so the reset renders first
+                setTimeout(() => {
                     switch (v) {
                         case 'scan':
                             this._callbacks.onScan?.();
@@ -239,11 +194,7 @@ export class ScanToolbarView {
                             this._callbacks.onHtmlUtility?.('extract-js');
                             break;
                     }
-                    commandMenu.value = '';
-                    updateTip();
-                } catch (err) {
-                    ErrLog.log('[scan-toolbar-view.js]', err?.message || String(err), err?.stack || null, 'SCAN_TOOLBAR_VIEW_ERROR');
-                }
+                }, 0);
             });
             commandMenu.addEventListener('mouseenter', updateTip);
             commandMenu.addEventListener('focus', updateTip);
@@ -288,24 +239,9 @@ export class ScanToolbarView {
                 container.appendChild(this._els.fullView);
             container.appendChild(this._els.trace);
             this._rendered = true;
-            return;
-            const order = [
-                'scan', 'cancel', 'deleteSelected',
-                'keepSelected', 'deleteAllCopies', 'applyAll',
-                'utilities', 'whiteBg', 'loadMore', 'fullView', 'trace',
-            ];
-            for (const key of order) {
-                const el = this._els[key];
-                if (el)
-                    container.appendChild(el);
-            }
-            if (this._els.utilityItems?.length) {
-                for (const btn of this._els.utilityItems)
-                    container.appendChild(btn);
-            }
-            this._rendered = true;
-        } catch (err) {
-            ErrLog.log('[scan-toolbar-view.js]', err?.message || String(err), err?.stack || null, 'SCAN_TOOLBAR_VIEW_ERROR');
+        }
+        catch (err) {
+            ErrLog.log('[scan-toolbar-view]', String(err), null, 'VIEW_ERROR');
         }
     }
     // ── State-driven update ───────────────────────────────────
@@ -347,8 +283,9 @@ export class ScanToolbarView {
                 if (more)
                     more.disabled = !!e.loadMore?.disabled;
             }
-        } catch (err) {
-            ErrLog.log('[scan-toolbar-view.js]', err?.message || String(err), err?.stack || null, 'SCAN_TOOLBAR_VIEW_ERROR');
+        }
+        catch (err) {
+            ErrLog.log('[scan-toolbar-view]', String(err), null, 'VIEW_ERROR');
         }
     }
     exposeDeleteAllAsLegacyId() {
@@ -357,30 +294,23 @@ export class ScanToolbarView {
             if (el && this._config.section === 'images') {
                 el.id = 'imgDeleteAllBtn';
             }
-        } catch (err) {
-            ErrLog.log('[scan-toolbar-view.js]', err?.message || String(err), err?.stack || null, 'SCAN_TOOLBAR_VIEW_ERROR');
+        }
+        catch (err) {
+            ErrLog.log('[scan-toolbar-view]', String(err), null, 'VIEW_ERROR');
         }
     }
     // ── Helpers ───────────────────────────────────────────────
     _btn(className, text, handler) {
-        try {
-            const btn = document.createElement('button');
-            btn.className = className;
-            btn.textContent = text;
-            btn.addEventListener('click', handler);
-            return btn;
-        } catch (err) {
-            ErrLog.log('[scan-toolbar-view.js]', err?.message || String(err), err?.stack || null, 'SCAN_TOOLBAR_VIEW_ERROR');
-        }
+        const btn = document.createElement('button');
+        btn.className = className;
+        btn.textContent = text;
+        btn.addEventListener('click', handler);
+        return btn;
     }
     _setDisabled(el, disabled) {
-        try {
-            if (!el)
-                return;
-            el.disabled = !!disabled;
-        } catch (err) {
-            ErrLog.log('[scan-toolbar-view.js]', err?.message || String(err), err?.stack || null, 'SCAN_TOOLBAR_VIEW_ERROR');
-        }
+        if (!el)
+            return;
+        el.disabled = !!disabled;
     }
 }
 //# sourceMappingURL=scan-toolbar-view.js.map
