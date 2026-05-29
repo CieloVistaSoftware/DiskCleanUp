@@ -269,6 +269,7 @@ try {
             const files = Array.isArray(msg.files) ? msg.files : [];
             window._imageGroups[msg.hash] = files;
             const container = document.getElementById('imageResult');
+            if (!container) { ErrLog.log('[images]', 'imageResult container not found', null, 'RENDER_ERROR'); return; }
             const skel = container.querySelector('.skel-grid');
             if (skel)
                 skel.remove();
@@ -278,11 +279,11 @@ try {
             const div = document.createElement('div');
             div.className = 'img-group';
             div.dataset.imgHash = msg.hash;
-            div.innerHTML = `<span class="badge red">Exact Duplicate Group</span><div class="img-grid">${files.map((fp, i) => {
+            div.innerHTML = `<span class="badge red">Exact Duplicate Group</span><div class="img-grid">${files.map((fp) => {
                 const escaped = (fp || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
                 return `<div class="img-card">
             <img src="/api/file?path=${encodeURIComponent(fp)}" loading="lazy" onerror="this.classList.add('img-broken')" alt="">
-            <p>${fp}</p>
+            <p>${escHtml(fp)}</p>
             <div class="img-card-footer">
             <button class="btn danger btn-sm img-trash-btn" onclick="window.trashImage('${escaped}')">\uD83D\uDDD1 Delete</button>
             <button class="btn-keep" onclick="window.keepPaths(['${escaped}'])">\uD83D\uDD12 Keep</button>

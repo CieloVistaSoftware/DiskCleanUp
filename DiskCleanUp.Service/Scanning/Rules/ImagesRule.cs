@@ -39,22 +39,25 @@ public sealed class ImagesRule : IScanRule
                     var h = await ctx.HashAsync(fp, token);
                     if (string.IsNullOrEmpty(h)) return;
 
-                    List<string> group;
+                    int groupCount;
+                    string[] groupSnapshot;
                     lock (lockObj)
                     {
-                        group = seen.GetOrAdd(h, _ => []);
+                        var group = seen.GetOrAdd(h, _ => []);
                         group.Add(fp);
+                        groupCount    = group.Count;
+                        groupSnapshot = group.ToArray();   // snapshot while holding lock — safe
                     }
 
                     var count = Interlocked.Increment(ref scanned);
-                    if (group.Count == 2)
+                    if (groupCount == 2)
                     {
                         Interlocked.Increment(ref results);
-                        await ctx.PushAsync(sec, "result",        new { hash = h, files = group.ToArray() }, token);
+                        await ctx.PushAsync(sec, "result",        new { hash = h, files = groupSnapshot }, token);
                     }
-                    else if (group.Count > 2)
+                    else if (groupCount > 2)
                     {
-                        await ctx.PushAsync(sec, "result_update", new { hash = h, files = group.ToArray() }, token);
+                        await ctx.PushAsync(sec, "result_update", new { hash = h, files = groupSnapshot }, token);
                     }
                     ctx.PushProgress(sec, new { files = count, results, folder = Path.GetDirectoryName(fp) });
                 }
