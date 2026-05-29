@@ -284,7 +284,7 @@ try {
             <img src="/api/file?path=${encodeURIComponent(fp)}" loading="lazy" onerror="this.classList.add('img-broken')" alt="">
             <p>${fp}</p>
             <div class="img-card-footer">
-            ${i > 0 ? `<button class="btn danger btn-sm img-trash-btn" onclick="window.trashImage('${escaped}')">\uD83D\uDDD1 Delete</button>` : `<span class="img-keep">\u2705 Original</span>`}
+            <button class="btn danger btn-sm img-trash-btn" onclick="window.trashImage('${escaped}')">\uD83D\uDDD1 Delete</button>
             <button class="btn-keep" onclick="window.keepPaths(['${escaped}'])">\uD83D\uDD12 Keep</button>
             </div>
           </div>`;
