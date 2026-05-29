@@ -29,11 +29,17 @@ export const DuplicatesSection = (() => {
     const view = new GridView('dupResult', {
         onDeleteGroup: (hash, paths, btn) => deleteGroup(btn, hash, paths),
         onLoadPreview: (el) => _loadPreview(el),
+        onMarkChanged: (count) => _updateMarkedBar(count),
     });
     vm.bindView(view);
     let _visible = true;
     let _allCopiesNuked = false;
     vm.visible = true; // duplicates is the default active tab
+    // ── Wire marked-bar buttons (once DOM is ready) ──────────
+    document.getElementById('dup-delete-marked-btn')
+        ?.addEventListener('click', () => deleteMarked());
+    document.getElementById('dup-clear-marked-btn')
+        ?.addEventListener('click', () => { view.clearMarked(); _updateMarkedBar(0); });
     // ── Visibility ───────────────────────────────────────────
     function onShow() {
         window._T?.('DUP', `onShow data=${vm.size}`);
@@ -100,10 +106,7 @@ export const DuplicatesSection = (() => {
         if (!Array.isArray(paths) || !paths.length)
             return;
         window._T?.('DEL', `deleteGroup: ${paths.length} paths`);
-        if (btn) {
-            btn.textContent = '\u23f3 deleting\u2026';
-            btn.disabled = true;
-        }
+        if (btn) { btn.textContent = '⏳ deleting…'; btn.disabled = true; }
         // Await the result and handle errors
         let result;
         try {
@@ -111,10 +114,7 @@ export const DuplicatesSection = (() => {
         }
         catch (e) {
             ErrLog.log('[DUPLICATES]', 'Delete failed', e.message, 'CAUGHT_ERROR');
-            if (btn) {
-                btn.textContent = 'Delete failed';
-                btn.disabled = false;
-            }
+            if (btn) { btn.textContent = 'Delete failed'; btn.disabled = false; }
             alert('Delete failed: ' + (e.message || e));
             return;
         }
@@ -122,36 +122,83 @@ export const DuplicatesSection = (() => {
         if (result && result.deleteResults) {
             const failed = result.deleteResults.filter(r => !r.ok);
             if (failed.length > 0) {
-                if (btn) {
-                    btn.textContent = 'Some failed';
-                    btn.disabled = false;
-                }
+                if (btn) { btn.textContent = 'Some failed'; btn.disabled = false; }
                 alert('Some files could not be deleted:\n' + failed.map(f => `${f.path}: ${f.error || 'Unknown error'}`).join('\n'));
                 return;
             }
         }
-        if (btn) {
-            btn.textContent = 'Deleted';
-            setTimeout(() => { btn.textContent = 'Delete'; btn.disabled = false; }, 1200);
-        }
+        if (btn) { btn.textContent = 'Deleted'; setTimeout(() => { btn.textContent = 'Delete'; btn.disabled = false; }, 1200); }
     }
     async function deleteAllCopies() {
         const paths = DuplicatesModel.allCopyPaths(vm.data);
-        if (!paths.length) {
-            alert('No duplicate copies found.');
-            return;
-        }
-        if (!confirm(`Delete ALL ${paths.length} duplicate cop${paths.length === 1 ? 'y' : 'ies'}?\nOriginals are safe. Files go to Recycle Bin.`))
-            return;
+        if (!paths.length) { alert('No duplicate copies found.'); return; }
+        if (!confirm(`Delete ALL ${paths.length} duplicate cop${paths.length === 1 ? 'y' : 'ies'}?\nOriginals are safe. Files go to Recycle Bin.`)) return;
         window._T?.('DEL', `deleteAllCopies: ${paths.length} paths`);
         _allCopiesNuked = true;
-        SB.progress('duplicates', { files: 0, results: 0, folder: 'Deleting copies\u2026' });
+        SB.progress('duplicates', { files: 0, results: 0, folder: 'Deleting copies…' });
         await vm.removeAllCopies();
         // Nuke server cache to prevent stale data on tab switch
         if (vm.size === 0) {
             fetch('/api/cache/duplicates', { method: 'DELETE' }).catch(() => { });
         }
         SB.done('duplicates', `${vm.size} dupe groups`);
+    }
+    // ── Delete marked paths ──────────────────────────────────
+    async function deleteMarked() {
+        const paths = view.getMarkedPaths();
+        if (!paths.length)
+            return;
+        if (!confirm(`Move ${paths.length} marked file${paths.length === 1 ? '' : 's'} to the Recycle Bin?\n\nYou can restore them later via right-click → Restore in Windows Explorer.`))
+            return;
+        const btn = document.getElementById('dup-delete-marked-btn');
+        if (btn) { btn.textContent = '⏳ Deleting…'; btn.disabled = true; }
+        let result;
+        try {
+            result = await vm.removePaths(paths, { trash: true });
+        }
+        catch (e) {
+            ErrLog.log('[DUPLICATES]', 'deleteMarked failed', e.message, 'CAUGHT_ERROR');
+            if (btn) { btn.textContent = '🗑 Delete Marked'; btn.disabled = false; }
+            alert('Delete failed: ' + (e.message || e));
+            return;
+        }
+        if (result && result.deleteResults) {
+            const failed = result.deleteResults.filter(r => !r.ok);
+            if (failed.length > 0) {
+                if (btn) { btn.textContent = '🗑 Delete Marked'; btn.disabled = false; }
+                alert('Some files could not be deleted:\n' + failed.map(f => `${f.path}: ${f.error || 'Unknown error'}`).join('\n'));
+                return;
+            }
+        }
+        const count = paths.length;
+        view.clearMarked();
+        _updateMarkedBar(0);
+        _showRecycleBinNotice(count);
+    }
+    function _updateMarkedBar(count) {
+        const bar = document.getElementById('dup-marked-bar');
+        const btnEl = document.getElementById('dup-delete-marked-btn');
+        const countEl = document.getElementById('dup-marked-count');
+        if (!bar)
+            return;
+        if (count === 0) {
+            bar.classList.add('hidden');
+        }
+        else {
+            bar.classList.remove('hidden');
+            if (countEl)
+                countEl.textContent = `${count} file${count === 1 ? '' : 's'} marked for deletion`;
+            if (btnEl)
+                btnEl.textContent = `🗑 Delete Marked (${count})`;
+        }
+    }
+    function _showRecycleBinNotice(count) {
+        const notice = document.getElementById('dup-recycle-notice');
+        if (!notice)
+            return;
+        notice.textContent = `✅ ${count} file${count === 1 ? '' : 's'} moved to Recycle Bin. Right-click → Restore in Windows Explorer to recover them.`;
+        notice.classList.remove('hidden');
+        setTimeout(() => notice.classList.add('hidden'), 8000);
     }
     // ── Filter ───────────────────────────────────────────────
     function filter(val) {
@@ -178,10 +225,7 @@ export const DuplicatesSection = (() => {
         else if (_codeExts.has(ext)) {
             try {
                 const r = await fetch(`/api/preview?path=${encodeURIComponent(path)}`);
-                if (!r.ok) {
-                    el.textContent = '(preview unavailable)';
-                    return;
-                }
+                if (!r.ok) { el.textContent = '(preview unavailable)'; return; }
                 const data = await r.json();
                 if (data.type === 'text' && data.content) {
                     const pre = document.createElement('pre');
@@ -189,7 +233,7 @@ export const DuplicatesSection = (() => {
                     const lines = data.content.split('\n').slice(0, 5);
                     pre.textContent = lines.join('\n');
                     if (data.content.split('\n').length > 5)
-                        pre.textContent += '\n\u2026';
+                        pre.textContent += '\n…';
                     el.textContent = '';
                     el.appendChild(pre);
                 }
@@ -213,6 +257,7 @@ export const DuplicatesSection = (() => {
         reset,
         deleteGroup,
         deleteAllCopies,
+        deleteMarked,
         filter,
         get size() { return vm.size; }
     };

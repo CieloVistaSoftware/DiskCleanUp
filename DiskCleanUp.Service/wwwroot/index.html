@@ -96,6 +96,12 @@ window._T = (tag, msg) => {
       <div class="sb-folder" id="sbf-duplicates"><span class="sb-scan-hint" data-action="scan" data-section="duplicates">▶ Click to Scan</span></div>
     </div>
     <div id="toolbar-duplicates"></div>
+    <div id="dup-marked-bar" class="dup-marked-bar hidden">
+      <span id="dup-marked-count">0 files marked for deletion</span>
+      <button id="dup-delete-marked-btn" class="btn danger">🗑 Delete Marked</button>
+      <button id="dup-clear-marked-btn" class="btn muted btn-sm">✕ Clear</button>
+    </div>
+    <div id="dup-recycle-notice" class="dup-recycle-notice hidden"></div>
     <div id="dupResult"></div>
   </div>
 </div>

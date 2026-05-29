@@ -34,12 +34,19 @@ export const DuplicatesSection = (() => {
   const view = new GridView('dupResult', {
     onDeleteGroup:  (hash, paths, btn) => deleteGroup(btn, hash, paths),
     onLoadPreview:  (el) => _loadPreview(el),
+    onMarkChanged:  (count) => _updateMarkedBar(count),
   });
   vm.bindView(view);
 
   let _visible        = true;
   let _allCopiesNuked = false;
   vm.visible = true;  // duplicates is the default active tab
+
+  // ── Wire marked-bar buttons (once DOM is ready) ──────────
+  document.getElementById('dup-delete-marked-btn')
+    ?.addEventListener('click', () => deleteMarked());
+  document.getElementById('dup-clear-marked-btn')
+    ?.addEventListener('click', () => { view.clearMarked(); _updateMarkedBar(0); });
 
   // ── Visibility ───────────────────────────────────────────
 
@@ -162,6 +169,63 @@ export const DuplicatesSection = (() => {
     SB.done('duplicates', `${vm.size} dupe groups`);
   }
 
+  // ── Delete marked paths ──────────────────────────────────
+
+  async function deleteMarked() {
+    const paths = view.getMarkedPaths();
+    if (!paths.length) return;
+    if (!confirm(`Move ${paths.length} marked file${paths.length === 1 ? '' : 's'} to the Recycle Bin?\n\nYou can restore them later via right-click → Restore in Windows Explorer.`)) return;
+
+    const btn = document.getElementById('dup-delete-marked-btn') as HTMLButtonElement | null;
+    if (btn) { btn.textContent = '⏳ Deleting…'; btn.disabled = true; }
+
+    let result;
+    try {
+      result = await vm.removePaths(paths, { trash: true });
+    } catch (e: any) {
+      ErrLog.log('[DUPLICATES]', 'deleteMarked failed', e.message, 'CAUGHT_ERROR');
+      if (btn) { btn.textContent = '🗑 Delete Marked'; btn.disabled = false; }
+      alert('Delete failed: ' + (e.message || e));
+      return;
+    }
+
+    if (result && result.deleteResults) {
+      const failed = result.deleteResults.filter((r: any) => !r.ok);
+      if (failed.length > 0) {
+        if (btn) { btn.textContent = '🗑 Delete Marked'; btn.disabled = false; }
+        alert('Some files could not be deleted:\n' + failed.map((f: any) => `${f.path}: ${f.error || 'Unknown error'}`).join('\n'));
+        return;
+      }
+    }
+
+    const count = paths.length;
+    view.clearMarked();
+    _updateMarkedBar(0);
+    _showRecycleBinNotice(count);
+  }
+
+  function _updateMarkedBar(count: number) {
+    const bar    = document.getElementById('dup-marked-bar');
+    const btnEl  = document.getElementById('dup-delete-marked-btn') as HTMLButtonElement | null;
+    const countEl = document.getElementById('dup-marked-count');
+    if (!bar) return;
+    if (count === 0) {
+      bar.classList.add('hidden');
+    } else {
+      bar.classList.remove('hidden');
+      if (countEl) countEl.textContent = `${count} file${count === 1 ? '' : 's'} marked for deletion`;
+      if (btnEl)   btnEl.textContent  = `🗑 Delete Marked (${count})`;
+    }
+  }
+
+  function _showRecycleBinNotice(count: number) {
+    const notice = document.getElementById('dup-recycle-notice');
+    if (!notice) return;
+    notice.textContent = `✅ ${count} file${count === 1 ? '' : 's'} moved to Recycle Bin. Right-click → Restore in Windows Explorer to recover them.`;
+    notice.classList.remove('hidden');
+    setTimeout(() => notice.classList.add('hidden'), 8000);
+  }
+
   // ── Filter ───────────────────────────────────────────────
 
   function filter(val) {
@@ -218,6 +282,7 @@ export const DuplicatesSection = (() => {
     reset,
     deleteGroup,
     deleteAllCopies,
+    deleteMarked,
     filter,
     get size() { return vm.size; }
   };

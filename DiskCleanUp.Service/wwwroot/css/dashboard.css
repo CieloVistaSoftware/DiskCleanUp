@@ -101,59 +101,141 @@
   }
   .sb-stop-btn:hover { opacity: .85; }
   .sb-stop-btn:disabled { opacity: .5; cursor: default; }
-  /* ── Duplicates CSS grid list — replaces <table> entirely ── */
-  /* No table = no table reflow = no 13-second freezes           */
-  .dup-header, .dup-row {
-    display: grid;
-    grid-template-columns: 28px 70px 1fr 70px 90px;
-    align-items: center;
-    gap: 0 10px;
-  }
-  .dup-header {
-    position: sticky; top: 0; z-index: 2;
-    background: var(--panel);
-    border-bottom: 1px solid var(--border);
-    padding: 6px 10px;
-    font-size: 12px; color: var(--muted); font-weight: 500;
-  }
-  .dup-row {
-    padding: 5px 10px;
-    border-bottom: 1px solid rgba(48,54,61,0.5);
-    font-size: 13px;
-  }
-  .dup-row:hover { background: var(--hover); }
-  .dup-keep { background: rgba(63,185,80,0.04); }
-  .dup-copy { background: rgba(248,81,73,0.04); }
-  .dup-cell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .dup-path { font-size: 12px; }
+  /* ── Duplicates — card layout ─────────────────────────── */
   .dup-sep {
-    grid-column: 1 / -1;
-    display: flex; align-items: center; gap: 10px;
-    padding: 5px 10px;
+    display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+    padding: 6px 12px;
     background: #0d1520;
     border-top: 2px solid var(--border);
     font-size: 11px;
   }
-  .dup-sep-label { color: var(--muted); flex: 1; }
-  .dup-trash-btn { padding: 2px 10px; font-size: 11px; }
-  /* Inline preview — one per group, full width */
-  .dup-preview {
-    grid-column: 1 / -1;
-    padding: 6px 10px 8px 108px;
-    background: #0a0e14;
-    border-bottom: 1px solid rgba(48,54,61,0.3);
-    font-size: 11px;
-    color: var(--muted);
-    min-height: 32px;
+  .dup-sep-label { color: var(--muted); flex: 1; min-width: 180px; }
+  .dup-wasted { color: var(--red, #f85149); font-weight: 500; }
+  .dup-smart-keep {
+    display: flex; align-items: center; gap: 4px;
+    color: var(--muted); font-size: 11px; flex-shrink: 0;
   }
-  .dup-thumb {
-    max-height: 80px;
-    max-width: 200px;
-    border-radius: 4px;
-    border: 1px solid var(--border);
+  .dup-keep-smart {
+    padding: 1px 7px; font-size: 10px;
+    background: rgba(88,166,255,.12); border: 1px solid var(--accent);
+    border-radius: 3px; color: var(--accent); cursor: pointer;
+    transition: background .15s;
+  }
+  .dup-keep-smart:hover { background: rgba(88,166,255,.25); }
+  .dup-trash-btn { padding: 2px 10px; font-size: 11px; flex-shrink: 0; }
+  /* Cards wrapper */
+  .dup-cards-wrap {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    padding: 10px 12px 12px;
     background: var(--bg);
-    object-fit: contain;
+    border-bottom: 2px solid var(--border);
   }
+  /* Individual file card */
+  .dup-card {
+    display: flex; flex-direction: column;
+    width: 200px; flex-shrink: 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--panel);
+    overflow: hidden;
+    transition: border-color .15s, opacity .15s;
+  }
+  .dup-card-keep { border-color: rgba(63,185,80,.35); }
+  .dup-card-copy { border-color: var(--border); }
+  .dup-card-copy:hover { border-color: var(--accent); }
+  /* Marked-for-deletion state */
+  .dup-marked {
+    opacity: .45;
+    border-color: var(--red, #f85149) !important;
+    outline: 1px solid rgba(248,81,73,.4);
+  }
+  /* Preview area */
+  .dup-card-preview {
+    width: 200px; height: 160px;
+    display: flex; align-items: center; justify-content: center;
+    background: #0a0e14;
+    overflow: hidden; flex-shrink: 0;
+    font-size: 11px; color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .dup-card-img {
+    max-width: 100%; max-height: 100%;
+    object-fit: contain;
+    opacity: 0; transition: opacity .3s;
+  }
+  .dup-card-img.loaded { opacity: 1; }
+  .dup-preview-pending { cursor: pointer; user-select: none; }
+  .dup-preview-pending:hover { color: var(--accent); }
+  .dup-preview-broken { color: var(--muted); font-size: 10px; }
+  .dup-preview-icon {
+    display: flex; align-items: center; justify-content: center;
+  }
+  .dup-ext-badge {
+    padding: 4px 10px; border-radius: 4px;
+    background: rgba(88,166,255,.12); border: 1px solid var(--accent);
+    font-size: 13px; font-weight: 700; color: var(--accent); letter-spacing: 1px;
+  }
+  /* Card body */
+  .dup-card-body {
+    padding: 6px 8px; flex: 1;
+    display: flex; flex-direction: column; gap: 2px;
+    overflow: hidden;
+  }
+  .dup-card-badge { margin-bottom: 2px; }
+  .dup-card-filename {
+    font-size: 12px; font-weight: 500; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .dup-card-dir {
+    font-size: 10px; color: var(--muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .dup-card-meta { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  /* Card footer */
+  .dup-card-foot {
+    padding: 4px 8px 6px;
+    min-height: 28px;
+    display: flex; align-items: center;
+    border-top: 1px solid var(--border);
+  }
+  /* Mark-for-deletion button */
+  .dup-mark-btn {
+    font-size: 11px; padding: 2px 8px;
+    border: 1px solid var(--border); border-radius: 3px;
+    background: transparent; color: var(--muted);
+    cursor: pointer; transition: all .15s;
+  }
+  .dup-mark-btn:hover { border-color: var(--red, #f85149); color: var(--red, #f85149); }
+  .dup-mark-btn.active {
+    background: rgba(248,81,73,.15);
+    border-color: var(--red, #f85149);
+    color: var(--red, #f85149);
+  }
+  /* Expander (show more cards) */
+  .dup-card-expander {
+    width: 200px; height: 100px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px dashed var(--border); border-radius: 6px;
+    color: var(--accent); font-size: 12px; cursor: pointer;
+    background: var(--panel); flex-shrink: 0;
+    transition: background .15s;
+  }
+  .dup-card-expander:hover { background: var(--hover); }
+  /* Marked-deletion action bar */
+  .dup-marked-bar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; margin: 6px 0 0;
+    background: rgba(248,81,73,.08); border: 1px solid rgba(248,81,73,.3);
+    border-radius: 6px; font-size: 13px; color: var(--text);
+  }
+  .dup-marked-bar #dup-marked-count { flex: 1; color: var(--muted); }
+  /* Recycle bin notice */
+  .dup-recycle-notice {
+    padding: 8px 12px; margin: 4px 0;
+    background: rgba(63,185,80,.08); border: 1px solid rgba(63,185,80,.3);
+    border-radius: 6px; font-size: 12px; color: var(--green, #3fb950);
+  }
+  /* Code preview inside card */
   .dup-code {
     margin: 0;
     padding: 6px 10px;
@@ -163,12 +245,10 @@
     font: 11px/1.4 'Cascadia Code', 'Fira Code', monospace;
     color: var(--text);
     overflow-x: auto;
-    max-width: 600px;
+    max-width: 100%;
     white-space: pre;
     tab-size: 2;
   }
-  .dup-skel .dup-cell .skel-bar { display: block; height: 10px; border-radius: 4px;
-    background: var(--border); animation: skelPulse 1.4s ease-in-out infinite; }
   .dup-overflow-banner {
     display: flex; align-items: center; gap: 12px;
     padding: 12px 16px; margin-top: 8px;
@@ -500,9 +580,8 @@
   .td-path { font-size: 11px; color: var(--muted); max-width: 300px; overflow: hidden; text-overflow: ellipsis; }
   .img-broken { display: none; }
 
-  /* Dup path colors driven by parent row class */
-  .dup-keep .dup-path { color: var(--green); }
-  .dup-copy .dup-path { color: var(--text); }
+  /* Dup card keep gets green filename */
+  .dup-card-keep .dup-card-filename { color: var(--green); }
 
   /* Load More — savings pagination */
   .load-more-wrap {

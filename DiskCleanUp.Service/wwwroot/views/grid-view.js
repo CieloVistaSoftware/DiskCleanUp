@@ -1,24 +1,31 @@
 // ═══════════════════════════════════════════════════════════════════════════
-//  GRID VIEW — Pure DOM renderer for section data
+//  GRID VIEW — Pure DOM renderer for section data (card layout)
 //
 //  Takes:  data (Map) + model (column defs) → outputs DOM.
-//  Owns:   DOM lifecycle, RAF batching, expanders, overflow banner.
+//  Owns:   DOM lifecycle, RAF batching, card rendering, mark-for-deletion.
 //  Knows nothing about: JSONL, APIs, WebSockets, deletion logic.
 //
 //  Rendering modes:
-//    render()       — full rebuild from data Map (after load/mutation)
+//    render()       — full rebuild from data Map (sorted by wasted space)
 //    render({incremental, key}) — append/update one group (live scan)
 //    clear()        — wipe DOM
+//
+//  Callbacks:
+//    onDeleteGroup(hash, paths, btn) — "Delete Copies" button clicked
+//    onLoadPreview(el)               — click-to-preview for text/code/other
+//    onMarkChanged(count)            — marked-for-deletion count changed
 // ═══════════════════════════════════════════════════════════════════════════
 import { fmt } from '../js/ui-utils.js';
 import { ErrLog } from '../js/error-logger.js';
 const MAX_ROWS_PER_GROUP = 20;
 const MAX_RENDERED = 200;
 const GROUPS_PER_FRAME = 20;
-// ── Lazy image loader (IntersectionObserver) ─────────────────────────────
-// Shared across all GridView instances — one observer handles all dup groups.
+// ── Lazy media loader (IntersectionObserver) ─────────────────────────────
 const _IMG_EXTS = new Set(['.svg', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.ico']);
 const _VID_EXTS = new Set(['.mp4', '.webm', '.mov', '.avi', '.mkv']);
+const _TXT_EXTS = new Set(['.js', '.ts', '.jsx', '.tsx', '.css', '.html', '.htm', '.json',
+    '.xml', '.md', '.txt', '.cs', '.py', '.ps1', '.yaml', '.yml',
+    '.toml', '.ini', '.cfg', '.sh', '.bat', '.cmd', '.sql', '.csv']);
 const _lazyObserver = new IntersectionObserver((entries) => {
     for (const entry of entries) {
         if (!entry.isIntersecting)
@@ -33,10 +40,17 @@ function _extOf(path) {
     const m = String(path).match(/\.[^.\\/]+$/);
     return m ? m[0].toLowerCase() : '';
 }
+/** Wasted bytes = (copies count) × file size */
+function _wastedBytes(group) {
+    const files = group?.files;
+    if (!Array.isArray(files) || files.length < 2)
+        return 0;
+    return (files.length - 1) * (files[0]?.size || 0);
+}
 export class GridView {
     /**
      * @param containerId — DOM id of the result container (e.g. 'dupResult')
-     * @param callbacks   — { onDeleteGroup(hash, paths), onDeleteAllCopies() }
+     * @param callbacks   — { onDeleteGroup(hash,paths,btn), onLoadPreview(el), onMarkChanged(count) }
      */
     constructor(containerId, callbacks = {}) {
         this._containerId = containerId;
@@ -49,65 +63,68 @@ export class GridView {
         this._rafId = null;
         this._model = null;
         this._data = null;
+        this._marked = new Set();
     }
     // ── Public API ────────────────────────────────────────────
     render(data, model, opts = {}) {
         try {
-        this._model = model;
-        this._data = data;
-        if (opts.incremental && opts.key) {
-            this._renderIncremental(opts.key);
-            return;
+            this._model = model;
+            this._data = data;
+            if (opts.incremental && opts.key) {
+                this._renderIncremental(opts.key);
+                return;
+            }
+            this._fullRender(data, model);
         }
-        this._fullRender(data, model);
-        } catch (e) {
+        catch (e) {
             ErrLog.log('[grid-view]', e?.message || String(e), e?.stack || null, 'RENDER_ERROR');
         }
     }
     renderBatch(data, model, keys) {
         try {
-        this._model = model;
-        this._data = data;
-        if (!this._rendered)
-            this._ensureContainer(model);
-        const list = document.getElementById(this._listId());
-        if (!list)
-            return;
-        const frag = document.createDocumentFragment();
-        let added = 0;
-        let updated = 0;
-        for (const key of keys) {
-            const group = data.get(key);
-            if (!group) {
-                const existing = this._domRows.get(key);
-                if (existing) {
-                    existing.all.forEach(el => el.remove());
-                    this._domRows.delete(key);
-                    this._renderedCount--;
+            this._model = model;
+            this._data = data;
+            if (!this._rendered)
+                this._ensureContainer();
+            const list = document.getElementById(this._listId());
+            if (!list)
+                return;
+            const frag = document.createDocumentFragment();
+            let added = 0;
+            let updated = 0;
+            for (const key of keys) {
+                const group = data.get(key);
+                if (!group) {
+                    const existing = this._domRows.get(key);
+                    if (existing) {
+                        existing.all.forEach(el => el.remove());
+                        this._domRows.delete(key);
+                        this._renderedCount--;
+                    }
+                    continue;
                 }
-                continue;
+                if (this._domRows.has(key)) {
+                    this._patchGroup(list, key);
+                    updated++;
+                    continue;
+                }
+                if (this._renderedCount >= MAX_RENDERED) {
+                    this._overflowKeys.push(key);
+                    continue;
+                }
+                const els = this._buildGroupEls(key, group);
+                this._domRows.set(key, els);
+                els.all.forEach(el => frag.appendChild(el));
+                this._renderedCount++;
+                added++;
             }
-            if (this._domRows.has(key)) {
-                this._patchGroup(list, key);
-                updated++;
-                continue;
-            }
-            if (this._renderedCount >= MAX_RENDERED) {
-                this._overflowKeys.push(key);
-                continue;
-            }
-            const els = this._buildGroupEls(key, group);
-            this._domRows.set(key, els);
-            els.all.forEach(el => frag.appendChild(el));
-            this._renderedCount++;
-            added++;
+            if (frag.childNodes.length)
+                list.appendChild(frag);
+            if (this._overflowKeys.length)
+                this._updateOverflowBanner();
+            window._T?.('VIEW', `batch: +${added} new, ${updated} patched, ${this._renderedCount} total`);
         }
-        if (frag.childNodes.length)
-            list.appendChild(frag);
-        if (this._overflowKeys.length)
-            this._updateOverflowBanner();
-        window._T?.('VIEW', `batch: +${added} new, ${updated} patched, ${this._renderedCount} total`);
-        } catch (e) {
+        catch (e) {
             ErrLog.log('[grid-view]', e?.message || String(e), e?.stack || null, 'RENDER_BATCH_ERROR');
         }
     }
@@ -122,24 +139,42 @@ export class GridView {
         this._overflowKeys.length = 0;
         this._pendingKeys.length = 0;
         this._rendered = false;
+        this._marked.clear();
+    }
+    /** Returns all paths currently marked for deletion. */
+    getMarkedPaths() {
+        return [...this._marked];
+    }
+    /** Clear all marked states (call after successful delete). */
+    clearMarked() {
+        this._marked.clear();
+        document.querySelectorAll(`#${this._containerId} .dup-marked`).forEach(el => {
+            el.classList.remove('dup-marked');
+            const btn = el.querySelector('.dup-mark-btn');
+            if (btn) { btn.textContent = '✕ Mark'; btn.classList.remove('active'); }
+        });
+        this._callbacks.onMarkChanged?.(0);
     }
     // ── Full render ───────────────────────────────────────────
     _fullRender(data, model) {
         this._cancelRaf();
         this._domRows.clear();
-        this._rendered = false; // force _ensureContainer to wipe DOM
+        this._rendered = false;
         this._renderedCount = 0;
         this._overflowKeys.length = 0;
         this._pendingKeys.length = 0;
+        this._marked.clear();
         this._removeOverflowBanner();
-        this._ensureContainer(model);
+        this._ensureContainer();
         if (data.size === 0) {
             const list = document.getElementById(this._listId());
             if (list)
                 list.innerHTML = '<div class="empty-msg">No results</div>';
             return;
         }
-        for (const key of data.keys()) {
+        // Sort groups by wasted space descending — worst offenders first
+        const sortedKeys = [...data.keys()].sort((a, b) => _wastedBytes(data.get(b)) - _wastedBytes(data.get(a)));
+        for (const key of sortedKeys) {
             this._pendingKeys.push(key);
         }
         this._rafId = requestAnimationFrame(() => this._rafLoop());
@@ -147,7 +182,7 @@ export class GridView {
     // ── Incremental render (live scan) ────────────────────────
     _renderIncremental(key) {
         if (!this._rendered) {
-            this._ensureContainer(this._model);
+            this._ensureContainer();
         }
         if (this._domRows.has(key)) {
             const list = document.getElementById(this._listId());
@@ -209,9 +244,7 @@ export class GridView {
     // ── Build DOM for one group ───────────────────────────────
     _buildGroupEls(key, group) {
         const model = this._model;
-        // Sort files so the shortest filename is first — that's the "Keep" (original).
-        // Duplicate copies are typically named with suffixes: " (1)", " (1) (1)", etc.
-        // Shortest name = fewest suffixes = most likely the original file.
+        // Sort: shortest filename first (most likely the original)
         const files = [...(group.files || [])].sort((a, b) => {
             const nameA = (a.path || '').replace(/.*[\\/]/, '');
             const nameB = (b.path || '').replace(/.*[\\/]/, '');
@@ -219,113 +252,206 @@ export class GridView {
         });
         const seq = group._seq || 0;
         const safeKey = this._esc(key);
+        const wasted = _wastedBytes(group);
+        // ── Group header ─────────────────────────────────────────
         const sep = document.createElement('div');
         sep.className = 'dup-sep';
         sep.dataset.group = safeKey;
         sep.dataset.hash = key;
         sep.innerHTML = `
       <span class="dup-sep-label">
-        \ud83d\udccb Group ${seq} &mdash; ${files.length} identical files
-        &nbsp;\u00b7&nbsp;
-        <span class="accent-text">${fmt(files[0]?.size || 0)}</span> each
+        📋 Group ${seq} &mdash; ${files.length} identical files
+        &nbsp;·&nbsp;<span class="accent-text">${fmt(files[0]?.size || 0)}</span> each
+        &nbsp;·&nbsp;<span class="dup-wasted">${fmt(wasted)} wasted</span>
       </span>
-      <button class="btn danger dup-trash-btn" data-trash-key="${safeKey}">
-        \ud83d\uddd1 Delete Copies
-      </button>`;
-        const btn = sep.querySelector('.dup-trash-btn');
-        btn.addEventListener('click', () => {
+      <span class="dup-smart-keep">
+        Keep:&nbsp;<button class="dup-keep-smart" data-strategy="newest" title="Mark all except newest modified">Newest</button><button class="dup-keep-smart" data-strategy="oldest" title="Mark all except oldest modified">Oldest</button><button class="dup-keep-smart" data-strategy="shortest" title="Mark all except shortest path">Shortest</button>
+      </span>
+      <button class="btn danger dup-trash-btn" data-trash-key="${safeKey}">🗑 Delete Copies</button>`;
+        const trashBtn = sep.querySelector('.dup-trash-btn');
+        trashBtn.addEventListener('click', () => {
             const paths = model.copyPaths(group);
-            this._callbacks.onDeleteGroup?.(key, paths, btn);
+            this._callbacks.onDeleteGroup?.(key, paths, trashBtn);
         });
-        const firstPath = files[0]?.path || '';
-        const firstExt = _extOf(firstPath);
-        const preview = document.createElement('div');
-        preview.className = 'dup-preview';
-        preview.dataset.previewPath = firstPath;
-        if (_IMG_EXTS.has(firstExt)) {
-            const img = document.createElement('img');
-            img.className = 'dup-thumb';
-            img.alt = '';
-            img.dataset.lazySrc = `/api/file?path=${encodeURIComponent(firstPath)}`;
-            img.onload = () => img.classList.add('loaded');
-            img.onerror = () => { img.style.display = 'none'; };
-            _lazyObserver.observe(img);
-            preview.appendChild(img);
+        sep.querySelectorAll('.dup-keep-smart').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this._applySmartKeep(key, files, btn.dataset.strategy || 'shortest');
+            });
+        });
+        // ── Cards wrapper ─────────────────────────────────────────
+        const cardsWrap = document.createElement('div');
+        cardsWrap.className = 'dup-cards-wrap';
+        cardsWrap.dataset.group = safeKey;
+        const cards = [];
+        const visibleCount = Math.min(files.length, MAX_ROWS_PER_GROUP);
+        const hiddenCount = files.length - visibleCount;
+        for (let i = 0; i < visibleCount; i++) {
+            const card = this._buildFileCard(files[i], i === 0, safeKey);
+            cards.push(card);
+            cardsWrap.appendChild(card);
         }
-        else if (_VID_EXTS.has(firstExt)) {
+        if (hiddenCount > 0) {
+            const expander = document.createElement('div');
+            expander.className = 'dup-card-expander';
+            expander.textContent = `▶ Show all ${files.length} files (${hiddenCount} more)`;
+            expander.addEventListener('click', () => {
+                for (let i = visibleCount; i < files.length; i++) {
+                    const card = this._buildFileCard(files[i], false, safeKey);
+                    cards.push(card);
+                    cardsWrap.insertBefore(card, expander);
+                }
+                expander.remove();
+            }, { once: true });
+            cardsWrap.appendChild(expander);
+        }
+        const all = [sep, cardsWrap];
+        return { sep, cardsWrap, cards, all };
+    }
+    _buildFileCard(file, isKeep, safeGroupKey) {
+        const path = file.path || '';
+        const safePath = this._esc(path);
+        const ext = _extOf(path);
+        const filename = path.replace(/.*[\\/]/, '') || path;
+        const dir = path.replace(/[\\/][^\\/]*$/, '') || '';
+        const card = document.createElement('div');
+        card.className = `dup-card ${isKeep ? 'dup-card-keep' : 'dup-card-copy'} live-row`;
+        card.dataset.group = safeGroupKey;
+        card.dataset.path = path;
+        // ── Preview area ───────────────────────────────────────────
+        const previewEl = document.createElement('div');
+        previewEl.className = 'dup-card-preview';
+        previewEl.dataset.previewPath = path;
+        if (_IMG_EXTS.has(ext)) {
+            const img = document.createElement('img');
+            img.className = 'dup-card-img';
+            img.alt = '';
+            img.dataset.lazySrc = `/api/file?path=${encodeURIComponent(path)}`;
+            img.onload = () => img.classList.add('loaded');
+            img.onerror = () => {
+                img.style.display = 'none';
+                previewEl.classList.add('dup-preview-broken');
+                previewEl.textContent = '(unavailable)';
+            };
+            _lazyObserver.observe(img);
+            previewEl.appendChild(img);
+        }
+        else if (_VID_EXTS.has(ext)) {
             const vid = document.createElement('video');
-            vid.className = 'dup-thumb dup-thumb-vid';
+            vid.className = 'dup-card-img';
             vid.muted = true;
             vid.preload = 'none';
             vid.playsInline = true;
-            vid.dataset.lazySrc = `/api/file?path=${encodeURIComponent(firstPath)}`;
+            vid.dataset.lazySrc = `/api/file?path=${encodeURIComponent(path)}`;
             vid.addEventListener('loadeddata', () => {
                 vid.currentTime = 0.5;
                 vid.classList.add('loaded');
             }, { once: true });
             _lazyObserver.observe(vid);
-            preview.appendChild(vid);
+            previewEl.appendChild(vid);
+        }
+        else if (_TXT_EXTS.has(ext)) {
+            previewEl.classList.add('dup-preview-pending');
+            previewEl.textContent = '🔍 Click to preview';
+            previewEl.style.cursor = 'pointer';
+            previewEl.addEventListener('click', () => {
+                if (previewEl.classList.contains('dup-preview-pending')) {
+                    previewEl.classList.remove('dup-preview-pending');
+                    previewEl.style.cursor = 'default';
+                    previewEl.textContent = 'Loading…';
+                    this._callbacks.onLoadPreview?.(previewEl);
+                }
+            }, { once: true });
         }
         else {
-            preview.classList.add('dup-preview-pending');
-            preview.dataset.previewPath = firstPath;
-            preview.textContent = '\ud83d\udd0d Click to preview';
-            preview.style.cursor = 'pointer';
-            preview.addEventListener('click', () => {
-                if (preview.classList.contains('dup-preview-pending')) {
-                    preview.classList.remove('dup-preview-pending');
-                    preview.style.cursor = 'default';
-                    preview.textContent = 'Loading\u2026';
-                    this._callbacks.onLoadPreview?.(preview);
+            const extLabel = ext ? ext.toUpperCase().slice(1) : '?';
+            previewEl.classList.add('dup-preview-icon');
+            previewEl.innerHTML = `<span class="dup-ext-badge">${this._esc(extLabel)}</span>`;
+        }
+        // ── Card body ──────────────────────────────────────────────
+        const body = document.createElement('div');
+        body.className = 'dup-card-body';
+        body.innerHTML = `
+      <div class="dup-card-badge">${isKeep
+            ? `<span class="badge green">✅ Keep</span>`
+            : `<span class="badge red">🗑 Copy</span>`}</div>
+      <div class="dup-card-filename" title="${safePath}">${this._esc(filename)}</div>
+      <div class="dup-card-dir" title="${safePath}">${this._esc(dir)}</div>
+      <div class="dup-card-meta">${fmt(file.size || 0)}&nbsp;·&nbsp;${this._esc(file.modified || '')}</div>`;
+        // ── Card footer (mark button for copies only) ──────────────
+        const foot = document.createElement('div');
+        foot.className = 'dup-card-foot';
+        if (!isKeep) {
+            const markBtn = document.createElement('button');
+            markBtn.className = 'dup-mark-btn';
+            markBtn.textContent = '✕ Mark';
+            markBtn.title = 'Mark for deletion';
+            markBtn.addEventListener('click', () => {
+                const isMarked = card.classList.toggle('dup-marked');
+                if (isMarked) {
+                    this._marked.add(path);
+                    markBtn.textContent = '↩ Unmark';
+                    markBtn.classList.add('active');
+                    markBtn.title = 'Remove from deletion list';
                 }
-            }, { once: true });
-        }
-        const fileRows = [];
-        const all = [sep, preview];
-        const visibleCount = Math.min(files.length, MAX_ROWS_PER_GROUP);
-        const hiddenCount = files.length - visibleCount;
-        for (let i = 0; i < visibleCount; i++) {
-            const row = this._buildFileRow(files[i], i === 0, safeKey);
-            fileRows.push(row);
-            all.push(row);
-        }
-        if (hiddenCount > 0) {
-            const expander = document.createElement('div');
-            expander.className = 'dup-row dup-expander';
-            expander.style.gridColumn = '1 / -1';
-            expander.style.cursor = 'pointer';
-            expander.style.padding = '6px 12px';
-            expander.style.color = '#58a6ff';
-            expander.textContent = `\u25b6 Show all ${files.length} files (${hiddenCount} hidden)`;
-            expander.addEventListener('click', () => {
-                const frag = document.createDocumentFragment();
-                for (let i = visibleCount; i < files.length; i++) {
-                    const row = this._buildFileRow(files[i], false, safeKey);
-                    fileRows.push(row);
-                    frag.appendChild(row);
+                else {
+                    this._marked.delete(path);
+                    markBtn.textContent = '✕ Mark';
+                    markBtn.classList.remove('active');
+                    markBtn.title = 'Mark for deletion';
                 }
-                expander.replaceWith(frag);
-            }, { once: true });
-            all.push(expander);
+                this._callbacks.onMarkChanged?.(this._marked.size);
+            });
+            foot.appendChild(markBtn);
         }
-        return { sep, preview, fileRows, all };
+        card.appendChild(previewEl);
+        card.appendChild(body);
+        card.appendChild(foot);
+        return card;
     }
-    _buildFileRow(file, isKeep, safeGroupKey) {
-        const safePath = this._esc(file.path || '');
-        const row = document.createElement('div');
-        row.className = `dup-row ${isKeep ? 'dup-keep' : 'dup-copy'} live-row`;
-        row.dataset.group = safeGroupKey;
-        row.innerHTML = `
-      <div class="dup-cell">${isKeep ? '' : `<input type="checkbox" data-path="${safePath}">`}</div>
-      <div class="dup-cell">
-        ${isKeep
-            ? `<span class="badge green">\u2705 Keep</span>`
-            : `<span class="badge red">\ud83d\uddd1 Copy</span>`}
-      </div>
-      <div class="dup-cell dup-path">${safePath}</div>
-      <div class="dup-cell">${fmt(file.size || 0)}</div>
-      <div class="dup-cell">${this._esc(file.modified || '')}</div>`;
-        return row;
+    // ── Smart keep — bulk-mark all except the chosen file ─────────
+    _applySmartKeep(key, files, strategy) {
+        let keepIdx = 0;
+        if (strategy === 'newest') {
+            let latest = '';
+            files.forEach((f, i) => {
+                const m = f.modified || '';
+                if (m > latest) { latest = m; keepIdx = i; }
+            });
+        }
+        else if (strategy === 'oldest') {
+            let earliest = '￿';
+            files.forEach((f, i) => {
+                const m = f.modified || '';
+                if (m && m < earliest) { earliest = m; keepIdx = i; }
+            });
+        }
+        else {
+            let minLen = Infinity;
+            files.forEach((f, i) => {
+                const len = (f.path || '').length;
+                if (len < minLen) { minLen = len; keepIdx = i; }
+            });
+        }
+        const keepPath = files[keepIdx]?.path || '';
+        const groupEls = this._domRows.get(key);
+        if (!groupEls)
+            return;
+        groupEls.cards.forEach(card => {
+            const cardPath = card.dataset.path || '';
+            const markBtn = card.querySelector('.dup-mark-btn');
+            if (cardPath === keepPath || !markBtn) {
+                card.classList.remove('dup-marked');
+                this._marked.delete(cardPath);
+                if (markBtn) { markBtn.textContent = '✕ Mark'; markBtn.classList.remove('active'); }
+            }
+            else {
+                card.classList.add('dup-marked');
+                this._marked.add(cardPath);
+                markBtn.textContent = '↩ Unmark';
+                markBtn.classList.add('active');
+            }
+        });
+        this._callbacks.onMarkChanged?.(this._marked.size);
     }
     // ── Patch existing group ──────────────────────────────────
     _patchGroup(list, key) {
@@ -344,37 +470,14 @@ export class GridView {
         els.all.forEach(el => frag.appendChild(el));
         list.appendChild(frag);
     }
-    // ── Container + header ────────────────────────────────────
-    _ensureContainer(model) {
+    // ── Container ─────────────────────────────────────────────
+    _ensureContainer() {
         if (this._rendered && document.getElementById(this._listId()))
             return;
         const container = document.getElementById(this._containerId);
         if (!container)
             return;
-        const headerCells = model.columns.map((c) => {
-            if (c.type === 'checkbox') {
-                return `<div><input type="checkbox" class="sg-select-all" title="Select all copies / none"></div>`;
-            }
-            return `<div>${this._esc(c.label)}</div>`;
-        }).join('');
-        container.innerHTML = `
-      <div class="dup-header">${headerCells}</div>
-      <div id="${this._listId()}"></div>`;
-        const hCb = container.querySelector('.sg-select-all');
-        const list = document.getElementById(this._listId());
-        if (hCb && list) {
-            hCb.addEventListener('change', () => {
-                list.querySelectorAll('.dup-copy input[type=checkbox]')
-                    .forEach(cb => { cb.checked = hCb.checked; });
-            });
-            list.addEventListener('change', (ev) => {
-                if (!ev.target.matches('input[type=checkbox]'))
-                    return;
-                const all = [...list.querySelectorAll('.dup-copy input[type=checkbox]')];
-                hCb.checked = all.length > 0 && all.every(cb => cb.checked);
-                hCb.indeterminate = !hCb.checked && all.some(cb => cb.checked);
-            });
-        }
+        container.innerHTML = `<div id="${this._listId()}" class="dup-list"></div>`;
         this._rendered = true;
     }
     _listId() {
@@ -424,18 +527,19 @@ export class GridView {
     // ── Filter ────────────────────────────────────────────────
     filter(val) {
         const lower = val.toLowerCase();
-        this._domRows.forEach(({ sep, preview, fileRows }) => {
+        this._domRows.forEach(({ sep, cardsWrap, cards }) => {
             let hit = false;
-            fileRows.forEach(row => {
-                const match = (row.textContent || '').toLowerCase().includes(lower);
-                row.classList.toggle('hidden', !match);
+            cards.forEach(card => {
+                const match = (card.dataset.path || '').toLowerCase().includes(lower) ||
+                    (card.textContent || '').toLowerCase().includes(lower);
+                card.classList.toggle('hidden', !match);
                 if (match)
                     hit = true;
             });
             if (sep)
                 sep.classList.toggle('hidden', !hit);
-            if (preview)
-                preview.classList.toggle('hidden', !hit);
+            if (cardsWrap)
+                cardsWrap.classList.toggle('hidden', !hit);
         });
     }
     // ── Helpers ───────────────────────────────────────────────
