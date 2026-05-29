@@ -184,7 +184,7 @@ cols.forEach((c, i) => {
     cell.title       = c.label || '';
   }
 
-  if (c.type !== 'checkbox' && c.type !== 'lineNo' && c.type !== 'actions') {
+  if (c.type !== 'checkbox' && c.type !== 'keepBtn' && c.type !== 'lineNo' && c.type !== 'actions') {
     cell.classList.add('sg-sortable');
     cell.addEventListener('click', (e) => {
       if ((e.target as Element).classList.contains('sg-resize-handle')) return;
@@ -261,6 +261,9 @@ g.columns.forEach(col => {
     }
     case 'checkbox': {
       cell.innerHTML = `<input type="checkbox" data-path="${_esc(path)}">`;
+      break;
+    }
+    case 'keepBtn': {
       const kb = document.createElement('button');
       kb.className = 'btn-keep';
       kb.textContent = '\uD83D\uDD12';

@@ -172,7 +172,7 @@ export function create(section, containerId, columns, opts = {}) {
             cell.textContent = c.label || '';
             cell.title = c.label || '';
         }
-        if (c.type !== 'checkbox' && c.type !== 'lineNo' && c.type !== 'actions') {
+        if (c.type !== 'checkbox' && c.type !== 'keepBtn' && c.type !== 'lineNo' && c.type !== 'actions') {
             cell.classList.add('sg-sortable');
             cell.addEventListener('click', (e) => {
                 if (e.target.classList.contains('sg-resize-handle'))
@@ -238,6 +238,9 @@ export function addRow(section, data) {
             }
             case 'checkbox': {
                 cell.innerHTML = `<input type="checkbox" data-path="${_esc(path)}">`;
+                break;
+            }
+            case 'keepBtn': {
                 const kb = document.createElement('button');
                 kb.className = 'btn-keep';
                 kb.textContent = '\uD83D\uDD12';
