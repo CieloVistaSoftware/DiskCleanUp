@@ -1,26 +1,20 @@
 // Scanning/Rules/ImagesRule.cs
-// Finds near-duplicate images via perceptual hash (aHash) + Hamming distance.
+// Finds byte-identical image files via fast xxHash64 grouping.
 //
-// Algorithm:
-//   Phase 1 (parallel): compute 64-bit aHash per image via ctx.PHashAsync.
-//   Phase 2 (sequential): O(n²) union-find — merge any two images whose
-//              Hamming distance is <= SimilarityBits (default: 10/64 ≈ 15%).
-//   Phase 3: emit one "result" per group of >= 2 similar images.
+// Changed from perceptual hashing (visual similarity) to exact byte-for-byte
+// matching so only truly identical images are grouped — no false positives
+// from similar color palettes or resized near-duplicates.
 //
-// Detects: resized, re-compressed, cropped, slightly edited near-duplicates.
-// Exact byte-duplicates are always caught (distance = 0).
+// Algorithm mirrors DuplicatesRule: group by xxHash64, emit result/result_update
+// as groups grow to 2+ members. Output format: { hash, files[] }.
 
 using System.Collections.Concurrent;
-using System.Numerics;
 
 namespace DiskCleanup.Scanning.Rules;
 
 public sealed class ImagesRule : IScanRule
 {
     public string Section => "images";
-
-    /// Hamming distance threshold: images differing in <= 10 of 64 bits are "similar".
-    private const int SimilarityBits = 10;
 
     private static readonly HashSet<string> _imageExts = new(StringComparer.OrdinalIgnoreCase)
         { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp" };
@@ -30,9 +24,9 @@ public sealed class ImagesRule : IScanRule
         const string sec = "images";
         await ctx.PushAsync(sec, "started", new { root = ctx.Config.Root }, ct);
 
-        // ── Phase 1: compute pHash for every image (parallel) ─────────────
-        var bag    = new ConcurrentBag<(string Path, ulong Hash)>();
-        long scanned = 0;
+        var seen    = new ConcurrentDictionary<string, List<string>>();
+        var lockObj = new object();
+        long scanned = 0, results = 0;
 
         await Parallel.ForEachAsync(
             FileEnumerator.FilteredFiles(ctx)
@@ -40,53 +34,35 @@ public sealed class ImagesRule : IScanRule
             new ParallelOptions { MaxDegreeOfParallelism = ctx.Config.MaxParallelism, CancellationToken = ct },
             async (fp, token) =>
             {
-                var h = await ctx.PHashAsync(fp, token);
-                if (h == 0UL) return; // unreadable or unsupported
-                bag.Add((fp, h));
-                ctx.PushProgress(sec, new { files = Interlocked.Increment(ref scanned) });
-            });
-
-        // ── Phase 2: union-find grouping by Hamming distance ──────────────
-        var list = bag.ToArray();
-        int n    = list.Length;
-        var parent = new int[n];
-        for (int i = 0; i < n; i++) parent[i] = i;
-
-        int Find(int i)
-        {
-            while (parent[i] != i) { parent[i] = parent[parent[i]]; i = parent[i]; }
-            return i;
-        }
-
-        for (int i = 0; i < n; i++)
-        {
-            ct.ThrowIfCancellationRequested();
-            for (int j = i + 1; j < n; j++)
-            {
-                if (BitOperations.PopCount(list[i].Hash ^ list[j].Hash) <= SimilarityBits)
+                try
                 {
-                    int ri = Find(i), rj = Find(j);
-                    if (ri != rj) parent[ri] = rj;
+                    var h = await ctx.HashAsync(fp, token);
+                    if (string.IsNullOrEmpty(h)) return;
+
+                    List<string> group;
+                    lock (lockObj)
+                    {
+                        group = seen.GetOrAdd(h, _ => []);
+                        group.Add(fp);
+                    }
+
+                    var count = Interlocked.Increment(ref scanned);
+                    if (group.Count == 2)
+                    {
+                        Interlocked.Increment(ref results);
+                        await ctx.PushAsync(sec, "result",        new { hash = h, files = group.ToArray() }, token);
+                    }
+                    else if (group.Count > 2)
+                    {
+                        await ctx.PushAsync(sec, "result_update", new { hash = h, files = group.ToArray() }, token);
+                    }
+                    ctx.PushProgress(sec, new { files = count, results, folder = Path.GetDirectoryName(fp) });
                 }
-            }
-        }
-
-        // ── Phase 3: emit one result per group of >= 2 ───────────────────
-        var groups = new Dictionary<int, List<string>>();
-        for (int i = 0; i < n; i++)
-        {
-            var root = Find(i);
-            if (!groups.TryGetValue(root, out var g)) groups[root] = g = [];
-            g.Add(list[i].Path);
-        }
-
-        int results = 0;
-        foreach (var (root, files) in groups.Where(g => g.Value.Count >= 2))
-        {
-            results++;
-            var hash = list[root].Hash.ToString("x16");
-            await ctx.PushAsync(sec, "result", new { hash, files }, ct);
-        }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or FileNotFoundException)
+                {
+                    Interlocked.Increment(ref scanned);
+                }
+            });
 
         await ctx.PushAsync(sec, "done", new { files = scanned, results }, ct);
     }

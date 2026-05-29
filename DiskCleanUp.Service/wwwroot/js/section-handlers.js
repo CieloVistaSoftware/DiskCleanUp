@@ -215,8 +215,28 @@ try {
             _set('smart-dedup', 'results', window._smartData.length.toLocaleString());
         }
     });
-    // ── Duplicate Images ──────────────────────────────────────────────────────
+        // ── Duplicate Images ──────────────────────────────────────────────────────
     window._imageGroups = {};
+
+    function _wireImgFilter() {
+        const filterBar = document.getElementById('sf-images');
+        if (!filterBar || filterBar.querySelector('.img-filter-input'))
+            return;
+        const fi = document.createElement('input');
+        fi.type = 'text';
+        fi.placeholder = 'Filter by path\u2026';
+        fi.className = 'img-filter-input';
+        fi.style.cssText = 'margin-left:8px;width:220px;padding:2px 6px;font-size:.85rem;';
+        fi.addEventListener('input', () => {
+            const q = (fi.value || '').toLowerCase();
+            document.querySelectorAll('#imageResult .img-group').forEach(grp => {
+                const paths = [...grp.querySelectorAll('p')].map(p => (p.textContent || '').toLowerCase());
+                grp.style.display = (!q || paths.some(p => p.includes(q))) ? '' : 'none';
+            });
+        });
+        filterBar.appendChild(fi);
+    }
+
     registerHandler('images', (msg) => {
         if (msg.type === 'started') {
             window._imageGroups = {};
@@ -224,24 +244,19 @@ try {
             window._updateLoadMoreBtn?.('images');
             SB.begin('images', msg.root);
             const delBtn = document.getElementById('imgDeleteAllBtn');
-            if (delBtn) {
-                delBtn.classList.add('hidden');
-                delBtn.disabled = false;
-                delBtn.textContent = '\ud83d\uddd1 Delete All Copies';
-            }
+            if (delBtn) { delBtn.classList.add('hidden'); delBtn.disabled = false; delBtn.textContent = '\uD83D\uDDD1 Delete All Copies'; }
+            _wireImgFilter();
             document.getElementById('imageResult').innerHTML =
                 '<div class="skel-grid">' +
-                    Array.from({ length: 6 }, () => '<div class="skel-card"></div>').join('') +
-                    '</div>';
+                Array.from({ length: 6 }, () => '<div class="skel-card"></div>').join('') +
+                '</div>';
             return;
         }
-        if (msg.type === 'progress') {
-            _folder('images', msg.folder || '');
-            return;
-        }
+        if (msg.type === 'progress') { _folder('images', msg.folder || ''); return; }
         if (msg.type === 'done') {
             removeSkeletons('imageResult');
-            SB.done('images', `Done — ${msg.results} duplicate groups`);
+            SB.done('images', `Done \u2014 ${msg.results} exact duplicate groups`);
+            localStorage.setItem('dcu_img_scan_ts', String(Date.now()));
             if (msg.results > 0) {
                 const delBtn = document.getElementById('imgDeleteAllBtn');
                 if (delBtn)
@@ -249,10 +264,7 @@ try {
             }
             return;
         }
-        if (msg.type === 'error') {
-            SB.error('images', msg.message);
-            return;
-        }
+        if (msg.type === 'error') { SB.error('images', msg.message); return; }
         if (msg.type === 'result' || msg.type === 'result_update') {
             const files = Array.isArray(msg.files) ? msg.files : [];
             window._imageGroups[msg.hash] = files;
@@ -266,16 +278,14 @@ try {
             const div = document.createElement('div');
             div.className = 'img-group';
             div.dataset.imgHash = msg.hash;
-            div.innerHTML = `<span class="badge red">Duplicate Group</span><div class="img-grid">${files.map((fp, i) => {
+            div.innerHTML = `<span class="badge red">Exact Duplicate Group</span><div class="img-grid">${files.map((fp, i) => {
                 const escaped = (fp || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
                 return `<div class="img-card">
             <img src="/api/file?path=${encodeURIComponent(fp)}" loading="lazy" onerror="this.classList.add('img-broken')" alt="">
             <p>${fp}</p>
-            <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap">
-            ${i > 0
-                    ? `<button class="btn danger btn-sm img-trash-btn" onclick="window.trashImage('${escaped}')">\ud83d\uddd1 Delete</button>`
-                    : `<span class="img-keep">\u2705 Original</span>`}
-            <button class="btn-keep" onclick="window.keepPaths(['${escaped}'])">\ud83d\udd12 Keep</button>
+            <div class="img-card-footer">
+            ${i > 0 ? `<button class="btn danger btn-sm img-trash-btn" onclick="window.trashImage('${escaped}')">\uD83D\uDDD1 Delete</button>` : `<span class="img-keep">\u2705 Original</span>`}
+            <button class="btn-keep" onclick="window.keepPaths(['${escaped}'])">\uD83D\uDD12 Keep</button>
             </div>
           </div>`;
             }).join('')}</div>`;
