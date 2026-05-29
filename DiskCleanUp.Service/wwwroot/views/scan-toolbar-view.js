@@ -90,7 +90,7 @@ export class ScanToolbarView {
                 const cont = document.getElementById(resultId);
                 if (!cont)
                     return;
-                cont.querySelectorAll('.dup-thumb, .img-card img')
+                cont.querySelectorAll('.dup-thumb, .img-card img, .sg-thumb')
                     .forEach(img => { img.style.background = _whiteBgOn ? 'white' : ''; });
                 this._els.whiteBg.textContent = _whiteBgOn ? '⬛ Dark BG' : '⬜ White BG';
                 this._els.whiteBg.classList.toggle('active', _whiteBgOn);

@@ -23,7 +23,7 @@
 /** @type {ScanToolbarConfig[]} */
 export const SCAN_TOOLBAR_CONFIGS = [
     { section: 'duplicates', tableId: 'dupTable', specialty: ['delete-all-copies', 'white-bg'] },
-    { section: 'smart-dedup', tableId: 'smartTable', specialty: ['apply-all'] },
+    { section: 'smart-dedup', tableId: 'smartTable', specialty: ['apply-all', 'white-bg'] },
     { section: 'stale', tableId: 'staleTable', specialty: [] },
     { section: 'large', tableId: 'largeTable', specialty: [] },
     { section: 'node-modules', tableId: 'nmTable', specialty: [] },
