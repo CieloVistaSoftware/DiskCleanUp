@@ -183,9 +183,10 @@ cols.forEach((c, i) => {
     cell.textContent = c.label || '';
     cell.title       = c.label || '';
     if (c.type === 'keepBtn') cell.classList.add('sg-keep-cell');
+    if (c.type === 'delBtn')  cell.classList.add('sg-del-cell');
   }
 
-  if (c.type !== 'checkbox' && c.type !== 'keepBtn' && c.type !== 'lineNo' && c.type !== 'actions') {
+  if (c.type !== 'checkbox' && c.type !== 'keepBtn' && c.type !== 'delBtn' && c.type !== 'lineNo' && c.type !== 'actions') {
     cell.classList.add('sg-sortable');
     cell.addEventListener('click', (e) => {
       if ((e.target as Element).classList.contains('sg-resize-handle')) return;
@@ -262,6 +263,16 @@ g.columns.forEach(col => {
     }
     case 'checkbox': {
       cell.innerHTML = `<input type="checkbox" data-path="${_esc(path)}">`;
+      break;
+    }
+    case 'delBtn': {
+      cell.classList.add('sg-del-cell');
+      const db = document.createElement('button');
+      db.className = 'btn-del';
+      db.textContent = '🗑';
+      db.title = 'Delete this file';
+      db.onclick = () => (window as any)._trashSelected?.(null, [path]);
+      cell.appendChild(db);
       break;
     }
     case 'keepBtn': {

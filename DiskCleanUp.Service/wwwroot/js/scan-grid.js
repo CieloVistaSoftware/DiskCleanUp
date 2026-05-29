@@ -150,7 +150,10 @@ export function create(section, containerId, columns, opts = {}) {
         const cell = document.createElement('div');
         cell.className = 'sg-hcell';
         cell.dataset.colIdx = String(i);
-        if (c.type === 'keepBtn') {
+        if (c.type === 'delBtn') {
+            cell.classList.add('sg-del-cell');
+        }
+        else if (c.type === 'keepBtn') {
             cell.classList.add('sg-keep-cell');
             cell.textContent = c.label || '';
         }
@@ -176,7 +179,7 @@ export function create(section, containerId, columns, opts = {}) {
             cell.textContent = c.label || '';
             cell.title = c.label || '';
         }
-        if (c.type !== 'checkbox' && c.type !== 'keepBtn' && c.type !== 'lineNo' && c.type !== 'actions') {
+        if (c.type !== 'checkbox' && c.type !== 'keepBtn' && c.type !== 'delBtn' && c.type !== 'lineNo' && c.type !== 'actions') {
             cell.classList.add('sg-sortable');
             cell.addEventListener('click', (e) => {
                 if (e.target.classList.contains('sg-resize-handle'))
@@ -242,6 +245,16 @@ export function addRow(section, data) {
             }
             case 'checkbox': {
                 cell.innerHTML = `<input type="checkbox" data-path="${_esc(path)}">`;
+                break;
+            }
+            case 'delBtn': {
+                cell.classList.add('sg-del-cell');
+                const db = document.createElement('button');
+                db.className = 'btn-del';
+                db.textContent = '🗑';
+                db.title = 'Delete this file';
+                db.onclick = () => window._trashSelected?.(null, [path]);
+                cell.appendChild(db);
                 break;
             }
             case 'keepBtn': {

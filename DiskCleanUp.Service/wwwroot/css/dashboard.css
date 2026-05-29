@@ -727,6 +727,28 @@
     justify-content: center;
   }
 
+  .sg-del-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-del {
+    background: transparent;
+    border: 1px solid #e74c3c;
+    color: #e74c3c;
+    padding: 2px 6px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    transition: background .15s, color .15s;
+  }
+  .btn-del:hover {
+    background: #e74c3c;
+    color: #fff;
+  }
+
   .btn-keep {
     background: transparent;
     border: 1px solid #2ecc71;
