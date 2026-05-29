@@ -68,6 +68,7 @@ try {
           SG.showSkeleton(section, containerId, columns);
           SF.reset(section);
           window._setSectionStatus?.(section, 'scanning');
+          window._scanToolbarVMs?.[section]?.scanStarted();
           break;
 
         case 'progress':
@@ -79,11 +80,13 @@ try {
           SB.done(section, doneMsg(msg));
           SF.rebuild(section);
           window._setSectionStatus?.(section, 'done');
+          window._scanToolbarVMs?.[section]?.scanDone();
           break;
 
         case 'error':
           SB.error(section, msg.message);
           window._setSectionStatus?.(section, 'error');
+          window._scanToolbarVMs?.[section]?.scanDone();
           break;
 
         case 'result':
@@ -215,13 +218,14 @@ try {
       resetPaging('smart-dedup');
       window._updateLoadMoreBtn?.('smart-dedup');
       SB.begin('smart-dedup', msg.root);
+            window._scanToolbarVMs?.['smart-dedup']?.scanStarted();
       SG.showSkeleton('smart-dedup', 'smartResult', [COL.keep, COL.delPaths, COL.size]);
       SF.reset('smart-dedup');
       return;
     }
     if (msg.type === 'progress') { SB.progress('smart-dedup', { files: msg.files, results: msg.results, folder: msg.folder }); return; }
-    if (msg.type === 'done')     { SG.removeSkeleton('smart-dedup'); SB.done('smart-dedup', `Done — ${msg.results} groups`); SF.rebuild('smart-dedup'); return; }
-    if (msg.type === 'error')    { SB.error('smart-dedup', msg.message); return; }
+    if (msg.type === 'done')     { SG.removeSkeleton('smart-dedup'); SB.done('smart-dedup', `Done — ${msg.results} groups`); SF.rebuild('smart-dedup'); window._scanToolbarVMs?.['smart-dedup']?.scanDone(); return; }
+    if (msg.type === 'error')    { SB.error('smart-dedup', msg.message); window._scanToolbarVMs?.['smart-dedup']?.scanDone(); return; }
     if (msg.type === 'result') {
       window._smartData.push(msg);
       SG.removeSkeleton('smart-dedup');
@@ -265,6 +269,7 @@ try {
       resetPaging('images');
       window._updateLoadMoreBtn?.('images');
       SB.begin('images', msg.root);
+            window._scanToolbarVMs?.['images']?.scanStarted();
       const delBtn = document.getElementById('imgDeleteAllBtn') as HTMLButtonElement | null;
       if (delBtn) { delBtn.classList.add('hidden'); delBtn.disabled = false; delBtn.textContent = '\uD83D\uDDD1 Delete All Copies'; }
       _wireImgFilter();
@@ -279,13 +284,14 @@ try {
       removeSkeletons('imageResult');
       SB.done('images', `Done \u2014 ${msg.results} exact duplicate groups`);
       localStorage.setItem('dcu_img_scan_ts', String(Date.now()));
+            window._scanToolbarVMs?.['images']?.scanDone();
       if (msg.results > 0) {
         const delBtn = document.getElementById('imgDeleteAllBtn');
         if (delBtn) delBtn.classList.remove('hidden');
       }
       return;
     }
-    if (msg.type === 'error')    { SB.error('images', msg.message); return; }
+    if (msg.type === 'error')    { SB.error('images', msg.message); window._scanToolbarVMs?.['images']?.scanDone(); return; }
     if (msg.type === 'result' || msg.type === 'result_update') {
       const files = Array.isArray(msg.files) ? msg.files : [];
       window._imageGroups[msg.hash] = files;
