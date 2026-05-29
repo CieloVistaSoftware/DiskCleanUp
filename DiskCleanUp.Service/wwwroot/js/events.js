@@ -197,6 +197,10 @@ document.getElementById('extSearchRootInput')?.addEventListener('change', (e) =>
         localStorage.setItem('dcu_ext_search_root', root);
     else
         localStorage.removeItem('dcu_ext_search_root');
+    // Auto-scan when root changes if extension is already typed
+    const extQ = document.getElementById('extSearchInput')?.value.trim().replace(/^\.+/, '');
+    if (root && extQ)
+        startScan('ext-search');
 });
 document.getElementById('extSearchPickFolderBtn')?.addEventListener('click', async () => {
     try {
@@ -207,6 +211,10 @@ document.getElementById('extSearchPickFolderBtn')?.addEventListener('click', asy
         if (input)
             input.value = res.path;
         localStorage.setItem('dcu_ext_search_root', res.path);
+        // Auto-scan immediately after folder pick if extension is typed
+        const extQ = document.getElementById('extSearchInput')?.value.trim().replace(/^\.+/, '');
+        if (extQ)
+            startScan('ext-search');
     }
     catch (e) { ErrLog.log('[events]', e?.message || String(e), e?.stack || null, 'PICK_FOLDER_ERROR'); }
 });
