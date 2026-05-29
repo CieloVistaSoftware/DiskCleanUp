@@ -617,6 +617,7 @@ export function applyFilter(section) {
         else
             statusEl.textContent = `Showing ${shown.toLocaleString()} of ${g.rows.length.toLocaleString()}`;
     }
+    _rebuildLegendFiltered(section, g, shown < g.rows.length);
 }
 // ═══════════════════════════════════════════════════════════════════════════
 //  INTERNAL
@@ -630,6 +631,49 @@ function _updateRowCount(section, g) {
     document.querySelectorAll(`[data-grid-section="${section}"]`).forEach(btn => {
         btn.disabled = !hasData;
     });
+}
+/** After applyFilter, show only the extensions that appear in visible rows. */
+function _rebuildLegendFiltered(section, g, anyFiltered) {
+    if (!g.legend) return;
+    if (!anyFiltered) {
+        if (g._legendLastCount !== g._legendExts.size) _rebuildLegend(section, g);
+        else _syncLegendActive(section, g);
+        return;
+    }
+    const visExts = new Set();
+    for (const row of g.rows) {
+        if (row.style.display !== 'none') {
+            const ext = row.dataset.ext;
+            if (ext) visExts.add(ext);
+        }
+    }
+    const sorted = [...visExts].sort();
+    g._legendLastCount = -1;
+    if (sorted.length === 0) {
+        g.legend.style.display = 'none';
+        g.legend.innerHTML = '';
+        return;
+    }
+    g.legend.style.display = '';
+    g.legend.innerHTML =
+        `<span class="sg-legend-label">File types (${sorted.length}):</span>` +
+        sorted.map(ext =>
+            `<span class="sg-legend-chip" data-ext="${ext}" title="Click to filter" style="cursor:pointer">${dot(ext)}<span style="color:${colorFor(ext)}">${ext}</span></span>`
+        ).join('') +
+        `<button class="sg-legend-clear" title="Clear chip filters" style="display:none">✕ Clear</button>`;
+    g.legend.querySelectorAll('.sg-legend-chip').forEach((chip) => {
+        chip.addEventListener('click', () => {
+            const ext = chip.dataset.ext || '';
+            if (g._activeExts.has(ext)) g._activeExts.delete(ext); else g._activeExts.add(ext);
+            _syncLegendActive(section, g);
+            applyFilter(section);
+        });
+    });
+    const clearBtn = g.legend.querySelector('.sg-legend-clear');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => { g._activeExts.clear(); _syncLegendActive(section, g); applyFilter(section); });
+    }
+    _syncLegendActive(section, g);
 }
 /** Rebuild the color legend bar from tracked extensions */
 function _rebuildLegend(section, g) {
