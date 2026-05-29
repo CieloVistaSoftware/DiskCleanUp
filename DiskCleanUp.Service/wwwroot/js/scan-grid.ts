@@ -182,6 +182,7 @@ cols.forEach((c, i) => {
   } else {
     cell.textContent = c.label || '';
     cell.title       = c.label || '';
+    if (c.type === 'keepBtn') cell.classList.add('sg-keep-cell');
   }
 
   if (c.type !== 'checkbox' && c.type !== 'keepBtn' && c.type !== 'lineNo' && c.type !== 'actions') {
@@ -264,6 +265,7 @@ g.columns.forEach(col => {
       break;
     }
     case 'keepBtn': {
+      cell.classList.add('sg-keep-cell');
       const kb = document.createElement('button');
       kb.className = 'btn-keep';
       kb.textContent = '\uD83D\uDD12';

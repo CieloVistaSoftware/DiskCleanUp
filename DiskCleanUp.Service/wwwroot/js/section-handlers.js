@@ -19,7 +19,7 @@ import { ErrLog } from './error-logger.js';
 try {
     const COL = {
         check: { key: 'check', width: 36, type: 'checkbox' },
-        keepBtn: { key: 'keepBtn', width: 36, type: 'keepBtn' },
+        keepBtn: { key: 'keepBtn', label: 'Keep', width: 72, type: 'keepBtn' },
         path: { key: 'path', label: 'File', flex: 3, minWidth: 150, type: 'path' },
         keep: { key: 'keep', label: 'Keep (newest)', flex: 2, minWidth: 120, type: 'path' },
         delPaths: { key: 'delete', label: 'Will Delete', flex: 3, minWidth: 150, type: 'paths' },

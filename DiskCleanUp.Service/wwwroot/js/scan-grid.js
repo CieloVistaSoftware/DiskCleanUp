@@ -150,7 +150,11 @@ export function create(section, containerId, columns, opts = {}) {
         const cell = document.createElement('div');
         cell.className = 'sg-hcell';
         cell.dataset.colIdx = String(i);
-        if (c.type === 'checkbox') {
+        if (c.type === 'keepBtn') {
+            cell.classList.add('sg-keep-cell');
+            cell.textContent = c.label || '';
+        }
+        else if (c.type === 'checkbox') {
             // Header checkbox — click checks/unchecks all visible rows
             const hCb = document.createElement('input');
             hCb.type = 'checkbox';
@@ -241,6 +245,7 @@ export function addRow(section, data) {
                 break;
             }
             case 'keepBtn': {
+                cell.classList.add('sg-keep-cell');
                 const kb = document.createElement('button');
                 kb.className = 'btn-keep';
                 kb.textContent = '\uD83D\uDD12';

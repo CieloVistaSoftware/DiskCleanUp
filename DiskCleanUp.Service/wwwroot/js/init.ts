@@ -128,6 +128,7 @@ async function restoreCachedResults() {
         // Rebuild scan-filter dropdown � trackExt ran during addRow but
         // the 'done' event (which calls SF.rebuild) is skipped on restore
         const SF = window._scanFilter;
+        if (SF?.reset)   SF.reset(section);
         if (SF?.rebuild) SF.rebuild(section);
 
         const bar = document.getElementById(`sb-${section}`);
