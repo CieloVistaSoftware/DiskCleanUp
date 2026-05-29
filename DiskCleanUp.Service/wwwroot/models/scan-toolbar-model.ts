@@ -36,7 +36,7 @@ export const SCAN_TOOLBAR_CONFIGS = [
   { section: 'backups',      tableId: 'backupsTable', specialty: []                    },
   { section: 'tiny-files',   tableId: 'tinyTable',    specialty: ['full-view']         },
   { section: 'html-files',   tableId: 'htmlTable',    specialty: ['html-utilities']    },
-  { section: 'css-files',    tableId: 'cssTable',     specialty: []                    },
+  { section: 'css-files',    tableId: 'cssTable',     specialty: ['css-merge-analyze'] },
 ];
 
 /**

@@ -251,6 +251,97 @@ export async function runHtmlUtility(utility) {
         alert(`Utility failed: ${e.message}`);
     }
 }
+export async function runCssMergeAnalyze(section) {
+    crumb('actions', 'runCssMergeAnalyze', { section });
+    let paths = SG.getChecked('css-files');
+    if (!paths.length) {
+        const container = document.getElementById('cssResult');
+        if (container) {
+            paths = [...container.querySelectorAll('input[type=checkbox]:checked[data-path]')]
+                .map(cb => cb.dataset.path).filter(Boolean);
+        }
+    }
+    if (!paths.length) {
+        const container = document.getElementById('cssResult');
+        if (container) {
+            paths = [...container.querySelectorAll('.sg-row[data-path]')]
+                .filter(r => r.style.display !== 'none')
+                .map(r => r.dataset.path).filter(Boolean);
+        }
+    }
+    if (!paths.length) {
+        alert('Run a CSS Files scan first, then click Analyze Merge.');
+        return;
+    }
+    let folderScope = null;
+    const filterInput = document.querySelector('[data-section="css-files"] .sf-folder-scope');
+    if (filterInput?.value.trim()) folderScope = filterInput.value.trim();
+    try {
+        const res = await apiFetch('/api/css/merge-analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paths, folderScope }),
+        }, { timeout: 60000 });
+        _showCssMergeReport(res);
+    }
+    catch (e) {
+        ErrLog.log('[actions]', `CSS merge analyze failed: ${e.message}`, e);
+        alert(`Analysis failed: ${e.message}`);
+    }
+}
+function _showCssMergeReport(res) {
+    const existing = document.getElementById('css-merge-report-overlay');
+    if (existing) existing.remove();
+    const groups = res?.mergeGroups ?? [];
+    const refs = res?.refs ?? [];
+    const errors = res?.errorFiles ?? [];
+    const riskColor = (r) => r === 'high' ? '#e74c3c' : r === 'medium' ? '#f39c12' : '#2ecc71';
+    const groupsHtml = groups.length === 0
+        ? '<p style="color:var(--muted)">No merge candidates found (each folder has only one CSS file).</p>'
+        : groups.map(g => `
+      <div style="border:1px solid var(--border);border-radius:4px;padding:10px 14px;margin-bottom:10px">
+        <div style="font-weight:600;margin-bottom:4px">📁 ${g.folder}</div>
+        <div style="margin-bottom:4px">${(g.files ?? []).map(f => `<span style="background:var(--surface2);padding:1px 6px;border-radius:3px;margin-right:4px;font-size:11px">${f.Path.split(/[\\/]/).pop()} (${f.selectorCount} selectors)</span>`).join('')}</div>
+        <div>Risk: <strong style="color:${riskColor(g.risk)}">${g.risk.toUpperCase()}</strong> — ${g.conflictCount} selector conflict${g.conflictCount !== 1 ? 's' : ''}</div>
+        ${g.conflictCount > 0 ? `<details style="margin-top:6px"><summary style="cursor:pointer;color:var(--muted);font-size:12px">Show conflicts</summary><ul style="margin:4px 0 0 16px;font-size:12px">${(g.conflicts ?? []).map(c => `<li><code>${c.selector}</code> in: ${c.files.join(', ')}</li>`).join('')}</ul></details>` : ''}
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Proposed: <code>${g.mergedName}</code></div>
+      </div>`).join('');
+    const refsHtml = refs.length === 0
+        ? '<p style="color:var(--muted)">No referencing HTML/JS files found in nearby directories.</p>'
+        : refs.map(r => `
+      <div style="margin-bottom:8px">
+        <div style="font-size:12px;font-weight:600">${r.cssFile.split(/[\\/]/).pop()}</div>
+        ${(r.referencedBy ?? []).length === 0
+            ? '<div style="color:var(--muted);font-size:11px">No referencing files found</div>'
+            : r.referencedBy.map(f => `<div style="font-size:11px;color:var(--muted)">→ ${f}</div>`).join('')}
+      </div>`).join('');
+    const errHtml = errors.length === 0 ? '' : `
+    <h3 style="margin:12px 0 6px">⚠ Parse Errors</h3>
+    ${errors.map(e => `<div style="font-size:11px;color:#e74c3c">${e.Path}: ${e.Error}</div>`).join('')}`;
+    const overlay = document.createElement('div');
+    overlay.id = 'css-merge-report-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center';
+    overlay.innerHTML = `
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;width:min(860px,92vw);max-height:82vh;display:flex;flex-direction:column;overflow:hidden">
+      <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <strong>🔬 CSS Merge Analysis — ${res?.analyzedCount ?? 0} files analyzed${res?.scopeApplied ? ` (scope: ${res.scopeApplied})` : ''}</strong>
+        <button id="css-merge-close" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--fg)">✕</button>
+      </div>
+      <div style="overflow-y:auto;padding:16px;flex:1">
+        <h3 style="margin:0 0 8px">Merge Candidates</h3>
+        ${groupsHtml}
+        <h3 style="margin:12px 0 6px">CSS References in HTML/JS</h3>
+        ${refsHtml}
+        ${errHtml}
+      </div>
+      <div style="padding:10px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--muted)">
+        Dry-run only — no files were modified. Review findings above before any merge action.
+      </div>
+    </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    document.getElementById('css-merge-close')?.addEventListener('click', () => overlay.remove());
+}
 export async function extractSvgFromSelectedHtml() {
     await runHtmlUtility('extract-svg');
 }
@@ -337,4 +428,5 @@ window.trashImage = trashImage;
 window._trashSelected = trashSelected; // used by Commands → Delete Selected
 window._extractSvgFromSelectedHtml = extractSvgFromSelectedHtml;
 window._runHtmlUtility = runHtmlUtility;
+window._runCssMergeAnalyze = runCssMergeAnalyze;
 //# sourceMappingURL=actions.js.map

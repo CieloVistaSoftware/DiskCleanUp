@@ -198,6 +198,7 @@ app.MapDiagEndpoints(dataDir);
 app.MapMetricsEndpoints();
 app.MapFileEndpoints();
 app.MapHtmlUtilityEndpoints();
+app.MapCssMergeAnalyzerEndpoints();
 app.MapTaskEndpoints();
 app.MapScanLogEndpoints();
 app.MapHub<ScanHub>("/scanhub");

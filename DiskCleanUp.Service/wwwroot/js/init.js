@@ -308,6 +308,7 @@ function _mountScanToolbars() {
             onDeleteAllCopies: () => window._deleteAllCopies?.(config.section),
             onApplyAll: () => window._applySmartDedup?.(),
             onHtmlUtility: (utility) => window._runHtmlUtility?.(utility),
+            onCssMergeAnalyze: () => window._runCssMergeAnalyze?.(config.section),
             onFullView: () => window.open('/tinyfiles-render.html', '_blank'),
         });
         vm.bindView(view);

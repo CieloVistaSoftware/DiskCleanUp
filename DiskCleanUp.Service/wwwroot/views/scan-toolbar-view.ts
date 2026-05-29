@@ -99,6 +99,11 @@ export class ScanToolbarView {
       });
     }
 
+    if (specialty.includes('css-merge-analyze')) {
+      this._els.cssMergeAnalyze = this._btn('btn muted', '🔬 Analyze Merge', () => this._callbacks.onCssMergeAnalyze?.());
+      this._els.cssMergeAnalyze.title = 'Dry-run CSS merge analysis — no files are modified';
+    }
+
     if (specialty.includes('white-bg')) {
       let _whiteBgOn = false;
       this._els.whiteBg = this._btn('btn muted', '⬜ White BG', () => {
@@ -144,6 +149,7 @@ export class ScanToolbarView {
     if (this._els.utilities) container.appendChild(this._els.utilities);
     if (this._els.utilityItems?.length) for (const btn of this._els.utilityItems) container.appendChild(btn);
     if (this._els.whiteBg) container.appendChild(this._els.whiteBg);
+    if (this._els.cssMergeAnalyze) container.appendChild(this._els.cssMergeAnalyze);
     container.appendChild(this._els.loadMore);
     if (this._els.fullView) container.appendChild(this._els.fullView);
     container.appendChild(this._els.trace);
