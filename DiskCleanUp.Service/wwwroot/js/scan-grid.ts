@@ -232,244 +232,219 @@ _grids[section] = {
  * microtask are flushed to the DOM in a single appendChild, eliminating
  * the layout thrashing that caused 1s freezes with 1,270+ rows.
  */
-export function addRow(section, data) {
-const g = _grids[section];
-if (!g) return;
+// ── Cell builders ────────────────────────────────────────────────────────
 
-const row = document.createElement('div');
-row.className = 'sg-row live-row';
-row.style.gridTemplateColumns = g.header.style.gridTemplateColumns;
+function _buildPathCell(cell: HTMLElement, col, data) {
+  cell.classList.add('sg-path');
+  const colPath = data[col.key] || '';
+  const colExt  = extOf(colPath);
+  cell.title = colPath;
+  if (_isPreviewable(colExt)) {
+    cell.appendChild(_makeThumb(colPath, colExt));
+  } else {
+    cell.innerHTML = dot(colExt);
+  }
+  const span = document.createElement('span');
+  span.className = 'sg-path-text';
+  span.style.color = colorFor(colExt) || 'inherit';
+  span.textContent = colPath;
+  cell.appendChild(span);
+}
 
-const path = data.path || data.keep || '';
-const ext = extOf(path);
+function _buildSubpathCell(cell: HTMLElement, arr: string[], section, row: HTMLElement) {
+  cell.classList.add('sg-paths');
+  arr.forEach(p => {
+    const e   = extOf(p);
+    const sub = document.createElement('div');
+    sub.className = 'sg-subpath';
+    sub.title = p;
+    const pathSpan = document.createElement('span');
+    pathSpan.className = 'sg-subpath-text';
+    pathSpan.style.color = colorFor(e) || 'inherit';
+    pathSpan.innerHTML = dot(e) + _esc(p);
+    sub.appendChild(pathSpan);
+    const acts = document.createElement('span');
+    acts.className = 'sg-subpath-actions';
+    const tb = document.createElement('button');
+    tb.className = 'btn muted btn-xxs sg-trash-btn';
+    tb.textContent = '🗑';
+    tb.title = 'Delete this file (Recycle Bin)';
+    tb.onclick = (ev) => { ev.stopPropagation(); _trashSubPath(section, p, sub, row); };
+    acts.appendChild(tb);
+    const fb = document.createElement('button');
+    fb.className = 'btn muted btn-xxs';
+    fb.textContent = '📄';
+    fb.title = 'Open file in VS Code';
+    fb.onclick = (ev) => { ev.stopPropagation(); window.openInVSCode ? window.openInVSCode(p) : window.openFileInVSCode?.(p); };
+    acts.appendChild(fb);
+    const ob = document.createElement('button');
+    ob.className = 'btn muted btn-xxs';
+    ob.textContent = '📂';
+    ob.title = 'Open containing folder';
+    ob.onclick = (ev) => { ev.stopPropagation(); _openFolder(p, ob); };
+    acts.appendChild(ob);
+    sub.appendChild(acts);
+    cell.appendChild(sub);
+  });
+}
 
-if (ext) row.style.background = bgFor(ext);
+async function _fileIssueForRow(path: string, section: string, row: HTMLElement) {
+  const sizeBytes = parseInt(row.dataset.size || '0', 10) || undefined;
+  const modified  = row.dataset.modified || undefined;
+  try {
+    const res = await fetch('/api/issue/file', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path, section, sizeBytes, modified }),
+    });
+    const json = await res.json();
+    if (!res.ok) { ErrLog.log('[sg]', `File-issue failed: ${json.detail || json.error || res.status}`, null, 'FILE_ISSUE_FAIL'); return; }
+    const url = json.issueUrl || '';
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:16px;right:16px;background:#2d333b;color:#cae8ff;border:1px solid #58a6ff;border-radius:4px;padding:8px 14px;font-size:12px;z-index:9999';
+    toast.innerHTML = url ? `Issue filed: <a href="${url}" target="_blank" style="color:#58a6ff">${url}</a>` : 'Issue filed.';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 5000);
+  } catch (e: any) {
+    ErrLog.log('[sg]', `File-issue error: ${e.message}`, null, 'FILE_ISSUE_ERROR');
+  }
+}
 
-row.dataset.path = path;
-row.dataset.ext = ext;
+function _buildActionsCell(cell: HTMLElement, path: string, section, row: HTMLElement) {
+  cell.classList.add('sg-actions');
+  const trashBtn = document.createElement('button');
+  trashBtn.className = 'btn muted btn-xs sg-trash-btn';
+  trashBtn.textContent = '🗑';
+  trashBtn.title = 'Delete (Recycle Bin)';
+  trashBtn.onclick = () => _trashRow(section, path, row);
+  cell.appendChild(trashBtn);
+  const fileBtn = document.createElement('button');
+  fileBtn.className = 'btn muted btn-xs';
+  fileBtn.textContent = '📄';
+  fileBtn.title = 'Open file in VS Code';
+  fileBtn.onclick = () => { window.openInVSCode ? window.openInVSCode(path) : window.openFileInVSCode?.(path); };
+  cell.appendChild(fileBtn);
+  const folderBtn = document.createElement('button');
+  folderBtn.className = 'btn muted btn-xs';
+  folderBtn.textContent = '📂';
+  folderBtn.title = 'Open containing folder in Explorer';
+  folderBtn.onclick = () => _openFolder(path, folderBtn);
+  cell.appendChild(folderBtn);
+  const vscBtn = document.createElement('button');
+  vscBtn.className = 'btn muted btn-xs btn-vscode';
+  vscBtn.textContent = '</>';
+  vscBtn.title = 'Open containing folder in VS Code';
+  vscBtn.onclick = () => _openFolderInVSCode(path, vscBtn);
+  cell.appendChild(vscBtn);
+  const issueBtn = document.createElement('button');
+  issueBtn.className = 'btn muted btn-xs btn-file-issue';
+  issueBtn.textContent = '⚑';
+  issueBtn.title = 'File a GitHub issue for this file';
+  issueBtn.onclick = (ev) => { ev.stopPropagation(); _fileIssueForRow(path, section, row); };
+  cell.appendChild(issueBtn);
+}
 
-// Track row count BEFORE pushing (0-based → display as 1-based)
-const rowNum = g.rows.length + 1;
-
-g.columns.forEach(col => {
+function _buildCell(col, data, path: string, rowNum: number, section, row: HTMLElement): HTMLElement {
   const cell = document.createElement('div');
   cell.className = 'sg-cell';
-
   switch (col.type) {
-    case 'lineNo': {
-      cell.classList.add('sg-lineno');
-      cell.textContent = rowNum;
-      break;
-    }
-    case 'checkbox': {
-      cell.innerHTML = `<input type="checkbox" data-path="${_esc(path)}">`;
-      break;
-    }
+    case 'lineNo':   { cell.classList.add('sg-lineno'); cell.textContent = rowNum; break; }
+    case 'checkbox': { cell.innerHTML = `<input type="checkbox" data-path="${_esc(path)}">`; break; }
     case 'delBtn': {
       cell.classList.add('sg-del-cell');
       const db = document.createElement('button');
-      db.className = 'btn-del';
-      db.textContent = '🗑';
-      db.title = 'Delete this file';
+      db.className = 'btn-del'; db.textContent = '🗑'; db.title = 'Delete this file';
       db.onclick = () => (window as any)._trashSelected?.(null, [path]);
-      cell.appendChild(db);
-      break;
+      cell.appendChild(db); break;
     }
     case 'keepBtn': {
       cell.classList.add('sg-keep-cell');
       const kb = document.createElement('button');
-      kb.className = 'btn-keep';
-      kb.textContent = '\uD83D\uDD12';
-      kb.title = 'Keep — exclude from future scans';
+      kb.className = 'btn-keep'; kb.textContent = '🔒'; kb.title = 'Keep — exclude from future scans';
       kb.onclick = () => (window.keepPaths as ((p: string[]) => void) | undefined)?.([path]);
-      cell.appendChild(kb);
-      break;
+      cell.appendChild(kb); break;
     }
-    case 'path': {
-      cell.classList.add('sg-path');
-      const colPath = data[col.key] || '';
-      const colExt  = extOf(colPath);
-      const extDot  = dot(colExt);
-      cell.title = colPath;
-      // Lazy thumbnail for previewable media types
-      if (_isPreviewable(colExt)) {
-        cell.appendChild(_makeThumb(colPath, colExt));
-      } else {
-        cell.innerHTML = extDot;
-      }
-      const pathSpan = document.createElement('span');
-      pathSpan.className = 'sg-path-text';
-      pathSpan.style.color = colorFor(colExt) || 'inherit';
-      pathSpan.textContent = colPath;
-      cell.appendChild(pathSpan);
-      break;
-    }
-    case 'size': {
-      cell.textContent = fmtBytes(data[col.key] || 0);
-      cell.dataset.sortVal = data[col.key] || 0;
-      break;
-    }
-    case 'paths': {
-      const arr = Array.isArray(data[col.key]) ? data[col.key] : [];
-      cell.classList.add('sg-paths');
-      arr.forEach(p => {
-        const e = extOf(p);
-        const sub = document.createElement('div');
-        sub.className = 'sg-subpath';
-        sub.title = p;
-        // Path text
-        const pathSpan = document.createElement('span');
-        pathSpan.className = 'sg-subpath-text';
-        pathSpan.style.color = colorFor(e) || 'inherit';
-        pathSpan.innerHTML = dot(e) + _esc(p);
-        sub.appendChild(pathSpan);
-        // Inline action buttons
-        const acts = document.createElement('span');
-        acts.className = 'sg-subpath-actions';
-        // Trash
-        const tb = document.createElement('button');
-        tb.className = 'btn muted btn-xxs sg-trash-btn';
-        tb.textContent = '\uD83D\uDDD1';
-        tb.title = 'Delete this file (Recycle Bin)';
-        tb.onclick = (ev) => { ev.stopPropagation(); _trashSubPath(section, p, sub, row); };
-        acts.appendChild(tb);
-        // Open file
-        const fb = document.createElement('button');
-        fb.className = 'btn muted btn-xxs';
-        fb.textContent = '\uD83D\uDCC4';
-        fb.title = 'Open file in VS Code';
-        fb.onclick = (ev) => { ev.stopPropagation(); window.openInVSCode ? window.openInVSCode(p) : window.openFileInVSCode?.(p); };
-        acts.appendChild(fb);
-        // Open folder
-        const ob = document.createElement('button');
-        ob.className = 'btn muted btn-xxs';
-        ob.textContent = '\uD83D\uDCC2';
-        ob.title = 'Open containing folder';
-        ob.onclick = (ev) => { ev.stopPropagation(); _openFolder(p); };
-        acts.appendChild(ob);
-        sub.appendChild(acts);
-        cell.appendChild(sub);
-      });
-      break;
-    }
-    case 'badge': {
-      const val = data[col.key] || '';
-      cell.innerHTML = `<span class="badge orange">${_esc(val)}</span>`;
-      break;
-    }
-    case 'actions': {
-      cell.classList.add('sg-actions');
-      // Trash button — sends to Recycle Bin + removes row
-      const trashBtn = document.createElement('button');
-      trashBtn.className = 'btn muted btn-xs sg-trash-btn';
-      trashBtn.textContent = '\uD83D\uDDD1';
-      trashBtn.title = 'Delete (Recycle Bin)';
-      trashBtn.onclick = () => _trashRow(section, path, row);
-      cell.appendChild(trashBtn);
-      // Open File button
-      const fileBtn = document.createElement('button');
-      fileBtn.className = 'btn muted btn-xs';
-      fileBtn.textContent = '\uD83D\uDCC4';
-      fileBtn.title = 'Open file in VS Code';
-      fileBtn.onclick = () => { window.openInVSCode ? window.openInVSCode(path) : window.openFileInVSCode?.(path); };
-      cell.appendChild(fileBtn);
-      // Open Folder in Explorer button
-      const folderBtn = document.createElement('button');
-      folderBtn.className = 'btn muted btn-xs';
-      folderBtn.textContent = '\uD83D\uDCC2';
-      folderBtn.title = 'Open containing folder in Explorer';
-      folderBtn.onclick = () => _openFolder(path);
-      cell.appendChild(folderBtn);
-      // Open Folder in VS Code button
-      const vscBtn = document.createElement('button');
-      vscBtn.className = 'btn muted btn-xs btn-vscode';
-      vscBtn.textContent = '</>';
-      vscBtn.title = 'Open containing folder in VS Code';
-      vscBtn.onclick = () => _openFolderInVSCode(path);
-      cell.appendChild(vscBtn);
-      break;
-    }
-    // Legacy 'open' type — should be filtered out by create(), but handle gracefully
+    case 'path':    { _buildPathCell(cell, col, data); break; }
+    case 'size':    { cell.textContent = fmtBytes(data[col.key] || 0); cell.dataset.sortVal = data[col.key] || 0; break; }
+    case 'paths':   { _buildSubpathCell(cell, Array.isArray(data[col.key]) ? data[col.key] : [], section, row); break; }
+    case 'badge':   { cell.innerHTML = `<span class="badge orange">${_esc(data[col.key] || '')}</span>`; break; }
+    case 'actions': { _buildActionsCell(cell, path, section, row); break; }
     case 'open': {
       cell.classList.add('sg-actions');
       const btn = document.createElement('button');
-      btn.className = 'btn muted btn-xs';
-      btn.textContent = '\uD83D\uDCC4';
-      btn.title = 'Open file';
+      btn.className = 'btn muted btn-xs'; btn.textContent = '📄'; btn.title = 'Open file';
       btn.onclick = () => { window.openInVSCode ? window.openInVSCode(path) : window.openFileInVSCode?.(path); };
-      cell.appendChild(btn);
-      break;
+      cell.appendChild(btn); break;
     }
-    default: {
-      cell.textContent = data[col.key] ?? '';
-      break;
-    }
+    default: { cell.textContent = data[col.key] ?? ''; break; }
   }
+  return cell;
+}
 
-  row.appendChild(cell);
-});
-
-// Double-click row to open file
-// HTML/CSS sections → default browser; others → VS Code
-if (path) {
-  const _browserSections = new Set(['html-files', 'css-files']);
+function _wireRowDblClick(row: HTMLElement, path: string, section) {
+  const inBrowser = new Set(['html-files', 'css-files']).has(section);
   row.addEventListener('dblclick', (e) => {
-    // Don't trigger if clicking a button or checkbox
     if ((e.target as Element).closest('button') || (e.target as Element).closest('input')) return;
-    const api = _browserSections.has(section) ? '/api/open-default' : '/api/open';
-    fetch(api, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path })
+    fetch(inBrowser ? '/api/open-default' : '/api/open', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path })
     }).catch(() => {});
   });
   row.style.cursor = 'pointer';
-  row.title = row.title || `Double-click to open${_browserSections.has(section) ? ' in browser' : ''}`;
+  row.title = row.title || `Double-click to open${inBrowser ? ' in browser' : ''}`;
 }
 
-g.rows.push(row);
-
-// Log every 50th row to avoid flooding the debug log
-if (rowNum % 50 === 0 || rowNum === 1) {
-  crumb('sg', 'addRow', { section, row: rowNum });
-}
-
-// ── Fragment batching: accumulate rows, flush in one DOM op ──
-if (!g._frag) g._frag = document.createDocumentFragment();
-g._frag.appendChild(row);
-
-if (!g._flushScheduled) {
+function _scheduleFlush(section, g) {
+  if (!g._frag) g._frag = document.createDocumentFragment();
+  g._frag.appendChild(g.rows[g.rows.length - 1]);
+  if (g._flushScheduled) return;
   g._flushScheduled = true;
   queueMicrotask(() => {
     crumb('sg', 'flush', { section, total: g.rows.length });
-    if (g._frag) {
-      g.body.appendChild(g._frag);
-      g._frag = null;
-    }
+    if (g._frag) { g.body.appendChild(g._frag); g._frag = null; }
     g._flushScheduled = false;
     _updateRowCount(section, g);
     _rebuildLegend(section, g);
-    // Re-apply filter after flush so newly-added rows obey any active chip filter
-    if (g._activeExts.size > 0) {
-      requestAnimationFrame(() => applyFilter(section));
+    if (g._activeExts.size > 0) requestAnimationFrame(() => applyFilter(section));
+  });
+}
+
+function _trackExts(g, path: string, ext: string, data, section) {
+  if (ext) { SF.trackExt(section, path); g._legendExts.add(ext); }
+  g.columns.forEach(col => {
+    if (col.type === 'paths') {
+      (Array.isArray(data[col.key]) ? data[col.key] : []).forEach((p: string) => { const e = extOf(p); if (e) g._legendExts.add(e); });
     }
   });
 }
 
-// Track extensions for filter + legend
-if (ext) { SF.trackExt(section, path); g._legendExts.add(ext); }
-// Also track sub-path extensions (paths column)
-g.columns.forEach(col => {
-  if (col.type === 'paths') {
-    const arr = Array.isArray(data[col.key]) ? data[col.key] : [];
-    arr.forEach(p => { const e = extOf(p); if (e) g._legendExts.add(e); });
-  }
-});
-}
+// ── Public API ────────────────────────────────────────────────────────────
 
-/**
- * Show skeleton loading rows.
- */
+export function addRow(section, data) {
+const g = _grids[section];
+if (!g) return;
+
+const path   = data.path || data.keep || '';
+const ext    = extOf(path);
+const rowNum = g.rows.length + 1;
+
+const row = document.createElement('div');
+row.className = 'sg-row live-row';
+row.style.gridTemplateColumns = g.header.style.gridTemplateColumns;
+if (ext) row.style.background = bgFor(ext);
+row.dataset.path     = path;
+row.dataset.ext      = ext;
+row.dataset.size     = String(data.size || data.sizeBytes || 0);
+row.dataset.modified = data.modified || data.lastModified || '';
+
+g.columns.forEach(col => row.appendChild(_buildCell(col, data, path, rowNum, section, row)));
+if (path) _wireRowDblClick(row, path, section);
+
+g.rows.push(row);
+if (rowNum % 50 === 0 || rowNum === 1) crumb('sg', 'addRow', { section, row: rowNum });
+
+_scheduleFlush(section, g);
+_trackExts(g, path, ext, data, section);
+}
 export function showSkeleton(section, containerId, columns) {
 create(section, containerId, columns, { filterBar: false });
 const g = _grids[section];
@@ -769,6 +744,15 @@ removeByPath(path);
 }
 
 /** Trash a single row — Recycle Bin + remove from all grids */
+function _btnFeedback(btn: HTMLButtonElement | null, ok: boolean) {
+  if (!btn) return;
+  const orig = btn.textContent;
+  btn.textContent = ok ? '✓' : '✗';
+  btn.style.opacity = ok ? '0.6' : '1';
+  btn.style.color   = ok ? '' : '#e74c3c';
+  setTimeout(() => { btn.textContent = orig; btn.style.opacity = ''; btn.style.color = ''; }, 1200);
+}
+
 function _trashRow(section, path, row) {
 if (!path) return;
 crumb('sg', 'trashRow', { section, path });
@@ -780,12 +764,13 @@ removeByPath(path);
 if (window.TrashQ?.enqueue) {
   window.TrashQ.enqueue([path]);
 } else {
-  // Fallback: direct API call
   fetch('/api/trash', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ paths: [path] })
-  }).catch(() => {});
+  }).catch((e) => {
+    ErrLog.log('[sg]', `Delete failed: ${e.message}`, e, 'ACTION_FAIL');
+  });
 }
 
 // Remove from backend caches so it doesn't reappear on Load More
@@ -801,28 +786,34 @@ for (const sec of cacheSections) {
 }
 
 /** Open the containing folder in VS Code — reuses the existing /api/open endpoint */
-function _openFolderInVSCode(path) {
+function _openFolderInVSCode(path, btn?: HTMLButtonElement) {
 if (!path) return;
 const folder = path.replace(/[\\/][^\\/]+$/, '');
 fetch('/api/open', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ path: folder })
-}).catch(() => {});
+}).then(() => _btnFeedback(btn ?? null, true))
+  .catch((e) => {
+    ErrLog.log('[sg]', `Open in VS Code failed: ${e.message}`, e, 'ACTION_FAIL');
+    _btnFeedback(btn ?? null, false);
+  });
 }
 
 /** Open the containing folder of a file path */
-function _openFolder(path) {
+function _openFolder(path, btn?: HTMLButtonElement) {
 if (!path) return;
 const folder = path.replace(/[\\/][^\\/]+$/, '');
 fetch('/api/open-folder', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ path: folder })
-}).catch(() => {
-  // Fallback: try opening via VS Code
-  window.openInVSCode?.(folder);
-});
+}).then(() => _btnFeedback(btn ?? null, true))
+  .catch((e) => {
+    ErrLog.log('[sg]', `Open folder failed: ${e.message}`, e, 'ACTION_FAIL');
+    _btnFeedback(btn ?? null, false);
+    window.openInVSCode?.(folder);
+  });
 }
 
 // _esc is now imported from wb-core as escHtml (aliased to _esc for minimal churn)

@@ -41,6 +41,9 @@ function initErrorDisplay() {
     <div class="wb-err-header">
       <span class="wb-err-title">❌ Errors (<span id="wb-error-count">0</span>)</span>
       <div class="wb-err-actions">
+        <button id="wb-error-create-issues" class="wb-err-btn wb-err-btn-issues"
+                title="File a GitHub issue for each error"
+                aria-label="Create GitHub issues for all errors">Create Issues</button>
         <button id="wb-error-copy" class="wb-err-btn wb-err-btn-copy"
                 title="Copy all errors to clipboard"
                 aria-label="Copy all errors to clipboard">📋 Copy</button>
@@ -56,11 +59,57 @@ function initErrorDisplay() {
 
   document.body.appendChild(errorContainer);
 
+  document.getElementById('wb-error-create-issues').onclick = _createIssues;
   document.getElementById('wb-error-copy').onclick = _copyAll;
   document.getElementById('wb-error-clear').onclick = _clearAll;
   document.getElementById('wb-error-close').onclick = () => {
     errorContainer.style.display = 'none';
   };
+}
+
+/**
+ * Open a GitHub new-issue URL for each unique error.
+ * Deduplicates by message so a repeated error (e.g. 4× WS_RECONNECTING) files one issue.
+ */
+function _createIssues() {
+  const REPO = 'CieloVistaSoftware/DiskCleanUp';
+  const seen = new Set<string>();
+  const unique = errors.filter(e => {
+    const key = `${e.prefix}|${e.type}|${e.message}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  if (unique.length === 0) return;
+
+  const btn = document.getElementById('wb-error-create-issues');
+  if (btn) { btn.textContent = `Opening ${unique.length}…`; (btn as HTMLButtonElement).disabled = true; }
+
+  unique.forEach((e, idx) => {
+    const title = `[${e.prefix}] ${e.type}: ${e.message.slice(0, 80)}`;
+    const body = [
+      '## Error report (auto-filed from error log)',
+      '',
+      `**Prefix:** \`${e.prefix}\``,
+      `**Type:** \`${e.type}\``,
+      `**Message:** ${e.message}`,
+      e.context ? `**Context:** ${e.context}` : '',
+      e.filename ? `**File:** ${e.filename}:${e.lineno}` : '',
+      '',
+      `**Time:** ${new Date(e.timestamp).toLocaleString()}`,
+      `**URL:** ${e.url}`,
+      e.stack ? `\n## Stack\n\`\`\`\n${e.stack.slice(0, 1500)}\n\`\`\`` : '',
+    ].filter(l => l !== '').join('\n');
+
+    const params = new URLSearchParams({ title, body, labels: 'bug,project:diskcleanup' });
+    // Stagger opens slightly so browsers don't block them as a popup flood
+    setTimeout(() => window.open(`https://github.com/${REPO}/issues/new?${params}`, '_blank'), idx * 400);
+  });
+
+  setTimeout(() => {
+    if (btn) { btn.textContent = 'Create Issues'; (btn as HTMLButtonElement).disabled = false; }
+  }, unique.length * 400 + 500);
 }
 
 /**

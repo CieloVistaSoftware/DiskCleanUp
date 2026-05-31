@@ -56,13 +56,15 @@
   font-family: inherit;
 }
 
-.wb-err-btn-copy  { background: #3b82f6; }
-.wb-err-btn-clear { background: #333; }
-.wb-err-btn-close { background: #ef4444; }
+.wb-err-btn-issues { background: #7c3aed; }
+.wb-err-btn-copy   { background: #3b82f6; }
+.wb-err-btn-clear  { background: #333; }
+.wb-err-btn-close  { background: #ef4444; }
 
-.wb-err-btn-copy:hover  { background: #2563eb; }
-.wb-err-btn-clear:hover { background: #444; }
-.wb-err-btn-close:hover { background: #dc2626; }
+.wb-err-btn-issues:hover { background: #6d28d9; }
+.wb-err-btn-copy:hover   { background: #2563eb; }
+.wb-err-btn-clear:hover  { background: #444; }
+.wb-err-btn-close:hover  { background: #dc2626; }
 
 .wb-err-btn-copied {
   background: #22c55e !important;
