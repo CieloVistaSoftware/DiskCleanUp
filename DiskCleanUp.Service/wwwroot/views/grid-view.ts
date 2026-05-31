@@ -341,8 +341,17 @@ export class GridView {
     files.slice(0, Math.min(files.length, MAX_ROWS_PER_GROUP)).forEach(f => {
       const cell = document.createElement('div');
       cell.className = 'dup-path-cell';
-      cell.title = f.path || '';
+      cell.title = (f.path || '') + '\n(click to open folder)';
       cell.textContent = f.path || '';
+      cell.style.cursor = 'pointer';
+      cell.addEventListener('click', () => {
+        const folder = (f.path || '').replace(/[\\/][^\\/]*$/, '');
+        fetch('/api/open-folder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: folder }),
+        }).catch(() => {});
+      });
       pathRow.appendChild(cell);
     });
     cardsWrap.appendChild(pathRow);
@@ -430,9 +439,10 @@ export class GridView {
         .then(text => {
           const pre = document.createElement('pre');
           pre.className = 'dup-file-content';
-          pre.textContent = text.slice(0, 2000); // first 2000 chars from position 0
+          pre.textContent = text.slice(0, 2000);
           previewEl.textContent = '';
           previewEl.appendChild(pre);
+          previewEl.scrollTop = 0;
         })
         .catch(() => {
           previewEl.textContent = '(could not read file)';
@@ -464,6 +474,12 @@ export class GridView {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ paths: [path] }),
       }).then(() => {
+        // Remove matching path cell from the path row
+        const wrap = card.closest('.dup-cards-wrap') as HTMLElement | null;
+        if (wrap) {
+          const pathCell = wrap.querySelector(`.dup-path-cell[title="${path.replace(/"/g, '\\"')}"]`) as HTMLElement | null;
+          if (pathCell) { pathCell.remove(); }
+        }
         const groupRow = card.closest('.dup-row') as HTMLElement | null;
         if (groupRow) {
           groupRow.style.transition = 'opacity .25s';
@@ -479,6 +495,19 @@ export class GridView {
       });
     });
     foot.appendChild(deleteBtn);
+
+    const openBtn = document.createElement('button');
+    openBtn.className = 'dup-open-btn';
+    openBtn.textContent = '</>';
+    openBtn.title = 'Open in VS Code';
+    openBtn.addEventListener('click', () => {
+      fetch('/api/open', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path }),
+      }).catch(() => {});
+    });
+    foot.appendChild(openBtn);
 
     card.appendChild(previewEl);
     card.appendChild(body);
@@ -511,29 +540,34 @@ export class GridView {
       });
     }
 
-    const keepPath  = files[keepIdx]?.path || '';
-    const groupEls  = this._domRows.get(key);
+    const keepPath = files[keepIdx]?.path || '';
+    const deletePaths = files.map(f => f.path).filter(p => p && p !== keepPath);
+    if (!deletePaths.length) return;
+
+    const groupEls = this._domRows.get(key);
     if (!groupEls) return;
 
-    groupEls.cards.forEach(card => {
-      const cardPath = card.dataset.path || '';
-      const markBtn  = card.querySelector('.dup-mark-btn') as HTMLButtonElement | null;
+    // Disable the smart-keep buttons while in flight
+    groupEls.sep.querySelectorAll<HTMLButtonElement>('.dup-keep-smart').forEach(b => { b.disabled = true; });
 
-      if (cardPath === keepPath || !markBtn) {
-        // Keep card — unmark
-        card.classList.remove('dup-marked');
-        this._marked.delete(cardPath);
-        if (markBtn) { markBtn.textContent = 'Select'; markBtn.classList.remove('active'); }
-      } else {
-        // Copy card — select
-        card.classList.add('dup-marked');
-        this._marked.add(cardPath);
-        markBtn.textContent = '↩ Deselect';
-        markBtn.classList.add('active');
-      }
+    fetch('/api/trash', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ paths: deletePaths }),
+    }).then(() => {
+      // Remove cards and their path cells for every deleted file
+      const wrap = groupEls.cardsWrap;
+      deletePaths.forEach(p => {
+        const card = wrap.querySelector(`.dup-card[data-path="${p.replace(/"/g, '\\"')}"]`) as HTMLElement | null;
+        if (card) { card.style.opacity = '0'; setTimeout(() => card.remove(), 260); }
+        const pathCell = wrap.querySelector(`.dup-path-cell[title="${p.replace(/"/g, '\\"')}"]`) as HTMLElement | null;
+        if (pathCell) { pathCell.remove(); }
+        this._marked.delete(p);
+      });
+      this._callbacks.onMarkChanged?.(this._marked.size);
+    }).catch(() => {
+      groupEls.sep.querySelectorAll<HTMLButtonElement>('.dup-keep-smart').forEach(b => { b.disabled = false; });
     });
-
-    this._callbacks.onMarkChanged?.(this._marked.size);
   }
 
   // ── Patch existing group ──────────────────────────────────

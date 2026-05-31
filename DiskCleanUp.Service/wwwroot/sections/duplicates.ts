@@ -128,26 +128,27 @@ export const DuplicatesSection = (() => {
 
     if (btn) { btn.textContent = '\u23f3 deleting\u2026'; btn.disabled = true; }
 
-    // Await the result and handle errors
-    let result;
+    // Find and immediately hide the group row \u2014 no full view refresh
+    const groupSep  = document.querySelector(`.dup-sep[data-hash="${hash}"]`) as HTMLElement | null;
+    const groupWrap = document.querySelector(`.dup-cards-wrap[data-group="${hash}"]`) as HTMLElement | null;
+    if (groupSep)  { groupSep.style.transition  = 'opacity .25s'; groupSep.style.opacity  = '0'; }
+    if (groupWrap) { groupWrap.style.transition = 'opacity .25s'; groupWrap.style.opacity = '0'; }
+
     try {
-      result = await vm.removePaths(paths, { trash: true });
+      await fetch('/api/trash', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paths }),
+      });
+      // Remove from DOM after fade
+      setTimeout(() => { groupSep?.remove(); groupWrap?.remove(); }, 260);
     } catch (e) {
+      // Restore visibility on failure
+      if (groupSep)  { groupSep.style.opacity  = '1'; }
+      if (groupWrap) { groupWrap.style.opacity = '1'; }
       ErrLog.log('[DUPLICATES]', 'Delete failed', e.message, 'CAUGHT_ERROR');
-      if (btn) { btn.textContent = 'Delete failed'; btn.disabled = false; }
-      alert('Delete failed: ' + (e.message || e));
-      return;
+      if (btn) { btn.textContent = 'Delete Copies'; btn.disabled = false; }
     }
-    // If backend returns per-file errors, show them
-    if (result && result.deleteResults) {
-      const failed = result.deleteResults.filter(r => !r.ok);
-      if (failed.length > 0) {
-        if (btn) { btn.textContent = 'Some failed'; btn.disabled = false; }
-        alert('Some files could not be deleted:\n' + failed.map(f => `${f.path}: ${f.error || 'Unknown error'}`).join('\n'));
-        return;
-      }
-    }
-    if (btn) { btn.textContent = 'Deleted'; setTimeout(() => { btn.textContent = 'Delete'; btn.disabled = false; }, 1200); }
   }
 
   async function deleteAllCopies() {

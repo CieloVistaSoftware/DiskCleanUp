@@ -294,8 +294,18 @@ class GridView {
     files.slice(0, Math.min(files.length, MAX_ROWS_PER_GROUP)).forEach((f) => {
       const cell = document.createElement("div");
       cell.className = "dup-path-cell";
-      cell.title = f.path || "";
+      cell.title = (f.path || "") + "\n(click to open folder)";
       cell.textContent = f.path || "";
+      cell.style.cursor = "pointer";
+      cell.addEventListener("click", () => {
+        const folder = (f.path || "").replace(/[\\/][^\\/]*$/, "");
+        fetch("/api/open-folder", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ path: folder })
+        }).catch(() => {
+        });
+      });
       pathRow.appendChild(cell);
     });
     cardsWrap.appendChild(pathRow);
@@ -372,6 +382,7 @@ class GridView {
         pre.textContent = text.slice(0, 2e3);
         previewEl.textContent = "";
         previewEl.appendChild(pre);
+        previewEl.scrollTop = 0;
       }).catch(() => {
         previewEl.textContent = "(could not read file)";
       });
@@ -397,6 +408,13 @@ class GridView {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paths: [path] })
       }).then(() => {
+        const wrap = card.closest(".dup-cards-wrap");
+        if (wrap) {
+          const pathCell = wrap.querySelector(`.dup-path-cell[title="${path.replace(/"/g, '\\"')}"]`);
+          if (pathCell) {
+            pathCell.remove();
+          }
+        }
         const groupRow = card.closest(".dup-row");
         if (groupRow) {
           groupRow.style.transition = "opacity .25s";
@@ -412,6 +430,19 @@ class GridView {
       });
     });
     foot.appendChild(deleteBtn);
+    const openBtn = document.createElement("button");
+    openBtn.className = "dup-open-btn";
+    openBtn.textContent = "</>";
+    openBtn.title = "Open in VS Code";
+    openBtn.addEventListener("click", () => {
+      fetch("/api/open", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path })
+      }).catch(() => {
+      });
+    });
+    foot.appendChild(openBtn);
     card.appendChild(previewEl);
     card.appendChild(body);
     card.appendChild(foot);
@@ -449,26 +480,37 @@ class GridView {
       });
     }
     const keepPath = files[keepIdx]?.path || "";
+    const deletePaths = files.map((f) => f.path).filter((p) => p && p !== keepPath);
+    if (!deletePaths.length) return;
     const groupEls = this._domRows.get(key);
     if (!groupEls) return;
-    groupEls.cards.forEach((card) => {
-      const cardPath = card.dataset.path || "";
-      const markBtn = card.querySelector(".dup-mark-btn");
-      if (cardPath === keepPath || !markBtn) {
-        card.classList.remove("dup-marked");
-        this._marked.delete(cardPath);
-        if (markBtn) {
-          markBtn.textContent = "Select";
-          markBtn.classList.remove("active");
-        }
-      } else {
-        card.classList.add("dup-marked");
-        this._marked.add(cardPath);
-        markBtn.textContent = "\u21A9 Deselect";
-        markBtn.classList.add("active");
-      }
+    groupEls.sep.querySelectorAll(".dup-keep-smart").forEach((b) => {
+      b.disabled = true;
     });
-    this._callbacks.onMarkChanged?.(this._marked.size);
+    fetch("/api/trash", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ paths: deletePaths })
+    }).then(() => {
+      const wrap = groupEls.cardsWrap;
+      deletePaths.forEach((p) => {
+        const card = wrap.querySelector(`.dup-card[data-path="${p.replace(/"/g, '\\"')}"]`);
+        if (card) {
+          card.style.opacity = "0";
+          setTimeout(() => card.remove(), 260);
+        }
+        const pathCell = wrap.querySelector(`.dup-path-cell[title="${p.replace(/"/g, '\\"')}"]`);
+        if (pathCell) {
+          pathCell.remove();
+        }
+        this._marked.delete(p);
+      });
+      this._callbacks.onMarkChanged?.(this._marked.size);
+    }).catch(() => {
+      groupEls.sep.querySelectorAll(".dup-keep-smart").forEach((b) => {
+        b.disabled = false;
+      });
+    });
   }
   // ── Patch existing group ──────────────────────────────────
   _patchGroup(list, key) {
