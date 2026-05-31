@@ -258,14 +258,14 @@ function _buildActionsCell(cell, path, section, row) {
   trashBtn.title = "Delete (Recycle Bin)";
   trashBtn.onclick = () => _trashRow(section, path, row);
   cell.appendChild(trashBtn);
-  const fileBtn = document.createElement("button");
-  fileBtn.className = "btn muted btn-xs";
-  fileBtn.textContent = "\u{1F4C4}";
-  fileBtn.title = "Open file in VS Code";
-  fileBtn.onclick = () => {
-    window.openInVSCode ? window.openInVSCode(path) : window.openFileInVSCode?.(path);
+  const copyBtn = document.createElement("button");
+  copyBtn.className = "btn muted btn-xs";
+  copyBtn.textContent = "\u{1F4CB}";
+  copyBtn.title = "Copy path to clipboard";
+  copyBtn.onclick = () => {
+    navigator.clipboard.writeText(path).then(() => _btnFeedback(copyBtn, true)).catch(() => _btnFeedback(copyBtn, false));
   };
-  cell.appendChild(fileBtn);
+  cell.appendChild(copyBtn);
   const folderBtn = document.createElement("button");
   folderBtn.className = "btn muted btn-xs";
   folderBtn.textContent = "\u{1F4C2}";
@@ -275,12 +275,12 @@ function _buildActionsCell(cell, path, section, row) {
   const vscBtn = document.createElement("button");
   vscBtn.className = "btn muted btn-xs btn-vscode";
   vscBtn.textContent = "</>";
-  vscBtn.title = "Open containing folder in VS Code";
-  vscBtn.onclick = () => _openFolderInVSCode(path, vscBtn);
+  vscBtn.title = "Open file in VS Code";
+  vscBtn.onclick = () => _openFileInVSCode(path, vscBtn);
   cell.appendChild(vscBtn);
   const issueBtn = document.createElement("button");
   issueBtn.className = "btn muted btn-xs btn-file-issue";
-  issueBtn.textContent = "\u2691";
+  issueBtn.textContent = "\u{1F6A9}";
   issueBtn.title = "File a GitHub issue for this file";
   issueBtn.onclick = (ev) => {
     ev.stopPropagation();
@@ -725,6 +725,17 @@ function _trashRow(section, path, row) {
     }).catch(() => {
     });
   }
+}
+function _openFileInVSCode(path, btn) {
+  if (!path) return;
+  fetch("/api/open", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ path })
+  }).then(() => _btnFeedback(btn ?? null, true)).catch((e) => {
+    ErrLog.log("[sg]", `Open file in VS Code failed: ${e.message}`, e, "ACTION_FAIL");
+    _btnFeedback(btn ?? null, false);
+  });
 }
 function _openFolderInVSCode(path, btn) {
   if (!path) return;

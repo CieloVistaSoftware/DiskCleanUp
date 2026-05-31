@@ -312,33 +312,47 @@ async function _fileIssueForRow(path: string, section: string, row: HTMLElement)
 
 function _buildActionsCell(cell: HTMLElement, path: string, section, row: HTMLElement) {
   cell.classList.add('sg-actions');
+
+  // 🗑 Delete → Recycle Bin
   const trashBtn = document.createElement('button');
   trashBtn.className = 'btn muted btn-xs sg-trash-btn';
   trashBtn.textContent = '🗑';
   trashBtn.title = 'Delete (Recycle Bin)';
   trashBtn.onclick = () => _trashRow(section, path, row);
   cell.appendChild(trashBtn);
-  const fileBtn = document.createElement('button');
-  fileBtn.className = 'btn muted btn-xs';
-  fileBtn.textContent = '📄';
-  fileBtn.title = 'Open file in VS Code';
-  fileBtn.onclick = () => { window.openInVSCode ? window.openInVSCode(path) : window.openFileInVSCode?.(path); };
-  cell.appendChild(fileBtn);
+
+  // 📋 Copy path → clipboard
+  const copyBtn = document.createElement('button');
+  copyBtn.className = 'btn muted btn-xs';
+  copyBtn.textContent = '📋';
+  copyBtn.title = 'Copy path to clipboard';
+  copyBtn.onclick = () => {
+    navigator.clipboard.writeText(path)
+      .then(() => _btnFeedback(copyBtn, true))
+      .catch(() => _btnFeedback(copyBtn, false));
+  };
+  cell.appendChild(copyBtn);
+
+  // 📂 Open containing folder in Explorer
   const folderBtn = document.createElement('button');
   folderBtn.className = 'btn muted btn-xs';
   folderBtn.textContent = '📂';
   folderBtn.title = 'Open containing folder in Explorer';
   folderBtn.onclick = () => _openFolder(path, folderBtn);
   cell.appendChild(folderBtn);
+
+  // </> Open file in VS Code
   const vscBtn = document.createElement('button');
   vscBtn.className = 'btn muted btn-xs btn-vscode';
   vscBtn.textContent = '</>';
-  vscBtn.title = 'Open containing folder in VS Code';
-  vscBtn.onclick = () => _openFolderInVSCode(path, vscBtn);
+  vscBtn.title = 'Open file in VS Code';
+  vscBtn.onclick = () => _openFileInVSCode(path, vscBtn);
   cell.appendChild(vscBtn);
+
+  // 🚩 File a GitHub issue
   const issueBtn = document.createElement('button');
   issueBtn.className = 'btn muted btn-xs btn-file-issue';
-  issueBtn.textContent = '⚑';
+  issueBtn.textContent = '🚩';
   issueBtn.title = 'File a GitHub issue for this file';
   issueBtn.onclick = (ev) => { ev.stopPropagation(); _fileIssueForRow(path, section, row); };
   cell.appendChild(issueBtn);
@@ -783,6 +797,20 @@ for (const sec of cacheSections) {
     body: JSON.stringify({ paths: [path], trash: false })
   }).catch(() => {});
 }
+}
+
+/** Open the file itself in VS Code */
+function _openFileInVSCode(path, btn?: HTMLButtonElement) {
+if (!path) return;
+fetch('/api/open', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ path })
+}).then(() => _btnFeedback(btn ?? null, true))
+  .catch((e) => {
+    ErrLog.log('[sg]', `Open file in VS Code failed: ${e.message}`, e, 'ACTION_FAIL');
+    _btnFeedback(btn ?? null, false);
+  });
 }
 
 /** Open the containing folder in VS Code — reuses the existing /api/open endpoint */
