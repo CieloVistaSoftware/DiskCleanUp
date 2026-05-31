@@ -195,13 +195,29 @@
     display: flex; flex-direction: column; gap: 2px;
     overflow: hidden;
   }
-  .dup-card-path-banner {
+  .dup-path-row {
+    display: flex; gap: 8px; padding: 6px 8px;
+    background: rgba(255,255,255,.03);
+    border-bottom: 1px solid var(--border);
+  }
+  .dup-path-cell {
+    flex: 1; min-width: 0;
     font-family: var(--vscode-editor-font-family, monospace);
-    font-size: 10px; color: var(--muted);
-    background: rgba(255,255,255,.04);
-    padding: 4px 8px; border-bottom: 1px solid var(--border);
+    font-size: 10px; color: var(--accent, #58a6ff);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     direction: rtl; text-align: left;
+    background: rgba(88,166,255,.06);
+    border: 1px solid rgba(88,166,255,.2);
+    border-radius: 3px; padding: 3px 6px;
+  }
+  .dup-preview-text {
+    overflow: auto; max-height: 220px;
+    background: #0d1117;
+  }
+  .dup-file-content {
+    margin: 0; padding: 8px 10px;
+    font: 10px/1.5 'Cascadia Code','Consolas',monospace;
+    color: #c9d1d9; white-space: pre; tab-size: 2;
   }
   .dup-delete-one-btn {
     font-size: 11px; padding: 3px 10px;

@@ -289,6 +289,16 @@ class GridView {
     const cardsWrap = document.createElement("div");
     cardsWrap.className = "dup-cards-wrap";
     cardsWrap.dataset.group = safeKey;
+    const pathRow = document.createElement("div");
+    pathRow.className = "dup-path-row";
+    files.slice(0, Math.min(files.length, MAX_ROWS_PER_GROUP)).forEach((f) => {
+      const cell = document.createElement("div");
+      cell.className = "dup-path-cell";
+      cell.title = f.path || "";
+      cell.textContent = f.path || "";
+      pathRow.appendChild(cell);
+    });
+    cardsWrap.appendChild(pathRow);
     const cards = [];
     const visibleCount = Math.min(files.length, MAX_ROWS_PER_GROUP);
     const hiddenCount = files.length - visibleCount;
@@ -354,9 +364,18 @@ class GridView {
       _lazyObserver.observe(vid);
       previewEl.appendChild(vid);
     } else {
-      const extLabel = ext ? ext.toUpperCase().slice(1) : "?";
-      previewEl.classList.add("dup-preview-icon");
-      previewEl.innerHTML = `<span class="dup-ext-badge">${this._esc(extLabel)}</span>`;
+      previewEl.classList.add("dup-preview-text");
+      previewEl.textContent = "Loading\u2026";
+      fetch(`/api/file?path=${encodeURIComponent(path)}`).then((r) => r.text()).then((text) => {
+        const lines = text.split("\n").slice(0, 60).join("\n");
+        const pre = document.createElement("pre");
+        pre.className = "dup-file-content";
+        pre.textContent = lines;
+        previewEl.textContent = "";
+        previewEl.appendChild(pre);
+      }).catch(() => {
+        previewEl.textContent = "(could not read file)";
+      });
     }
     const body = document.createElement("div");
     body.className = "dup-card-body";
@@ -394,11 +413,6 @@ class GridView {
       });
     });
     foot.appendChild(deleteBtn);
-    const pathBanner = document.createElement("div");
-    pathBanner.className = "dup-card-path-banner";
-    pathBanner.title = path;
-    pathBanner.textContent = path;
-    card.appendChild(pathBanner);
     card.appendChild(previewEl);
     card.appendChild(body);
     card.appendChild(foot);

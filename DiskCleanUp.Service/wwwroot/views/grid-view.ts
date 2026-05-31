@@ -335,6 +335,18 @@ export class GridView {
     cardsWrap.className = 'dup-cards-wrap';
     cardsWrap.dataset.group = safeKey;
 
+    // ── Path comparison row above cards ──────────────────────────
+    const pathRow = document.createElement('div');
+    pathRow.className = 'dup-path-row';
+    files.slice(0, Math.min(files.length, MAX_ROWS_PER_GROUP)).forEach(f => {
+      const cell = document.createElement('div');
+      cell.className = 'dup-path-cell';
+      cell.title = f.path || '';
+      cell.textContent = f.path || '';
+      pathRow.appendChild(cell);
+    });
+    cardsWrap.appendChild(pathRow);
+
     const cards: HTMLElement[] = [];
     const visibleCount = Math.min(files.length, MAX_ROWS_PER_GROUP);
     const hiddenCount  = files.length - visibleCount;
@@ -410,20 +422,32 @@ export class GridView {
       previewEl.appendChild(vid);
 
     } else {
-      // All non-image/non-video: show ext badge only — no "click to preview"
-      const extLabel = ext ? ext.toUpperCase().slice(1) : '?';
-      previewEl.classList.add('dup-preview-icon');
-      previewEl.innerHTML = `<span class="dup-ext-badge">${this._esc(extLabel)}</span>`;
+      // Non-image/non-video: load and display file content inline
+      previewEl.classList.add('dup-preview-text');
+      previewEl.textContent = 'Loading…';
+      fetch(`/api/file?path=${encodeURIComponent(path)}`)
+        .then(r => r.text())
+        .then(text => {
+          const lines = text.split('\n').slice(0, 60).join('\n');
+          const pre = document.createElement('pre');
+          pre.className = 'dup-file-content';
+          pre.textContent = lines;
+          previewEl.textContent = '';
+          previewEl.appendChild(pre);
+        })
+        .catch(() => {
+          previewEl.textContent = '(could not read file)';
+        });
     }
 
-    // ── Card body — filename + meta only, no Keep/Copy badges ─────
+    // ── Card body — filename + meta only ──────────────────────
     const body = document.createElement('div');
     body.className = 'dup-card-body';
     body.innerHTML = `
       <div class="dup-card-filename" title="${safePath}">${this._esc(filename)}</div>
       <div class="dup-card-meta">${fmt(file.size || 0)}&nbsp;·&nbsp;${this._esc(file.modified || '')}</div>`;
 
-    // ── Delete button on every card ────────────────────────────
+    // ── Delete button ──────────────────────────────────────────
     const foot = document.createElement('div');
     foot.className = 'dup-card-foot';
 
@@ -457,13 +481,6 @@ export class GridView {
     });
     foot.appendChild(deleteBtn);
 
-    // ── Path banner at top ─────────────────────────────────────
-    const pathBanner = document.createElement('div');
-    pathBanner.className = 'dup-card-path-banner';
-    pathBanner.title = path;
-    pathBanner.textContent = path;
-
-    card.appendChild(pathBanner);
     card.appendChild(previewEl);
     card.appendChild(body);
     card.appendChild(foot);
