@@ -517,13 +517,14 @@ export class GridView {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ copyPath: path, keepPath }),
         }).then(async r => {
+          const j = await r.json().catch(() => ({}));
           if (!r.ok) {
-            const j = await r.json().catch(() => ({}));
             symlinkBtn.disabled = false;
             symlinkBtn.textContent = '🔗 Symlink';
-            alert(j.detail || j.error || 'Symlink failed');
+            alert(j.detail || j.error || `Symlink failed (${r.status})`);
             return;
           }
+          symlinkBtn.textContent = j.linkType === 'hardlink' ? '🔗 Hardlinked' : '🔗 Symlinked';
           // Remove path cell and fade card
           const wrap = card.closest('.dup-cards-wrap') as HTMLElement | null;
           if (wrap) {
