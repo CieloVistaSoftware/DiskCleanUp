@@ -409,9 +409,15 @@ export class GridView {
       img.dataset.lazySrc = `/api/file?path=${encodeURIComponent(path)}`;
       img.onload  = () => img.classList.add('loaded');
       img.onerror = () => {
-        img.style.display = 'none';
-        previewEl.classList.add('dup-preview-broken');
-        previewEl.textContent = '(unavailable)';
+        // File no longer on disk — hide card and remove its path cell immediately
+        const wrap = card.closest('.dup-cards-wrap') as HTMLElement | null;
+        if (wrap) {
+          const pathCell = wrap.querySelector(`.dup-path-cell[title^="${path.replace(/"/g, '\\"').split('\n')[0]}"]`) as HTMLElement | null;
+          if (pathCell) { pathCell.remove(); }
+        }
+        card.style.transition = 'opacity .2s';
+        card.style.opacity = '0';
+        setTimeout(() => card.remove(), 220);
       };
       _lazyObserver.observe(img);
       previewEl.appendChild(img);
