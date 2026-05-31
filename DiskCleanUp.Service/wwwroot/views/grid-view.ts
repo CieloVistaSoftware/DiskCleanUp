@@ -179,7 +179,7 @@ export class GridView {
     document.querySelectorAll(`#${this._containerId} .dup-marked`).forEach(el => {
       el.classList.remove('dup-marked');
       const btn = el.querySelector('.dup-mark-btn') as HTMLButtonElement | null;
-      if (btn) { btn.textContent = '✕ Mark'; btn.classList.remove('active'); }
+      if (btn) { btn.textContent = 'Select'; btn.classList.remove('active'); }
     });
     this._callbacks.onMarkChanged?.(0);
   }
@@ -444,26 +444,61 @@ export class GridView {
     foot.className = 'dup-card-foot';
 
     if (!isKeep) {
-      const markBtn = document.createElement('button');
-      markBtn.className = 'dup-mark-btn';
-      markBtn.textContent = '✕ Mark';
-      markBtn.title = 'Mark for deletion';
-      markBtn.addEventListener('click', () => {
+      // Select button — toggles this copy into/out of the marked set
+      const selectBtn = document.createElement('button');
+      selectBtn.className = 'dup-mark-btn';
+      selectBtn.textContent = 'Select';
+      selectBtn.title = 'Select this copy for deletion';
+      selectBtn.addEventListener('click', () => {
         const isMarked = card.classList.toggle('dup-marked');
         if (isMarked) {
           this._marked.add(path);
-          markBtn.textContent = '↩ Unmark';
-          markBtn.classList.add('active');
-          markBtn.title = 'Remove from deletion list';
+          selectBtn.textContent = '↩ Deselect';
+          selectBtn.classList.add('active');
+          selectBtn.title = 'Remove from selection';
         } else {
           this._marked.delete(path);
-          markBtn.textContent = '✕ Mark';
-          markBtn.classList.remove('active');
-          markBtn.title = 'Mark for deletion';
+          selectBtn.textContent = 'Select';
+          selectBtn.classList.remove('active');
+          selectBtn.title = 'Select this copy for deletion';
         }
         this._callbacks.onMarkChanged?.(this._marked.size);
       });
-      foot.appendChild(markBtn);
+      foot.appendChild(selectBtn);
+
+      // Delete button — immediately sends to Recycle Bin and hides the row
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'dup-delete-one-btn';
+      deleteBtn.textContent = '🗑 Delete';
+      deleteBtn.title = 'Send this copy to Recycle Bin immediately';
+      deleteBtn.addEventListener('click', () => {
+        deleteBtn.disabled = true;
+        deleteBtn.textContent = '⟳';
+        // Remove from marked set if selected
+        this._marked.delete(path);
+        this._callbacks.onMarkChanged?.(this._marked.size);
+        // Send to Recycle Bin
+        fetch('/api/trash', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paths: [path] }),
+        }).then(() => {
+          // Hide the card's parent group row without refreshing the full list
+          const groupRow = card.closest('.dup-row') as HTMLElement | null;
+          if (groupRow) {
+            groupRow.style.transition = 'opacity .25s';
+            groupRow.style.opacity = '0';
+            setTimeout(() => groupRow.remove(), 260);
+          } else {
+            card.style.opacity = '0';
+            setTimeout(() => card.remove(), 260);
+          }
+        }).catch(() => {
+          deleteBtn.disabled = false;
+          deleteBtn.textContent = '🗑 Delete';
+        });
+      });
+      foot.appendChild(deleteBtn);
     }
 
     card.appendChild(previewEl);
@@ -509,12 +544,12 @@ export class GridView {
         // Keep card — unmark
         card.classList.remove('dup-marked');
         this._marked.delete(cardPath);
-        if (markBtn) { markBtn.textContent = '✕ Mark'; markBtn.classList.remove('active'); }
+        if (markBtn) { markBtn.textContent = 'Select'; markBtn.classList.remove('active'); }
       } else {
-        // Copy card — mark
+        // Copy card — select
         card.classList.add('dup-marked');
         this._marked.add(cardPath);
-        markBtn.textContent = '↩ Unmark';
+        markBtn.textContent = '↩ Deselect';
         markBtn.classList.add('active');
       }
     });
