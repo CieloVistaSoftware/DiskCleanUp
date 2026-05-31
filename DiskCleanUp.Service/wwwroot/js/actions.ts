@@ -283,13 +283,18 @@ export async function runCssMergeAnalyze(section: string) {
 
   if (btn) { btn.classList.remove('btn-error'); btn.title = ''; }
   const _origLabel = (btn as HTMLButtonElement | null)?.textContent;
-  if (btn) { (btn as HTMLButtonElement).disabled = true; btn.textContent = '⟳ Analyzing…'; }
+  const _setAnalyzing = (secs: number) => {
+    if (!btn) return;
+    (btn as HTMLButtonElement).disabled = true;
+    btn.innerHTML = `<span class="css-spin">⟳</span> Analyzing${secs > 0 ? ` ${secs}s` : '…'}`;
+  };
+  _setAnalyzing(0);
 
   // Tick the button label every 5s so users know it is still working on large sets
   let _tick = 0;
   const _tickId = btn ? setInterval(() => {
     _tick += 5;
-    if (btn) { btn.textContent = `⟳ Analyzing… ${_tick}s`; }
+    _setAnalyzing(_tick);
   }, 5000) : null;
 
   try {

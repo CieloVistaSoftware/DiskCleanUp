@@ -263,6 +263,8 @@
   }
   .live-row { animation: rowIn .4s ease-out; }
   @keyframes skelPulse { 0%,100%{opacity:.35} 50%{opacity:.7} }
+@keyframes cssSpin { to { transform: rotate(360deg); } }
+.css-spin { display:inline-block; animation: cssSpin .8s linear infinite; }
   .skel-row td { animation: skelPulse 1.4s ease-in-out infinite; }
   .skel-bar { height:10px; border-radius:4px; background:var(--border); display:inline-block; }
   #connStatus { font-size: 11px; padding: 2px 8px; border-radius: 10px; text-decoration: none; }
@@ -747,6 +749,26 @@
   .btn-del:hover {
     background: #e74c3c;
     color: #fff;
+  }
+
+  .btn-file-issue {
+    background: transparent;
+    border: 1px solid #444;
+    color: #858585;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: border-color .12s, color .12s;
+  }
+  .btn-file-issue:hover {
+    border-color: #58a6ff;
+    color: #58a6ff;
+  }
+
+  .btn-css-merge-analyze.btn-error {
+    border-color: #e74c3c;
+    color: #e74c3c;
   }
 
   .btn-keep {

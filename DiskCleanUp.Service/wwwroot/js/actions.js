@@ -262,16 +262,16 @@ async function runCssMergeAnalyze(section) {
     btn.title = "";
   }
   const _origLabel = btn?.textContent;
-  if (btn) {
+  const _setAnalyzing = (secs) => {
+    if (!btn) return;
     btn.disabled = true;
-    btn.textContent = "\u27F3 Analyzing\u2026";
-  }
+    btn.innerHTML = `<span class="css-spin">\u27F3</span> Analyzing${secs > 0 ? ` ${secs}s` : "\u2026"}`;
+  };
+  _setAnalyzing(0);
   let _tick = 0;
   const _tickId = btn ? setInterval(() => {
     _tick += 5;
-    if (btn) {
-      btn.textContent = `\u27F3 Analyzing\u2026 ${_tick}s`;
-    }
+    _setAnalyzing(_tick);
   }, 5e3) : null;
   try {
     const res = await apiFetch("/api/css/merge-analyze", {
