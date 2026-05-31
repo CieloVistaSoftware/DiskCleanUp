@@ -360,8 +360,9 @@ export class GridView {
     const visibleCount = Math.min(files.length, MAX_ROWS_PER_GROUP);
     const hiddenCount  = files.length - visibleCount;
 
+    const keepPath = files[0]?.path || '';
     for (let i = 0; i < visibleCount; i++) {
-      const card = this._buildFileCard(files[i], i === 0, safeKey);
+      const card = this._buildFileCard(files[i], i === 0, safeKey, keepPath);
       cards.push(card);
       cardsWrap.appendChild(card);
     }
@@ -385,7 +386,7 @@ export class GridView {
     return { sep, cardsWrap, cards, all };
   }
 
-  private _buildFileCard(file: any, isKeep: boolean, safeGroupKey: string): HTMLElement {
+  private _buildFileCard(file: any, isKeep: boolean, safeGroupKey: string, keepPath = ''): HTMLElement {
     const path     = file.path || '';
     const safePath = this._esc(path);
     const ext      = _extOf(path);
@@ -501,6 +502,45 @@ export class GridView {
       });
     });
     foot.appendChild(deleteBtn);
+
+    // Symlink button — copy cards only: trash copy, create symlink at copy path → keep file
+    if (!isKeep && keepPath && keepPath !== path) {
+      const symlinkBtn = document.createElement('button');
+      symlinkBtn.className = 'dup-symlink-btn';
+      symlinkBtn.textContent = '🔗 Symlink';
+      symlinkBtn.title = `Delete copy and replace with symlink → ${keepPath}`;
+      symlinkBtn.addEventListener('click', () => {
+        symlinkBtn.disabled = true;
+        symlinkBtn.textContent = '⟳';
+        fetch('/api/symlink', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ copyPath: path, keepPath }),
+        }).then(async r => {
+          if (!r.ok) {
+            const j = await r.json().catch(() => ({}));
+            symlinkBtn.disabled = false;
+            symlinkBtn.textContent = '🔗 Symlink';
+            alert(j.detail || j.error || 'Symlink failed');
+            return;
+          }
+          // Remove path cell and fade card
+          const wrap = card.closest('.dup-cards-wrap') as HTMLElement | null;
+          if (wrap) {
+            const pc = wrap.querySelector(`.dup-path-cell[title^="${path.replace(/"/g, '\\"')}"]`) as HTMLElement | null;
+            if (pc) { pc.remove(); }
+          }
+          card.style.transition = 'opacity .25s';
+          card.style.opacity = '0';
+          setTimeout(() => card.remove(), 260);
+        }).catch(e => {
+          symlinkBtn.disabled = false;
+          symlinkBtn.textContent = '🔗 Symlink';
+          alert('Symlink error: ' + e.message);
+        });
+      });
+      foot.appendChild(symlinkBtn);
+    }
 
     const openBtn = document.createElement('button');
     openBtn.className = 'dup-open-btn';

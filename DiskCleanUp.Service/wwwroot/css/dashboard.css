@@ -236,6 +236,15 @@
     transition: background .15s, border-color .15s;
   }
   .dup-open-btn:hover { background: #0078d4; border-color: #0078d4; color: #fff; }
+  .dup-symlink-btn {
+    font-size: 11px; padding: 3px 8px;
+    background: #1c1c1c; color: #a78bfa;
+    border: 1px solid #6d28d9; border-radius: 4px;
+    cursor: pointer; font-weight: 600;
+    transition: background .15s, border-color .15s;
+  }
+  .dup-symlink-btn:hover { background: #6d28d9; border-color: #7c3aed; color: #fff; }
+  .dup-symlink-btn:disabled { opacity: .5; cursor: not-allowed; }
   .dup-card-badge { margin-bottom: 2px; }
   .dup-card-filename {
     font-size: 12px; font-weight: 500; color: var(--text);

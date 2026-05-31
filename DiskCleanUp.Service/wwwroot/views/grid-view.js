@@ -312,8 +312,9 @@ class GridView {
     const cards = [];
     const visibleCount = Math.min(files.length, MAX_ROWS_PER_GROUP);
     const hiddenCount = files.length - visibleCount;
+    const keepPath = files[0]?.path || "";
     for (let i = 0; i < visibleCount; i++) {
-      const card = this._buildFileCard(files[i], i === 0, safeKey);
+      const card = this._buildFileCard(files[i], i === 0, safeKey, keepPath);
       cards.push(card);
       cardsWrap.appendChild(card);
     }
@@ -334,7 +335,7 @@ class GridView {
     const all = [sep, cardsWrap];
     return { sep, cardsWrap, cards, all };
   }
-  _buildFileCard(file, isKeep, safeGroupKey) {
+  _buildFileCard(file, isKeep, safeGroupKey, keepPath = "") {
     const path = file.path || "";
     const safePath = this._esc(path);
     const ext = _extOf(path);
@@ -437,6 +438,44 @@ class GridView {
       });
     });
     foot.appendChild(deleteBtn);
+    if (!isKeep && keepPath && keepPath !== path) {
+      const symlinkBtn = document.createElement("button");
+      symlinkBtn.className = "dup-symlink-btn";
+      symlinkBtn.textContent = "\u{1F517} Symlink";
+      symlinkBtn.title = `Delete copy and replace with symlink \u2192 ${keepPath}`;
+      symlinkBtn.addEventListener("click", () => {
+        symlinkBtn.disabled = true;
+        symlinkBtn.textContent = "\u27F3";
+        fetch("/api/symlink", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ copyPath: path, keepPath })
+        }).then(async (r) => {
+          if (!r.ok) {
+            const j = await r.json().catch(() => ({}));
+            symlinkBtn.disabled = false;
+            symlinkBtn.textContent = "\u{1F517} Symlink";
+            alert(j.detail || j.error || "Symlink failed");
+            return;
+          }
+          const wrap = card.closest(".dup-cards-wrap");
+          if (wrap) {
+            const pc = wrap.querySelector(`.dup-path-cell[title^="${path.replace(/"/g, '\\"')}"]`);
+            if (pc) {
+              pc.remove();
+            }
+          }
+          card.style.transition = "opacity .25s";
+          card.style.opacity = "0";
+          setTimeout(() => card.remove(), 260);
+        }).catch((e) => {
+          symlinkBtn.disabled = false;
+          symlinkBtn.textContent = "\u{1F517} Symlink";
+          alert("Symlink error: " + e.message);
+        });
+      });
+      foot.appendChild(symlinkBtn);
+    }
     const openBtn = document.createElement("button");
     openBtn.className = "dup-open-btn";
     openBtn.textContent = "</>";
