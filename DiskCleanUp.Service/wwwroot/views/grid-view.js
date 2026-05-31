@@ -367,10 +367,9 @@ class GridView {
       previewEl.classList.add("dup-preview-text");
       previewEl.textContent = "Loading\u2026";
       fetch(`/api/file?path=${encodeURIComponent(path)}`).then((r) => r.text()).then((text) => {
-        const lines = text.split("\n").slice(0, 60).join("\n");
         const pre = document.createElement("pre");
         pre.className = "dup-file-content";
-        pre.textContent = lines;
+        pre.textContent = text.slice(0, 2e3);
         previewEl.textContent = "";
         previewEl.appendChild(pre);
       }).catch(() => {

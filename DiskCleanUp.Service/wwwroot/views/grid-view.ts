@@ -422,16 +422,15 @@ export class GridView {
       previewEl.appendChild(vid);
 
     } else {
-      // Non-image/non-video: load and display file content inline
+      // Non-image/non-video: load and display file content inline from the top
       previewEl.classList.add('dup-preview-text');
       previewEl.textContent = 'Loading…';
       fetch(`/api/file?path=${encodeURIComponent(path)}`)
         .then(r => r.text())
         .then(text => {
-          const lines = text.split('\n').slice(0, 60).join('\n');
           const pre = document.createElement('pre');
           pre.className = 'dup-file-content';
-          pre.textContent = lines;
+          pre.textContent = text.slice(0, 2000); // first 2000 chars from position 0
           previewEl.textContent = '';
           previewEl.appendChild(pre);
         })
