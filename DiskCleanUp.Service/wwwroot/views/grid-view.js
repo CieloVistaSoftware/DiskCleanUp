@@ -353,18 +353,6 @@ class GridView {
       }, { once: true });
       _lazyObserver.observe(vid);
       previewEl.appendChild(vid);
-    } else if (_TXT_EXTS.has(ext)) {
-      previewEl.classList.add("dup-preview-pending");
-      previewEl.textContent = "\u{1F50D} Click to preview";
-      previewEl.style.cursor = "pointer";
-      previewEl.addEventListener("click", () => {
-        if (previewEl.classList.contains("dup-preview-pending")) {
-          previewEl.classList.remove("dup-preview-pending");
-          previewEl.style.cursor = "default";
-          previewEl.textContent = "Loading\u2026";
-          this._callbacks.onLoadPreview?.(previewEl);
-        }
-      }, { once: true });
     } else {
       const extLabel = ext ? ext.toUpperCase().slice(1) : "?";
       previewEl.classList.add("dup-preview-icon");
@@ -373,63 +361,44 @@ class GridView {
     const body = document.createElement("div");
     body.className = "dup-card-body";
     body.innerHTML = `
-      <div class="dup-card-badge">${isKeep ? `<span class="badge green">\u2705 Keep</span>` : `<span class="badge red">\u{1F5D1} Copy</span>`}</div>
       <div class="dup-card-filename" title="${safePath}">${this._esc(filename)}</div>
-      <div class="dup-card-dir" title="${safePath}">${this._esc(dir)}</div>
       <div class="dup-card-meta">${fmt(file.size || 0)}&nbsp;\xB7&nbsp;${this._esc(file.modified || "")}</div>`;
     const foot = document.createElement("div");
     foot.className = "dup-card-foot";
-    if (!isKeep) {
-      const selectBtn = document.createElement("button");
-      selectBtn.className = "dup-mark-btn";
-      selectBtn.textContent = "Select";
-      selectBtn.title = "Select this copy for deletion";
-      selectBtn.addEventListener("click", () => {
-        const isMarked = card.classList.toggle("dup-marked");
-        if (isMarked) {
-          this._marked.add(path);
-          selectBtn.textContent = "\u21A9 Deselect";
-          selectBtn.classList.add("active");
-          selectBtn.title = "Remove from selection";
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "dup-delete-one-btn";
+    deleteBtn.textContent = "\u{1F5D1} Delete";
+    deleteBtn.title = "Send to Recycle Bin";
+    deleteBtn.addEventListener("click", () => {
+      deleteBtn.disabled = true;
+      deleteBtn.textContent = "\u27F3";
+      this._marked.delete(path);
+      this._callbacks.onMarkChanged?.(this._marked.size);
+      fetch("/api/trash", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paths: [path] })
+      }).then(() => {
+        const groupRow = card.closest(".dup-row");
+        if (groupRow) {
+          groupRow.style.transition = "opacity .25s";
+          groupRow.style.opacity = "0";
+          setTimeout(() => groupRow.remove(), 260);
         } else {
-          this._marked.delete(path);
-          selectBtn.textContent = "Select";
-          selectBtn.classList.remove("active");
-          selectBtn.title = "Select this copy for deletion";
+          card.style.opacity = "0";
+          setTimeout(() => card.remove(), 260);
         }
-        this._callbacks.onMarkChanged?.(this._marked.size);
+      }).catch(() => {
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = "\u{1F5D1} Delete";
       });
-      foot.appendChild(selectBtn);
-      const deleteBtn = document.createElement("button");
-      deleteBtn.className = "dup-delete-one-btn";
-      deleteBtn.textContent = "\u{1F5D1} Delete";
-      deleteBtn.title = "Send this copy to Recycle Bin immediately";
-      deleteBtn.addEventListener("click", () => {
-        deleteBtn.disabled = true;
-        deleteBtn.textContent = "\u27F3";
-        this._marked.delete(path);
-        this._callbacks.onMarkChanged?.(this._marked.size);
-        fetch("/api/trash", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ paths: [path] })
-        }).then(() => {
-          const groupRow = card.closest(".dup-row");
-          if (groupRow) {
-            groupRow.style.transition = "opacity .25s";
-            groupRow.style.opacity = "0";
-            setTimeout(() => groupRow.remove(), 260);
-          } else {
-            card.style.opacity = "0";
-            setTimeout(() => card.remove(), 260);
-          }
-        }).catch(() => {
-          deleteBtn.disabled = false;
-          deleteBtn.textContent = "\u{1F5D1} Delete";
-        });
-      });
-      foot.appendChild(deleteBtn);
-    }
+    });
+    foot.appendChild(deleteBtn);
+    const pathBanner = document.createElement("div");
+    pathBanner.className = "dup-card-path-banner";
+    pathBanner.title = path;
+    pathBanner.textContent = path;
+    card.appendChild(pathBanner);
     card.appendChild(previewEl);
     card.appendChild(body);
     card.appendChild(foot);

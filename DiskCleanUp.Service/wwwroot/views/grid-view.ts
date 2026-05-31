@@ -409,98 +409,61 @@ export class GridView {
       _lazyObserver.observe(vid);
       previewEl.appendChild(vid);
 
-    } else if (_TXT_EXTS.has(ext)) {
-      previewEl.classList.add('dup-preview-pending');
-      previewEl.textContent = '🔍 Click to preview';
-      previewEl.style.cursor = 'pointer';
-      previewEl.addEventListener('click', () => {
-        if (previewEl.classList.contains('dup-preview-pending')) {
-          previewEl.classList.remove('dup-preview-pending');
-          previewEl.style.cursor = 'default';
-          previewEl.textContent  = 'Loading…';
-          this._callbacks.onLoadPreview?.(previewEl);
-        }
-      }, { once: true });
-
     } else {
+      // All non-image/non-video: show ext badge only — no "click to preview"
       const extLabel = ext ? ext.toUpperCase().slice(1) : '?';
       previewEl.classList.add('dup-preview-icon');
       previewEl.innerHTML = `<span class="dup-ext-badge">${this._esc(extLabel)}</span>`;
     }
 
-    // ── Card body ──────────────────────────────────────────────
+    // ── Card body — filename + meta only, no Keep/Copy badges ─────
     const body = document.createElement('div');
     body.className = 'dup-card-body';
     body.innerHTML = `
-      <div class="dup-card-badge">${isKeep
-        ? `<span class="badge green">✅ Keep</span>`
-        : `<span class="badge red">🗑 Copy</span>`}</div>
       <div class="dup-card-filename" title="${safePath}">${this._esc(filename)}</div>
-      <div class="dup-card-dir" title="${safePath}">${this._esc(dir)}</div>
       <div class="dup-card-meta">${fmt(file.size || 0)}&nbsp;·&nbsp;${this._esc(file.modified || '')}</div>`;
 
-    // ── Card footer (mark button for copies only) ──────────────
+    // ── Delete button on every card ────────────────────────────
     const foot = document.createElement('div');
     foot.className = 'dup-card-foot';
 
-    if (!isKeep) {
-      // Select button — toggles this copy into/out of the marked set
-      const selectBtn = document.createElement('button');
-      selectBtn.className = 'dup-mark-btn';
-      selectBtn.textContent = 'Select';
-      selectBtn.title = 'Select this copy for deletion';
-      selectBtn.addEventListener('click', () => {
-        const isMarked = card.classList.toggle('dup-marked');
-        if (isMarked) {
-          this._marked.add(path);
-          selectBtn.textContent = '↩ Deselect';
-          selectBtn.classList.add('active');
-          selectBtn.title = 'Remove from selection';
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'dup-delete-one-btn';
+    deleteBtn.textContent = '🗑 Delete';
+    deleteBtn.title = 'Send to Recycle Bin';
+    deleteBtn.addEventListener('click', () => {
+      deleteBtn.disabled = true;
+      deleteBtn.textContent = '⟳';
+      this._marked.delete(path);
+      this._callbacks.onMarkChanged?.(this._marked.size);
+      fetch('/api/trash', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paths: [path] }),
+      }).then(() => {
+        const groupRow = card.closest('.dup-row') as HTMLElement | null;
+        if (groupRow) {
+          groupRow.style.transition = 'opacity .25s';
+          groupRow.style.opacity = '0';
+          setTimeout(() => groupRow.remove(), 260);
         } else {
-          this._marked.delete(path);
-          selectBtn.textContent = 'Select';
-          selectBtn.classList.remove('active');
-          selectBtn.title = 'Select this copy for deletion';
+          card.style.opacity = '0';
+          setTimeout(() => card.remove(), 260);
         }
-        this._callbacks.onMarkChanged?.(this._marked.size);
+      }).catch(() => {
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = '🗑 Delete';
       });
-      foot.appendChild(selectBtn);
+    });
+    foot.appendChild(deleteBtn);
 
-      // Delete button — immediately sends to Recycle Bin and hides the row
-      const deleteBtn = document.createElement('button');
-      deleteBtn.className = 'dup-delete-one-btn';
-      deleteBtn.textContent = '🗑 Delete';
-      deleteBtn.title = 'Send this copy to Recycle Bin immediately';
-      deleteBtn.addEventListener('click', () => {
-        deleteBtn.disabled = true;
-        deleteBtn.textContent = '⟳';
-        // Remove from marked set if selected
-        this._marked.delete(path);
-        this._callbacks.onMarkChanged?.(this._marked.size);
-        // Send to Recycle Bin
-        fetch('/api/trash', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ paths: [path] }),
-        }).then(() => {
-          // Hide the card's parent group row without refreshing the full list
-          const groupRow = card.closest('.dup-row') as HTMLElement | null;
-          if (groupRow) {
-            groupRow.style.transition = 'opacity .25s';
-            groupRow.style.opacity = '0';
-            setTimeout(() => groupRow.remove(), 260);
-          } else {
-            card.style.opacity = '0';
-            setTimeout(() => card.remove(), 260);
-          }
-        }).catch(() => {
-          deleteBtn.disabled = false;
-          deleteBtn.textContent = '🗑 Delete';
-        });
-      });
-      foot.appendChild(deleteBtn);
-    }
+    // ── Path banner at top ─────────────────────────────────────
+    const pathBanner = document.createElement('div');
+    pathBanner.className = 'dup-card-path-banner';
+    pathBanner.title = path;
+    pathBanner.textContent = path;
 
+    card.appendChild(pathBanner);
     card.appendChild(previewEl);
     card.appendChild(body);
     card.appendChild(foot);
