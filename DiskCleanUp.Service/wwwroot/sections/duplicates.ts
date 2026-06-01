@@ -72,7 +72,7 @@ export const DuplicatesSection = (() => {
   function onEvent(msg) {
     switch (msg.type) {
       case 'started':
-        if (vm.size > 0) reset();
+        reset();  // always reset — _allCopiesNuked must clear even when vm.size === 0
         vm.visible = true;   // ensure flushes render during scan
         vm.scanStarted();
         SB.begin('duplicates', msg.root);

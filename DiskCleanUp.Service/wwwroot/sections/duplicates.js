@@ -67,7 +67,7 @@ const DuplicatesSection = (() => {
   function onEvent(msg) {
     switch (msg.type) {
       case "started":
-        if (vm.size > 0) reset();
+        reset();
         vm.visible = true;
         vm.scanStarted();
         SB.begin("duplicates", msg.root);
