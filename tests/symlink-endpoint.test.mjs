@@ -12,7 +12,19 @@ import fs   from 'fs';
 import os   from 'os';
 import path from 'path';
 
-const BASE_URL = 'http://localhost:5100';
+// Auto-detect port — service runs on 5100 (production) or 5000 (dev/console)
+async function _detectPort() {
+  for (const port of [5100, 5000]) {
+    try {
+      const r = await fetch(`http://localhost:${port}/api/service/info`, { signal: AbortSignal.timeout(1000) });
+      if (r.ok) return port;
+    } catch {}
+  }
+  return 5100; // fallback
+}
+const PORT     = await _detectPort();
+const BASE_URL = `http://localhost:${PORT}`;
+console.log(`Using port ${PORT}`);
 const TMP      = os.tmpdir();
 
 let passed = 0;

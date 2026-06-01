@@ -26,17 +26,17 @@
 /** @type {ScanToolbarConfig[]} */
 export const SCAN_TOOLBAR_CONFIGS = [
   { section: 'duplicates',   tableId: 'dupTable',     specialty: ['delete-all-copies', 'white-bg'] },
-  { section: 'smart-dedup',  tableId: 'smartTable',   specialty: ['apply-all', 'white-bg'] },
-  { section: 'stale',        tableId: 'staleTable',   specialty: []                    },
-  { section: 'large',        tableId: 'largeTable',   specialty: []                    },
-  { section: 'node-modules', tableId: 'nmTable',      specialty: []                    },
-  { section: 'venvs',        tableId: 'venvTable',    specialty: []                    },
-  { section: 'empty',        tableId: 'emptyTable',   specialty: []                    },
+  { section: 'smart-dedup',  tableId: 'smartTable',   specialty: ['apply-all',         'white-bg'] },
+  { section: 'stale',        tableId: 'staleTable',   specialty: ['white-bg']                      },
+  { section: 'large',        tableId: 'largeTable',   specialty: ['white-bg']                      },
+  { section: 'node-modules', tableId: 'nmTable',      specialty: ['white-bg']                      },
+  { section: 'venvs',        tableId: 'venvTable',    specialty: ['white-bg']                      },
+  { section: 'empty',        tableId: 'emptyTable',   specialty: ['white-bg']                      },
   { section: 'images',       tableId: 'imageTable',   specialty: ['delete-all-copies', 'white-bg'] },
-  { section: 'backups',      tableId: 'backupsTable', specialty: []                    },
-  { section: 'tiny-files',   tableId: 'tinyTable',    specialty: ['full-view']         },
-  { section: 'html-files',   tableId: 'htmlTable',    specialty: ['html-utilities']    },
-  { section: 'css-files',    tableId: 'cssTable',     specialty: ['css-merge-analyze'] },
+  { section: 'backups',      tableId: 'backupsTable', specialty: ['white-bg']                      },
+  { section: 'tiny-files',   tableId: 'tinyTable',    specialty: ['full-view',         'white-bg'] },
+  { section: 'html-files',   tableId: 'htmlTable',    specialty: ['html-utilities',    'white-bg'] },
+  { section: 'css-files',    tableId: 'cssTable',     specialty: ['css-merge-analyze', 'white-bg'] },
 ];
 
 /**

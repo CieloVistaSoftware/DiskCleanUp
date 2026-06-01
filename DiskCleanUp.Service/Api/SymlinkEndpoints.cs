@@ -38,30 +38,39 @@ public static class SymlinkEndpoints
             {
                 var size = new FileInfo(req.CopyPath).Length;
 
-                // Trash the copy first so its slot is free for the link
-                var trash = await Task.Run(() => FileUtilities.SendToRecycleBin(req.CopyPath));
-                if (!trash.Ok)
-                    return Results.Problem(trash.Error ?? "Could not move copy to Recycle Bin");
-
-                // Try symlink first; fall back to hardlink if Developer Mode is off
+                // Step 1: probe link creation BEFORE touching the copy so we never
+                // leave a dangling path. Create the link at a temp location first.
+                var tempLink = req.CopyPath + $".link{Guid.NewGuid():N}";
                 string linkType;
                 try
                 {
-                    File.CreateSymbolicLink(req.CopyPath, req.KeepPath);
+                    File.CreateSymbolicLink(tempLink, req.KeepPath);
                     linkType = "symlink";
                 }
-                catch (UnauthorizedAccessException)
+                catch   // IOException on Windows without Developer Mode — not UnauthorizedAccessException
                 {
-                    // No Developer Mode — create a hardlink instead (same volume, no elevation)
-                    if (!CreateHardLink(req.CopyPath, req.KeepPath, IntPtr.Zero))
+                    // Try hardlink (no elevation required, same volume)
+                    if (!CreateHardLink(tempLink, req.KeepPath, IntPtr.Zero))
                     {
                         var err = Marshal.GetLastWin32Error();
                         return Results.Problem(
-                            $"Could not create symlink (Developer Mode off) or hardlink (Win32 error {err}). " +
-                            $"Enable Developer Mode in Settings → System → For developers.");
+                            $"Cannot create symlink (enable Developer Mode in Settings → System → For developers) " +
+                            $"or hardlink (Win32 error {err} — files may be on different drives or a network share).");
                     }
                     linkType = "hardlink";
                 }
+
+                // Step 2: link creation succeeded — now safe to trash the copy
+                var trash = await Task.Run(() => FileUtilities.SendToRecycleBin(req.CopyPath));
+                if (!trash.Ok)
+                {
+                    // Couldn't trash — clean up the temp link and bail
+                    try { File.Delete(tempLink); } catch { }
+                    return Results.Problem(trash.Error ?? "Could not move copy to Recycle Bin");
+                }
+
+                // Step 3: move temp link into the vacated slot
+                File.Move(tempLink, req.CopyPath);
 
                 await cfgService.AppendSavingsAsync(linkType, size, req.CopyPath);
 

@@ -528,7 +528,10 @@ export class GridView {
           if (!r.ok) {
             symlinkBtn.disabled = false;
             symlinkBtn.textContent = '🔗 Symlink';
-            alert(j.detail || j.error || `Symlink failed (${r.status})`);
+            const msg = r.status === 404 || r.status === 405
+              ? 'Symlink endpoint not found — restart the DiskCleanUp service to pick up the new endpoint (npm run restart).'
+              : (j.detail || j.error || `Symlink failed (HTTP ${r.status})`);
+            alert(msg);
             return;
           }
           symlinkBtn.textContent = j.linkType === 'hardlink' ? '🔗 Hardlinked' : '🔗 Symlinked';
