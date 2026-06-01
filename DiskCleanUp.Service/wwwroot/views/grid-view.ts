@@ -460,8 +460,21 @@ export class GridView {
     const body = document.createElement('div');
     body.className = 'dup-card-body';
     body.innerHTML = `
-      <div class="dup-card-filename" title="${safePath}">${this._esc(filename)}</div>
+      <div class="dup-card-filename dup-card-filename-link" title="${safePath}\n(click to open folder)" data-folder="${safePath}">${this._esc(filename)}</div>
       <div class="dup-card-meta">${fmt(file.size || 0)}&nbsp;·&nbsp;${this._esc(file.modified || '')}</div>`;
+
+    // Wire filename click → open folder
+    const filenameEl = body.querySelector('.dup-card-filename-link') as HTMLElement | null;
+    if (filenameEl) {
+      filenameEl.addEventListener('click', () => {
+        const folder = path.replace(/[\\/][^\\/]*$/, '');
+        fetch('/api/open-folder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: folder }),
+        }).catch(() => {});
+      });
+    }
 
     // ── Delete button ──────────────────────────────────────────
     const foot = document.createElement('div');

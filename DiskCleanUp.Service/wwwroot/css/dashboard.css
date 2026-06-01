@@ -250,6 +250,11 @@
     font-size: 12px; font-weight: 500; color: var(--text);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
+  .dup-card-filename-link {
+    cursor: pointer; text-decoration: underline dotted;
+    text-underline-offset: 2px;
+  }
+  .dup-card-filename-link:hover { color: var(--accent, #58a6ff); }
   .dup-card-dir {
     font-size: 10px; color: var(--muted);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;

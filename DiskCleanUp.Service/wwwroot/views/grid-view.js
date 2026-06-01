@@ -398,8 +398,21 @@ class GridView {
     const body = document.createElement("div");
     body.className = "dup-card-body";
     body.innerHTML = `
-      <div class="dup-card-filename" title="${safePath}">${this._esc(filename)}</div>
+      <div class="dup-card-filename dup-card-filename-link" title="${safePath}
+(click to open folder)" data-folder="${safePath}">${this._esc(filename)}</div>
       <div class="dup-card-meta">${fmt(file.size || 0)}&nbsp;\xB7&nbsp;${this._esc(file.modified || "")}</div>`;
+    const filenameEl = body.querySelector(".dup-card-filename-link");
+    if (filenameEl) {
+      filenameEl.addEventListener("click", () => {
+        const folder = path.replace(/[\\/][^\\/]*$/, "");
+        fetch("/api/open-folder", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ path: folder })
+        }).catch(() => {
+        });
+      });
+    }
     const foot = document.createElement("div");
     foot.className = "dup-card-foot";
     const deleteBtn = document.createElement("button");
