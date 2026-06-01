@@ -481,6 +481,13 @@ export class GridView {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ paths: [path] }),
       }).then(() => {
+        // Clear from scan cache so file doesn't reappear on page refresh
+        fetch('/api/cache/duplicates/remove', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paths: [path] }),
+        }).catch(() => {});
+
         // Remove matching path cell from the path row
         const wrap = card.closest('.dup-cards-wrap') as HTMLElement | null;
         if (wrap) {

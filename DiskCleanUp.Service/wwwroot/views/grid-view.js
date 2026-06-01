@@ -416,6 +416,12 @@ class GridView {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paths: [path] })
       }).then(() => {
+        fetch("/api/cache/duplicates/remove", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ paths: [path] })
+        }).catch(() => {
+        });
         const wrap = card.closest(".dup-cards-wrap");
         if (wrap) {
           const pathCell = wrap.querySelector(`.dup-path-cell[title="${path.replace(/"/g, '\\"')}"]`);
