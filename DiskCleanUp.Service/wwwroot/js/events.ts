@@ -151,6 +151,35 @@ document.addEventListener('change', (e) => {
     case 'delete-all':
       ACTIONS['trash-ext-all']();
       break;
+    case 'add-issue': {
+      const input   = document.getElementById('extSearchInput') as HTMLInputElement | null;
+      const rootIn  = document.getElementById('extSearchRootInput') as HTMLInputElement | null;
+      const ext     = input?.value?.trim() || '(unknown)';
+      const root    = rootIn?.value?.trim() || '(global root)';
+      const rows    = document.querySelectorAll('#extResult .sg-row');
+      const paths   = Array.from(rows).slice(0, 20)
+                        .map(r => (r as HTMLElement).dataset.path)
+                        .filter(Boolean);
+      const total   = rows.length;
+      const title   = `[ext-search] Found ${total} file(s) matching .${ext}`;
+      const body    = [
+        `## Extension Finder Results`,
+        ``,
+        `**Extension:** \`.${ext}\``,
+        `**Root:** \`${root}\``,
+        `**Total matches:** ${total}`,
+        ``,
+        `### Sample paths (first ${paths.length})`,
+        ...paths.map(p => `- \`${p}\``),
+        total > paths.length ? `- … and ${total - paths.length} more` : '',
+        ``,
+        `---`,
+        `*Filed from DiskCleanUp Extension Finder*`,
+      ].filter(l => l !== undefined).join('\n');
+      const params  = new URLSearchParams({ title, body, labels: 'project:diskcleanup' });
+      window.open(`https://github.com/CieloVistaSoftware/DiskCleanUp/issues/new?${params}`, '_blank');
+      break;
+    }
   }
 
   menu.value = '';
