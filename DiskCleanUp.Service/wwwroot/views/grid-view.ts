@@ -523,6 +523,52 @@ export class GridView {
     });
     foot.appendChild(deleteBtn);
 
+    // Delete Folder button — sends the containing folder to Recycle Bin
+    const folder = path.replace(/[\\/][^\\/]*$/, '');
+    if (folder) {
+      const delFolderBtn = document.createElement('button');
+      delFolderBtn.className = 'dup-delete-folder-btn';
+      delFolderBtn.textContent = '📁🗑';
+      delFolderBtn.title = `Delete containing folder: ${folder}`;
+      delFolderBtn.addEventListener('click', () => {
+        if (!confirm(`Send entire folder to Recycle Bin?\n\n${folder}`)) return;
+        delFolderBtn.disabled = true;
+        delFolderBtn.textContent = '⟳';
+        fetch('/api/trash', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paths: [folder] }),
+        }).then(() => {
+          // Remove ALL cards whose path starts with this folder
+          const wrap = card.closest('.dup-cards-wrap') as HTMLElement | null;
+          if (wrap) {
+            wrap.querySelectorAll<HTMLElement>('.dup-path-cell').forEach(pc => {
+              if ((pc.title || '').startsWith(folder)) pc.remove();
+            });
+          }
+          const groupRow = card.closest('.dup-row') as HTMLElement | null;
+          if (groupRow) {
+            groupRow.style.transition = 'opacity .25s';
+            groupRow.style.opacity = '0';
+            setTimeout(() => groupRow.remove(), 260);
+          } else {
+            card.style.opacity = '0';
+            setTimeout(() => card.remove(), 260);
+          }
+          // Clear from cache
+          fetch('/api/cache/duplicates/remove', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paths: [path] }),
+          }).catch(() => {});
+        }).catch(() => {
+          delFolderBtn.disabled = false;
+          delFolderBtn.textContent = '📁🗑';
+        });
+      });
+      foot.appendChild(delFolderBtn);
+    }
+
     // Symlink button — copy cards only: trash copy, create symlink at copy path → keep file
     if (!isKeep && keepPath && keepPath !== path) {
       const symlinkBtn = document.createElement('button');

@@ -228,6 +228,15 @@
   }
   .dup-delete-one-btn:hover { background: #c0392b; border-color: #c0392b; color: #fff; }
   .dup-delete-one-btn:disabled { opacity: .5; cursor: not-allowed; }
+  .dup-delete-folder-btn {
+    font-size: 11px; padding: 3px 7px;
+    background: #1c1c1c; color: #f39c12;
+    border: 1px solid #7d5a00; border-radius: 4px;
+    cursor: pointer; font-weight: 600;
+    transition: background .15s, border-color .15s;
+  }
+  .dup-delete-folder-btn:hover { background: #c0392b; border-color: #c0392b; color: #fff; }
+  .dup-delete-folder-btn:disabled { opacity: .5; cursor: not-allowed; }
   .dup-open-btn {
     font-size: 11px; padding: 3px 8px;
     background: #1c1c1c; color: #58a6ff;

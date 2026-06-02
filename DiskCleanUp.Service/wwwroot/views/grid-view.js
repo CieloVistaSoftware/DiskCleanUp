@@ -404,11 +404,11 @@ class GridView {
     const filenameEl = body.querySelector(".dup-card-filename-link");
     if (filenameEl) {
       filenameEl.addEventListener("click", () => {
-        const folder = path.replace(/[\\/][^\\/]*$/, "");
+        const folder2 = path.replace(/[\\/][^\\/]*$/, "");
         fetch("/api/open-folder", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ path: folder })
+          body: JSON.stringify({ path: folder2 })
         }).catch(() => {
         });
       });
@@ -457,6 +457,51 @@ class GridView {
       });
     });
     foot.appendChild(deleteBtn);
+    const folder = path.replace(/[\\/][^\\/]*$/, "");
+    if (folder) {
+      const delFolderBtn = document.createElement("button");
+      delFolderBtn.className = "dup-delete-folder-btn";
+      delFolderBtn.textContent = "\u{1F4C1}\u{1F5D1}";
+      delFolderBtn.title = `Delete containing folder: ${folder}`;
+      delFolderBtn.addEventListener("click", () => {
+        if (!confirm(`Send entire folder to Recycle Bin?
+
+${folder}`)) return;
+        delFolderBtn.disabled = true;
+        delFolderBtn.textContent = "\u27F3";
+        fetch("/api/trash", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ paths: [folder] })
+        }).then(() => {
+          const wrap = card.closest(".dup-cards-wrap");
+          if (wrap) {
+            wrap.querySelectorAll(".dup-path-cell").forEach((pc) => {
+              if ((pc.title || "").startsWith(folder)) pc.remove();
+            });
+          }
+          const groupRow = card.closest(".dup-row");
+          if (groupRow) {
+            groupRow.style.transition = "opacity .25s";
+            groupRow.style.opacity = "0";
+            setTimeout(() => groupRow.remove(), 260);
+          } else {
+            card.style.opacity = "0";
+            setTimeout(() => card.remove(), 260);
+          }
+          fetch("/api/cache/duplicates/remove", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ paths: [path] })
+          }).catch(() => {
+          });
+        }).catch(() => {
+          delFolderBtn.disabled = false;
+          delFolderBtn.textContent = "\u{1F4C1}\u{1F5D1}";
+        });
+      });
+      foot.appendChild(delFolderBtn);
+    }
     if (!isKeep && keepPath && keepPath !== path) {
       const symlinkBtn = document.createElement("button");
       symlinkBtn.className = "dup-symlink-btn";
