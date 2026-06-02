@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node scripts/start.js",
+    "browse": "node scripts/browse.js",
     "trace": "node scripts/kill-port.js 5001 && node scripts/trace-server.js",
     "extract:svg": "node scripts/extract-svg.js",
     "tray": "node scripts/tray.js",
