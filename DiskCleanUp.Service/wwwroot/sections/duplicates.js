@@ -50,6 +50,59 @@ const DuplicatesSection = (() => {
     view.clearMarked();
     _updateMarkedBar(0);
   });
+  const _filterInput = document.getElementById("dup-filter-input");
+  const _filterClear = document.getElementById("dup-filter-clear");
+  const _selectAllBtn = document.getElementById("dup-select-all-btn");
+  const _deselectBtn = document.getElementById("dup-deselect-all-btn");
+  function _applyFilter() {
+    const raw = _filterInput?.value.trim() ?? "";
+    const exclude = raw.startsWith("!");
+    const term = exclude ? raw.slice(1).toLowerCase() : raw.toLowerCase();
+    const result = document.getElementById("dupResult");
+    if (!result) return;
+    if (_filterClear) _filterClear.style.display = raw ? "" : "none";
+    result.querySelectorAll(".dup-sep, .dup-cards-wrap").forEach((el) => {
+      if (!term) {
+        el.style.display = "";
+        return;
+      }
+      const pathsWrap = el.classList.contains("dup-cards-wrap") ? el : result.querySelector(`.dup-cards-wrap[data-group="${el.dataset.group}"]`);
+      const text = (pathsWrap?.textContent ?? el.textContent ?? "").toLowerCase();
+      const matches = text.includes(term);
+      el.style.display = (exclude ? matches : !matches) ? "none" : "";
+    });
+  }
+  _filterInput?.addEventListener("input", _applyFilter);
+  _filterClear?.addEventListener("click", () => {
+    if (_filterInput) {
+      _filterInput.value = "";
+    }
+    _applyFilter();
+  });
+  _selectAllBtn?.addEventListener("click", () => {
+    const result = document.getElementById("dupResult");
+    if (!result) return;
+    let count = 0;
+    result.querySelectorAll(".dup-cards-wrap").forEach((wrap) => {
+      if (wrap.style.display === "none") return;
+      wrap.querySelectorAll(".dup-card.dup-card-copy").forEach((card) => {
+        const markBtn = card.querySelector(".dup-mark-btn");
+        if (markBtn && !markBtn.classList.contains("active")) {
+          markBtn.click();
+          count++;
+        }
+      });
+    });
+    if (_selectAllBtn) _selectAllBtn.style.display = "none";
+    if (_deselectBtn) _deselectBtn.style.display = "";
+    ErrLog.log("[DUP]", `Selected ${count} copy cards`, null, "INFO");
+  });
+  _deselectBtn?.addEventListener("click", () => {
+    view.clearMarked();
+    _updateMarkedBar(0);
+    if (_selectAllBtn) _selectAllBtn.style.display = "";
+    if (_deselectBtn) _deselectBtn.style.display = "none";
+  });
   function onShow() {
     window._T?.("DUP", `onShow data=${vm.size}`);
     _visible = true;

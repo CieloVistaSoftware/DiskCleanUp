@@ -48,6 +48,65 @@ export const DuplicatesSection = (() => {
   document.getElementById('dup-clear-marked-btn')
     ?.addEventListener('click', () => { view.clearMarked(); _updateMarkedBar(0); });
 
+  // ── Filter bar ────────────────────────────────────────────
+  const _filterInput  = document.getElementById('dup-filter-input')  as HTMLInputElement | null;
+  const _filterClear  = document.getElementById('dup-filter-clear')  as HTMLButtonElement | null;
+  const _selectAllBtn = document.getElementById('dup-select-all-btn') as HTMLButtonElement | null;
+  const _deselectBtn  = document.getElementById('dup-deselect-all-btn') as HTMLButtonElement | null;
+
+  function _applyFilter() {
+    const raw     = _filterInput?.value.trim() ?? '';
+    const exclude = raw.startsWith('!');
+    const term    = exclude ? raw.slice(1).toLowerCase() : raw.toLowerCase();
+    const result  = document.getElementById('dupResult');
+    if (!result) return;
+
+    if (_filterClear) _filterClear.style.display = raw ? '' : 'none';
+
+    result.querySelectorAll<HTMLElement>('.dup-sep, .dup-cards-wrap').forEach(el => {
+      if (!term) { el.style.display = ''; return; }
+      // Match against path cells inside the group
+      const pathsWrap = el.classList.contains('dup-cards-wrap') ? el : result.querySelector<HTMLElement>(`.dup-cards-wrap[data-group="${el.dataset.group}"]`);
+      const text = (pathsWrap?.textContent ?? el.textContent ?? '').toLowerCase();
+      const matches = text.includes(term);
+      el.style.display = (exclude ? matches : !matches) ? 'none' : '';
+    });
+  }
+
+  _filterInput?.addEventListener('input', _applyFilter);
+  _filterClear?.addEventListener('click', () => {
+    if (_filterInput) { _filterInput.value = ''; }
+    _applyFilter();
+  });
+
+  // ── Select All / Deselect All ─────────────────────────────
+  _selectAllBtn?.addEventListener('click', () => {
+    const result = document.getElementById('dupResult');
+    if (!result) return;
+    let count = 0;
+    // Click every delete button on visible copy cards that isn't the keep card
+    result.querySelectorAll<HTMLElement>('.dup-cards-wrap').forEach(wrap => {
+      if (wrap.style.display === 'none') return;
+      wrap.querySelectorAll<HTMLElement>('.dup-card.dup-card-copy').forEach(card => {
+        const markBtn = card.querySelector<HTMLButtonElement>('.dup-mark-btn');
+        if (markBtn && !markBtn.classList.contains('active')) {
+          markBtn.click();
+          count++;
+        }
+      });
+    });
+    if (_selectAllBtn) _selectAllBtn.style.display = 'none';
+    if (_deselectBtn)  _deselectBtn.style.display  = '';
+    ErrLog.log('[DUP]', `Selected ${count} copy cards`, null, 'INFO');
+  });
+
+  _deselectBtn?.addEventListener('click', () => {
+    view.clearMarked();
+    _updateMarkedBar(0);
+    if (_selectAllBtn) _selectAllBtn.style.display = '';
+    if (_deselectBtn)  _deselectBtn.style.display  = 'none';
+  });
+
   // ── Visibility ───────────────────────────────────────────
 
   function onShow() {
