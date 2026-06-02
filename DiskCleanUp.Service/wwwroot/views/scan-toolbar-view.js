@@ -2,15 +2,18 @@ var __defProp = Object.defineProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 class ScanToolbarView {
+  // els keys that must never be re-enabled
   constructor(config, callbacks = {}) {
     __publicField(this, "_config");
     __publicField(this, "_callbacks");
     __publicField(this, "_rendered");
     __publicField(this, "_els");
+    __publicField(this, "_permanentlyGrayed");
     this._config = config;
     this._callbacks = callbacks;
     this._rendered = false;
     this._els = {};
+    this._permanentlyGrayed = /* @__PURE__ */ new Set();
   }
   // ── Initial render ────────────────────────────────────────
   mount() {
@@ -36,22 +39,23 @@ class ScanToolbarView {
     this._els.keepSelected.dataset.gridSection = section;
     this._els.keepSelected.disabled = true;
     const has = (key) => specialty.includes(key);
-    const _grayed = (btn, reason) => {
+    const _grayed = (elKey, btn, reason) => {
       btn.disabled = true;
       btn.title = `Not available for ${section} \u2014 ${reason}`;
       btn.style.opacity = "0.35";
       btn.style.cursor = "not-allowed";
+      this._permanentlyGrayed.add(elKey);
     };
     this._els.deleteAllCopies = this._btn("btn danger hidden", "\u{1F5D1} Delete All Copies", () => this._callbacks.onDeleteAllCopies?.());
     this._els.deleteAllCopies.id = `imgDeleteAllBtn-${section}`;
     this._els.deleteAllCopies.dataset.action = "trash-all-copies";
-    if (!has("delete-all-copies")) _grayed(this._els.deleteAllCopies, "only on Duplicates and Dup Images");
+    if (!has("delete-all-copies")) _grayed("deleteAllCopies", this._els.deleteAllCopies, "only on Duplicates and Dup Images");
     this._els.applyAll = this._btn("btn danger", "\u26A1 Apply All", () => this._callbacks.onApplyAll?.());
     this._els.applyAll.dataset.action = "apply-smart-dedup";
-    if (!has("apply-all")) _grayed(this._els.applyAll, "only on Smart Dedup");
+    if (!has("apply-all")) _grayed("applyAll", this._els.applyAll, "only on Smart Dedup");
     this._els.deleteAllDevCache = this._btn("btn danger", "\u{1F5D1} Delete All Caches", () => this._callbacks.onDeleteAllDevCache?.());
     this._els.deleteAllDevCache.dataset.action = "delete-all-dev-cache";
-    if (!has("delete-all-dev-cache")) _grayed(this._els.deleteAllDevCache, "only on Dev Caches");
+    if (!has("delete-all-dev-cache")) _grayed("deleteAllDevCache", this._els.deleteAllDevCache, "only on Dev Caches");
     this._els.utilities = this._btn("btn muted", "\u{1F9F0} Utilities", () => {
       if (!has("html-utilities")) return;
       const items = this._els.utilityItems || [];
@@ -84,7 +88,7 @@ class ScanToolbarView {
         return btn;
       });
     } else {
-      _grayed(this._els.utilities, "only on HTML Files");
+      _grayed("utilities", this._els.utilities, "only on HTML Files");
     }
     this._els.cssMergeAnalyze = this._btn("btn muted btn-css-merge-analyze", "\u{1F52C} Analyze Merge", () => this._callbacks.onCssMergeAnalyze?.());
     if (has("css-merge-analyze")) {
@@ -98,8 +102,9 @@ class ScanToolbarView {
       excludeInput.style.cssText = "font-size:11px;padding:3px 7px;border-radius:4px;border:1px solid var(--border,#444);background:var(--surface,#1e1e1e);color:var(--fg,#eee);width:260px;margin-left:4px";
       this._els.mergeExcludeInput = excludeInput;
     } else {
-      _grayed(this._els.cssMergeAnalyze, "only on CSS Files");
+      _grayed("cssMergeAnalyze", this._els.cssMergeAnalyze, "only on CSS Files");
     }
+    const _imagesSections = /* @__PURE__ */ new Set(["duplicates", "smart-dedup", "images", "dup-images", "stale", "large", "backups", "tiny-files"]);
     let _whiteBgOn = false;
     this._els.whiteBg = this._btn("btn muted", "\u2B1C White BG", () => {
       _whiteBgOn = !_whiteBgOn;
@@ -112,7 +117,11 @@ class ScanToolbarView {
       this._els.whiteBg.textContent = _whiteBgOn ? "\u2B1B Dark BG" : "\u2B1C White BG";
       this._els.whiteBg.classList.toggle("active", _whiteBgOn);
     });
-    this._els.whiteBg.title = "Toggle white background on all images in this section";
+    if (_imagesSections.has(section)) {
+      this._els.whiteBg.title = "Toggle white background on all images in this section";
+    } else {
+      _grayed("whiteBg", this._els.whiteBg, "no images in this section");
+    }
     this._els.loadMore = document.createElement("button");
     this._els.loadMore.className = "btn load-more-btn-tb";
     this._els.loadMore.id = `loadMore-${section}`;
@@ -122,7 +131,10 @@ class ScanToolbarView {
     this._els.loadMore.appendChild(dot);
     this._els.loadMore.appendChild(document.createTextNode(" Load More Results"));
     this._els.fullView = this._btn("btn muted", "\u{1F50E} Full View", () => this._callbacks.onFullView?.());
-    if (!has("full-view")) _grayed(this._els.fullView, "only on Tiny Files");
+    if (!has("full-view")) _grayed("fullView", this._els.fullView, "only on Tiny Files");
+    this._els.cancel.disabled = true;
+    this._els.deleteSelected.disabled = true;
+    this._els.keepSelected.disabled = true;
     this._els.trace = this._btn("btn muted", "\u{1F4DC} Trace", () => {
       const tag = section.toUpperCase().replace(/-/g, "_");
       window.open(`/trace-viewer.html?filter=${encodeURIComponent(tag)}`, "_blank");
@@ -154,9 +166,10 @@ class ScanToolbarView {
     this._setDisabled(e.cancel, !scanning);
     this._setDisabled(e.deleteSelected, scanning || !hasSelection);
     this._setDisabled(e.keepSelected, scanning || !hasSelection);
-    if (e.deleteAllCopies) this._setDisabled(e.deleteAllCopies, scanning || !hasRows);
-    if (e.applyAll) this._setDisabled(e.applyAll, scanning || !hasRows);
-    if (e.utilities) this._setDisabled(e.utilities, scanning);
+    this._setDisabled(e.deleteAllCopies, scanning || !hasRows, "deleteAllCopies");
+    this._setDisabled(e.applyAll, scanning || !hasRows, "applyAll");
+    this._setDisabled(e.deleteAllDevCache, scanning || !hasRows, "deleteAllDevCache");
+    this._setDisabled(e.utilities, scanning, "utilities");
     if (e.utilityItems?.length) {
       for (const btn of e.utilityItems) this._setDisabled(btn, scanning || !hasSelection);
     }
@@ -188,8 +201,9 @@ class ScanToolbarView {
     btn.addEventListener("click", handler);
     return btn;
   }
-  _setDisabled(el, disabled) {
+  _setDisabled(el, disabled, elKey) {
     if (!el) return;
+    if (elKey && this._permanentlyGrayed.has(elKey)) return;
     el.disabled = !!disabled;
   }
 }

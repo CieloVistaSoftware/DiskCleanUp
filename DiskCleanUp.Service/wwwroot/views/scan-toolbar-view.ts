@@ -16,11 +16,14 @@ export class ScanToolbarView {
   private _rendered: boolean;
   private _els: Record<string, any>;
 
+  private _permanentlyGrayed: Set<string>;  // els keys that must never be re-enabled
+
   constructor(config: any, callbacks: Record<string, (...args: any[]) => any> = {}) {
-    this._config    = config;
-    this._callbacks = callbacks;
-    this._rendered  = false;
-    this._els       = {};      // name → element reference
+    this._config           = config;
+    this._callbacks        = callbacks;
+    this._rendered         = false;
+    this._els              = {};
+    this._permanentlyGrayed = new Set();
   }
 
   // ── Initial render ────────────────────────────────────────
@@ -59,28 +62,35 @@ export class ScanToolbarView {
     // are visible but grayed so users know what features exist.
 
     const has = (key: string) => specialty.includes(key);
-    const _grayed = (btn: HTMLButtonElement, reason: string) => {
+    // _grayed permanently disables a non-applicable button and registers it
+    // so update() never accidentally re-enables it.
+    const _grayed = (elKey: string, btn: HTMLButtonElement, reason: string) => {
       btn.disabled = true;
       btn.title    = `Not available for ${section} — ${reason}`;
       btn.style.opacity = '0.35';
       btn.style.cursor  = 'not-allowed';
+      this._permanentlyGrayed.add(elKey);
     };
+
+    // Initial state — Cancel and Delete Selected start disabled
+    // (enabled by update() once scanning starts / rows are selected)
+    // Set after creation below.
 
     // Delete All Copies
     this._els.deleteAllCopies = this._btn('btn danger hidden', '🗑 Delete All Copies', () => this._callbacks.onDeleteAllCopies?.());
     this._els.deleteAllCopies.id = `imgDeleteAllBtn-${section}`;
     this._els.deleteAllCopies.dataset.action = 'trash-all-copies';
-    if (!has('delete-all-copies')) _grayed(this._els.deleteAllCopies, 'only on Duplicates and Dup Images');
+    if (!has('delete-all-copies')) _grayed('deleteAllCopies', this._els.deleteAllCopies, 'only on Duplicates and Dup Images');
 
     // Apply All (Smart Dedup)
     this._els.applyAll = this._btn('btn danger', '⚡ Apply All', () => this._callbacks.onApplyAll?.());
     this._els.applyAll.dataset.action = 'apply-smart-dedup';
-    if (!has('apply-all')) _grayed(this._els.applyAll, 'only on Smart Dedup');
+    if (!has('apply-all')) _grayed('applyAll', this._els.applyAll, 'only on Smart Dedup');
 
     // Delete All Caches
     this._els.deleteAllDevCache = this._btn('btn danger', '🗑 Delete All Caches', () => this._callbacks.onDeleteAllDevCache?.());
     this._els.deleteAllDevCache.dataset.action = 'delete-all-dev-cache';
-    if (!has('delete-all-dev-cache')) _grayed(this._els.deleteAllDevCache, 'only on Dev Caches');
+    if (!has('delete-all-dev-cache')) _grayed('deleteAllDevCache', this._els.deleteAllDevCache, 'only on Dev Caches');
 
     // HTML Utilities
     this._els.utilities = this._btn('btn muted', '🧰 Utilities', () => {
@@ -115,7 +125,7 @@ export class ScanToolbarView {
         return btn;
       });
     } else {
-      _grayed(this._els.utilities, 'only on HTML Files');
+      _grayed('utilities', this._els.utilities, 'only on HTML Files');
     }
 
     // CSS Merge Analyze
@@ -131,10 +141,11 @@ export class ScanToolbarView {
       excludeInput.style.cssText = 'font-size:11px;padding:3px 7px;border-radius:4px;border:1px solid var(--border,#444);background:var(--surface,#1e1e1e);color:var(--fg,#eee);width:260px;margin-left:4px';
       this._els.mergeExcludeInput = excludeInput;
     } else {
-      _grayed(this._els.cssMergeAnalyze, 'only on CSS Files');
+      _grayed('cssMergeAnalyze', this._els.cssMergeAnalyze, 'only on CSS Files');
     }
 
-    // White BG
+    // White BG — only interactive on sections that actually show images
+    const _imagesSections = new Set(['duplicates','smart-dedup','images','dup-images','stale','large','backups','tiny-files']);
     let _whiteBgOn = false;
     this._els.whiteBg = this._btn('btn muted', '⬜ White BG', () => {
       _whiteBgOn = !_whiteBgOn;
@@ -148,7 +159,11 @@ export class ScanToolbarView {
       this._els.whiteBg.textContent = _whiteBgOn ? '⬛ Dark BG' : '⬜ White BG';
       this._els.whiteBg.classList.toggle('active', _whiteBgOn);
     });
-    this._els.whiteBg.title = 'Toggle white background on all images in this section';
+    if (_imagesSections.has(section)) {
+      this._els.whiteBg.title = 'Toggle white background on all images in this section';
+    } else {
+      _grayed('whiteBg', this._els.whiteBg, 'no images in this section');
+    }
 
     // Load More
     this._els.loadMore = document.createElement('button');
@@ -162,7 +177,12 @@ export class ScanToolbarView {
 
     // Full View
     this._els.fullView = this._btn('btn muted', '🔎 Full View', () => this._callbacks.onFullView?.());
-    if (!has('full-view')) _grayed(this._els.fullView, 'only on Tiny Files');
+    if (!has('full-view')) _grayed('fullView', this._els.fullView, 'only on Tiny Files');
+
+    // Set correct initial disabled state — Cancel and Delete Selected start disabled
+    this._els.cancel.disabled          = true;
+    this._els.deleteSelected.disabled  = true;
+    this._els.keepSelected.disabled    = true;
 
     // Trace
     this._els.trace = this._btn('btn muted', '📜 Trace', () => {
@@ -204,9 +224,10 @@ export class ScanToolbarView {
     this._setDisabled(e.deleteSelected, scanning || !hasSelection);
     this._setDisabled(e.keepSelected,   scanning || !hasSelection);
 
-    if (e.deleteAllCopies) this._setDisabled(e.deleteAllCopies, scanning || !hasRows);
-    if (e.applyAll)        this._setDisabled(e.applyAll, scanning || !hasRows);
-    if (e.utilities)       this._setDisabled(e.utilities, scanning);
+    this._setDisabled(e.deleteAllCopies,  scanning || !hasRows, 'deleteAllCopies');
+    this._setDisabled(e.applyAll,         scanning || !hasRows, 'applyAll');
+    this._setDisabled(e.deleteAllDevCache, scanning || !hasRows, 'deleteAllDevCache');
+    this._setDisabled(e.utilities,        scanning,              'utilities');
     if (e.utilityItems?.length) {
       for (const btn of e.utilityItems) this._setDisabled(btn, scanning || !hasSelection);
     }
@@ -244,8 +265,10 @@ export class ScanToolbarView {
     return btn;
   }
 
-  private _setDisabled(el: HTMLButtonElement | undefined, disabled: boolean) {
+  private _setDisabled(el: HTMLButtonElement | undefined, disabled: boolean, elKey?: string) {
     if (!el) return;
+    // Never re-enable a permanently grayed button
+    if (elKey && this._permanentlyGrayed.has(elKey)) return;
     el.disabled = !!disabled;
   }
 }

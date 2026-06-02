@@ -224,6 +224,24 @@ async function _restoreSectionIfEmpty(section: string) {
 }
 (window as any)._restoreSectionIfEmpty = _restoreSectionIfEmpty;
 
+// ── Auto-scan on section open ────────────────────────────────────────────
+// If a section has never been scanned (status=idle) and has no cached rows,
+// trigger a scan automatically so the user doesn't have to click Scan.
+// Does NOT auto-scan if: currently scanning, has existing rows, or has cache.
+async function _autoScanIfEmpty(section: string) {
+  // Wait for cache restore to finish first
+  await _restoreSectionIfEmpty(section);
+  const status = _sectionStatusMap.get(section) ?? 'idle';
+  if (status === 'scanning' || status === 'done') return;
+  if ((window._scanGrid?.rowCount?.(section) ?? 0) > 0) return;
+  // Short delay so the section renders before the scan starts
+  setTimeout(() => {
+    _T('AUTO-SCAN', `auto-scanning ${section}`);
+    (window as any).startScan?.(section);
+  }, 300);
+}
+(window as any)._autoScanIfEmpty = _autoScanIfEmpty;
+
 // ── Section scan status tracker ─────────────────────────────────────────
 // Tracks the current scan state for each section (idle, scanning, done, error)
 const _sectionStatusMap = new Map<string, 'idle' | 'scanning' | 'done' | 'error'>();

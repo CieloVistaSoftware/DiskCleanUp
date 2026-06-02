@@ -90,7 +90,7 @@ export function showSection(name, btn?) {
 }
 
   if (_sectionModules[name]?.onShow) _sectionModules[name].onShow();
-  (window as any)._restoreSectionIfEmpty?.(name);
+  (window as any)._autoScanIfEmpty?.(name);
 }
 
 // Restore last active tab on page load

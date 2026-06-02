@@ -171,6 +171,17 @@ async function _restoreSectionIfEmpty(section) {
   }
 }
 window._restoreSectionIfEmpty = _restoreSectionIfEmpty;
+async function _autoScanIfEmpty(section) {
+  await _restoreSectionIfEmpty(section);
+  const status = _sectionStatusMap.get(section) ?? "idle";
+  if (status === "scanning" || status === "done") return;
+  if ((window._scanGrid?.rowCount?.(section) ?? 0) > 0) return;
+  setTimeout(() => {
+    _T("AUTO-SCAN", `auto-scanning ${section}`);
+    window.startScan?.(section);
+  }, 300);
+}
+window._autoScanIfEmpty = _autoScanIfEmpty;
 const _sectionStatusMap = /* @__PURE__ */ new Map();
 window._setSectionStatus = (section, status) => {
   const validStatuses = ["idle", "scanning", "done", "error"];
