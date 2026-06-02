@@ -81,23 +81,12 @@ export const DuplicatesSection = (() => {
 
   // ── Select All / Deselect All ─────────────────────────────
   _selectAllBtn?.addEventListener('click', () => {
-    const result = document.getElementById('dupResult');
-    if (!result) return;
-    let count = 0;
-    // Click every delete button on visible copy cards that isn't the keep card
-    result.querySelectorAll<HTMLElement>('.dup-cards-wrap').forEach(wrap => {
-      if (wrap.style.display === 'none') return;
-      wrap.querySelectorAll<HTMLElement>('.dup-card.dup-card-copy').forEach(card => {
-        const markBtn = card.querySelector<HTMLButtonElement>('.dup-mark-btn');
-        if (markBtn && !markBtn.classList.contains('active')) {
-          markBtn.click();
-          count++;
-        }
-      });
-    });
+    const count = view.selectAllCopies();
     if (_selectAllBtn) _selectAllBtn.style.display = 'none';
     if (_deselectBtn)  _deselectBtn.style.display  = '';
-    ErrLog.log('[DUP]', `Selected ${count} copy cards`, null, 'INFO');
+    if (count === 0) {
+      ErrLog.log('[DUP]', 'Select All: no visible copy cards found — scan first or check your filter', null, 'WARN');
+    }
   });
 
   _deselectBtn?.addEventListener('click', () => {

@@ -153,6 +153,29 @@ class GridView {
   getMarkedPaths() {
     return [...this._marked];
   }
+  /**
+   * Select all copy cards from currently visible groups.
+   * An optional filter function receives the group's cardsWrap element
+   * and returns true if the group should be included.
+   */
+  selectAllCopies(groupFilter) {
+    this._marked.clear();
+    const container = document.getElementById(this._containerId);
+    if (!container) return 0;
+    container.querySelectorAll(".dup-cards-wrap").forEach((wrap) => {
+      if (wrap.style.display === "none") return;
+      if (groupFilter && !groupFilter(wrap)) return;
+      wrap.querySelectorAll(".dup-card.dup-card-copy").forEach((card) => {
+        const p = card.dataset.path;
+        if (p) {
+          this._marked.add(p);
+          card.classList.add("dup-marked");
+        }
+      });
+    });
+    this._callbacks.onMarkChanged?.(this._marked.size);
+    return this._marked.size;
+  }
   /** Clear all marked states (call after successful delete). */
   clearMarked() {
     this._marked.clear();
