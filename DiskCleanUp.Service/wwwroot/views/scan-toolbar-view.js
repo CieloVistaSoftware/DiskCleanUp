@@ -133,8 +133,6 @@ class ScanToolbarView {
     this._els.fullView = this._btn("btn muted", "\u{1F50E} Full View", () => this._callbacks.onFullView?.());
     if (!has("full-view")) _grayed("fullView", this._els.fullView, "only on Tiny Files");
     this._els.cancel.disabled = true;
-    this._els.deleteSelected.disabled = true;
-    this._els.keepSelected.disabled = true;
     this._els.trace = this._btn("btn muted", "\u{1F4DC} Trace", () => {
       const tag = section.toUpperCase().replace(/-/g, "_");
       window.open(`/trace-viewer.html?filter=${encodeURIComponent(tag)}`, "_blank");
@@ -164,8 +162,8 @@ class ScanToolbarView {
     const e = this._els;
     this._setDisabled(e.scan, scanning);
     this._setDisabled(e.cancel, !scanning);
-    this._setDisabled(e.deleteSelected, scanning || !hasSelection);
-    this._setDisabled(e.keepSelected, scanning || !hasSelection);
+    this._setDisabled(e.deleteSelected, scanning);
+    this._setDisabled(e.keepSelected, scanning);
     this._setDisabled(e.deleteAllCopies, scanning || !hasRows, "deleteAllCopies");
     this._setDisabled(e.applyAll, scanning || !hasRows, "applyAll");
     this._setDisabled(e.deleteAllDevCache, scanning || !hasRows, "deleteAllDevCache");

@@ -179,10 +179,11 @@ export class ScanToolbarView {
     this._els.fullView = this._btn('btn muted', '🔎 Full View', () => this._callbacks.onFullView?.());
     if (!has('full-view')) _grayed('fullView', this._els.fullView, 'only on Tiny Files');
 
-    // Set correct initial disabled state — Cancel and Delete Selected start disabled
-    this._els.cancel.disabled          = true;
-    this._els.deleteSelected.disabled  = true;
-    this._els.keepSelected.disabled    = true;
+    // Cancel starts disabled — enabled only while scanning
+    this._els.cancel.disabled = true;
+    // Delete Selected and Keep Selected start ENABLED so they work immediately
+    // after a scan completes without needing a checkbox-change event to re-enable them.
+    // The action handlers already guard against "nothing selected" with an alert.
 
     // Trace
     this._els.trace = this._btn('btn muted', '📜 Trace', () => {
@@ -221,8 +222,12 @@ export class ScanToolbarView {
 
     this._setDisabled(e.scan,           scanning);
     this._setDisabled(e.cancel,         !scanning);
-    this._setDisabled(e.deleteSelected, scanning || !hasSelection);
-    this._setDisabled(e.keepSelected,   scanning || !hasSelection);
+    // deleteSelected/keepSelected: disable ONLY while scanning.
+    // Do not disable based on selection state — update() fires only at scan
+    // boundaries, not on every checkbox click, so we can't track selection here.
+    // The action handlers guard against empty selection themselves.
+    this._setDisabled(e.deleteSelected, scanning);
+    this._setDisabled(e.keepSelected,   scanning);
 
     this._setDisabled(e.deleteAllCopies,  scanning || !hasRows, 'deleteAllCopies');
     this._setDisabled(e.applyAll,         scanning || !hasRows, 'applyAll');
