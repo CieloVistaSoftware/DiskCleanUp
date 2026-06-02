@@ -236,6 +236,8 @@ function _startWatchdog() {
 
 function _handleWsOpen(wsRef: { ws: WebSocket | null }, watchdogTimer: { val: ReturnType<typeof setInterval> | null }) {
   clearTimeout(_connectTimer);
+  if (_startBannerTimer) { clearTimeout(_startBannerTimer); _startBannerTimer = null; }
+  _hideStartBanner();
   _wsReconnectDelay = 0;
   setConnStatus('⚡ Live', true);
   window._T?.('WS', 'connected');
@@ -312,10 +314,32 @@ function _handleWsMessage(ev: MessageEvent, section: string) {
 let _wsMsgCount = 0;
 let _wsScanMsgCount = 0;
 
+let _startBannerTimer: ReturnType<typeof setTimeout> | null = null;
+
+function _showStartBanner() {
+  if (document.getElementById('ws-start-banner')) return;
+  const b = document.createElement('div');
+  b.id = 'ws-start-banner';
+  b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99998;background:#7c3aed;color:#fff;padding:10px 20px;font-size:13px;display:flex;align-items:center;gap:12px;font-family:Segoe UI,sans-serif';
+  b.innerHTML = `
+    <span>⚠ DiskCleanUp service is not running.</span>
+    <span style="opacity:.8">Start it: open a terminal in the project folder and run <code style="background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px">npm run restart</code></span>
+    <button onclick="this.parentElement.remove()" style="margin-left:auto;background:none;border:1px solid rgba(255,255,255,.5);color:#fff;padding:2px 10px;border-radius:3px;cursor:pointer">Dismiss</button>`;
+  document.body.prepend(b);
+}
+
+function _hideStartBanner() {
+  document.getElementById('ws-start-banner')?.remove();
+}
+
 export function wsConnect() {
   setConnStatus('⚡ Connecting…', false);
   _lastWsStatusTime = Date.now();
   _startWatchdog();
+
+  // Show "service not running" banner after 3s if still not connected
+  if (_startBannerTimer) clearTimeout(_startBannerTimer);
+  _startBannerTimer = setTimeout(_showStartBanner, 3000);
 
   const wsScheme = location.protocol === 'https:' ? 'wss' : 'ws';
   const wsUrl = `${wsScheme}://${location.host}/ws`;
