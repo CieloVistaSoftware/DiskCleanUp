@@ -176,6 +176,27 @@ export async function deleteNMSelected() {
   });
 }
 
+export async function deleteAllDevCaches() {
+  crumb('actions', 'deleteAllDevCaches');
+  const paths = SG.getChecked('dev-cache');
+  if (!paths.length) { alert('Scan for Dev Caches first, then click Delete All Caches.'); return; }
+  if (!confirm(
+    `Permanently delete ${paths.length} dev cache folder(s)?\n\n` +
+    `These are always safe to delete — they regenerate automatically.\n\n` +
+    paths.slice(0, 5).join('\n') + (paths.length > 5 ? `\n… and ${paths.length - 5} more` : '')
+  )) return;
+  window._T?.('TRASH', `DEV-CACHE delete ${paths.length} folders`);
+  await _postAndRescan({
+    endpoint:    '/api/delete-permanent',
+    body:        { paths },
+    section:     'dev-cache',
+    timeout:     120000,
+    label:       `DEV-CACHE (${paths.length} folders)`,
+    formatAlert: res => `Freed ${fmt(res?.freed ?? 0)}`,
+    trackSavings: true,
+  });
+}
+
 export async function deleteEmpty() {
   crumb('actions', 'deleteEmpty');
   let paths = SG.getChecked('empty');
@@ -851,4 +872,5 @@ window.trashImage         = trashImage;
 window._trashSelected     = trashSelected;   // used by Commands → Delete Selected
 window._extractSvgFromSelectedHtml = extractSvgFromSelectedHtml;
 window._runHtmlUtility      = runHtmlUtility;
-window._runCssMergeAnalyze  = runCssMergeAnalyze;
+window._runCssMergeAnalyze   = runCssMergeAnalyze;
+window._deleteAllDevCaches   = deleteAllDevCaches;

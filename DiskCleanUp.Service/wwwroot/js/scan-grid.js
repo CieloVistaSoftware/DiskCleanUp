@@ -715,7 +715,8 @@ function _trashRow(section, path, row) {
     "html-files",
     "css-files",
     "duplicates",
-    "images"
+    "images",
+    "dev-cache"
   ];
   for (const sec of cacheSections) {
     fetch(`/api/cache/${sec}/remove`, {

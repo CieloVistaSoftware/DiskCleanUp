@@ -66,6 +66,7 @@ window._T = (tag, msg) => {
   <button type="button" class="btn muted btn-xs" data-section="stale" title="Find files not modified in over N days (default 90). Sorted oldest-first."><span class="btn-status-light status-idle"></span>Stale Files</button>
   <button type="button" class="btn muted btn-xs" data-section="large" title="List files exceeding the size threshold (default 10 MB). Sorted by size descending."><span class="btn-status-light status-idle"></span>Large Files</button>
   <button type="button" class="btn muted btn-xs" data-section="node-modules" title="Find node_modules folders. Safe to delete — restore with npm install."><span class="btn-status-light status-idle"></span>node_modules</button>
+  <button type="button" class="btn muted btn-xs" data-section="dev-cache" title="Find dev tool cache folders (.vscode-test-web, .playwright, __pycache__, etc). Always safe to delete — regenerated automatically."><span class="btn-status-light status-idle"></span>Dev Caches</button>
   <button type="button" class="btn muted btn-xs" data-section="venvs" title="Find Python virtual environment folders. Safe to delete — restore with python -m venv."><span class="btn-status-light status-idle"></span>Venvs</button>
   <button type="button" class="btn muted btn-xs" data-section="empty" title="Find completely empty folders — zero files, no subfolders. Very fast scan."><span class="btn-status-light status-idle"></span>Empty Folders</button>
   <button type="button" class="btn muted btn-xs" data-section="images" title="Find visually similar duplicate images using perceptual hashing (pHash)."><span class="btn-status-light status-idle"></span>Dup Images</button>
@@ -165,6 +166,23 @@ window._T = (tag, msg) => {
     </div>
     <div id="toolbar-large"></div>
     <div id="largeResult"></div>
+  </div>
+</div>
+
+<!-- DEV CACHES -->
+<div id="section-dev-cache">
+  <div class="panel">
+    <h2>🗂 Dev Caches</h2>
+    <p class="section-desc">Finds developer tool cache folders that are always safe to delete — they are recreated automatically on next use. Covers: <code>.vscode-test-web</code>, <code>.vscode-test</code>, <code>.playwright</code>, <code>__pycache__</code>, <code>.pytest_cache</code>, <code>.mypy_cache</code>, <code>.ruff_cache</code>, <code>.tox</code>, <code>.nx</code>.</p>
+    <div id="sb-dev-cache" class="section-sb">
+      <div class="sb-seg status-seg"><span class="label">STATUS</span>&nbsp;<span class="value" id="sbv-dev-cache-status">Idle</span></div>
+      <div class="sb-seg"><span class="label">RESULTS</span>&nbsp;<span class="value" id="sbv-dev-cache-results">—</span></div>
+      <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-dev-cache-rows">0</span></div>
+      <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-dev-cache-time">—</span></div>
+      <div class="sb-folder" id="sbf-dev-cache"><span class="sb-scan-hint" data-action="scan" data-section="dev-cache">▶ Click to Scan</span></div>
+    </div>
+    <div id="toolbar-dev-cache"></div>
+    <div id="devCacheResult"></div>
   </div>
 </div>
 

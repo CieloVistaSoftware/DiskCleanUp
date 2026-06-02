@@ -299,8 +299,9 @@ function _mountScanToolbars() {
         }
       },
       onKeepSelected:    () => window.keepSelected?.(config.tableId),
-      onDeleteAllCopies: () => window._deleteAllCopies?.(config.section),
-      onApplyAll:        () => window._applySmartDedup?.(),
+      onDeleteAllCopies:    () => window._deleteAllCopies?.(config.section),
+      onApplyAll:           () => window._applySmartDedup?.(),
+      onDeleteAllDevCache:  () => window._deleteAllDevCaches?.(),
       onHtmlUtility:      (utility) => window._runHtmlUtility?.(utility),
       onCssMergeAnalyze:  () => window._runCssMergeAnalyze?.(config.section),
       onFullView:        () => window.open('/tinyfiles-render.html', '_blank'),

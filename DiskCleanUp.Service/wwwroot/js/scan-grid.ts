@@ -789,7 +789,7 @@ if (window.TrashQ?.enqueue) {
 
 // Remove from backend caches so it doesn't reappear on Load More
 const cacheSections = ['stale','large','empty','node-modules','venvs',
-  'backups','tiny-files','html-files','css-files','duplicates','images'];
+  'backups','tiny-files','html-files','css-files','duplicates','images','dev-cache'];
 for (const sec of cacheSections) {
   fetch(`/api/cache/${sec}/remove`, {
     method: 'POST',

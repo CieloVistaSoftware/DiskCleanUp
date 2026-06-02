@@ -77,6 +77,7 @@ if (isScanMode)
             services.AddSingleton<IScanRule, ImagesRule>();
             services.AddSingleton<IScanRule, BackupsRule>();
             services.AddSingleton<IScanRule, ExtSearchRule>();
+            services.AddSingleton<IScanRule, DevCacheRule>();
             services.AddSingleton<ScanOrchestrator>();
             services.AddSingleton<AnswerArtifactService>();
             services.AddHostedService<MetricsService>();
@@ -132,6 +133,7 @@ builder.Services.AddSingleton<IScanRule, VenvsRule>();
 builder.Services.AddSingleton<IScanRule, ImagesRule>();
 builder.Services.AddSingleton<IScanRule, BackupsRule>();
 builder.Services.AddSingleton<IScanRule, ExtSearchRule>();
+builder.Services.AddSingleton<IScanRule, DevCacheRule>();
 builder.Services.AddSingleton<ScanOrchestrator>();
 builder.Services.AddSingleton<DiagService>(_ => new DiagService(dataDir));
 builder.Services.AddSingleton<AnswerArtifactService>();

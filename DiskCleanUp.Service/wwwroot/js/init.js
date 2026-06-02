@@ -1,449 +1,376 @@
-// ── Open file in VS Code from frontend ───────────────────────────────────
-window.openInVSCode = function (path) {
-    fetch('/api/open', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path })
-    }).catch(() => { });
+window.openInVSCode = function(path) {
+  fetch("/api/open", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ path })
+  }).catch(() => {
+  });
 };
-// ═══════════════════════════════════════════════════════════════════════════
-//  INIT — startup sequence
-//  Import order matters: dependencies must be imported before dependents.
-// ═══════════════════════════════════════════════════════════════════════════
-// All ES imports are hoisted — they execute before any code below
-import './breadcrumb.js';
-import './error-logger.js';
-import './metrics.js';
-import './event-queue.js';
-import './column-controls.js?v=2';
-import './status-bar.js';
-import './table-utils.js?v=2';
-import './ui-utils.js';
-import './savings.js?v=2';
-import './settings.js';
-import './trash-queue.js';
-import './websocket.js';
-// @ts-ignore — ?v=2 cache-busting is valid at runtime; TS can't resolve query strings
-import { startScan, cancelScan } from './actions.js?v=2';
-import './ext-colors.js';
-import './scan-filter.js';
-import './scan-grid.js';
-import './section-handlers.js';
-import './events.js?v=2';
-import './keep-list.js';
-import './recycle-bin.js?v=2';
-import './task-manager.js?v=2';
-import { wsConnect } from './websocket.js';
-import { registerHandler } from './event-queue.js';
-import { registerSectionModule, restoreActiveTab } from './ui-utils.js';
-import { loadSettings } from './settings.js';
-// @ts-ignore — ?v=2 cache-busting
-import { updateTotalSaved } from './savings.js?v=2';
-import { apiFetch } from './ui-utils.js';
-import { pushEvent, pushEventSync } from './event-queue.js';
-import { _set, _folder } from './status-bar.js';
-// @ts-ignore — ?v=2 cache-busting
-import { loadPage, hasMore, resetPaging, getCacheAge } from './page-loader.js?v=2';
-import { DuplicatesSection } from '../sections/duplicates.js';
-// @ts-ignore — ?v=4 cache-busting
-import { SCAN_TOOLBAR_CONFIGS } from '../models/scan-toolbar-model.js?v=4';
-// @ts-ignore — ?v=4 cache-busting
-import { ScanToolbarVM } from '../viewmodels/scan-toolbar-vm.js?v=4';
-// @ts-ignore — ?v=4 cache-busting
-import { ScanToolbarView } from '../views/scan-toolbar-view.js?v=4';
-// stale-unified, large-unified, node-modules-unified disabled — crash on top-level DOM access before DOM ready
-// section-handlers.js handles these sections instead
-import { initKeepList } from './keep-list.js';
-import { crumb } from './breadcrumb.js';
-// @ts-ignore — ?v=2 cache-busting
-import { loadTasks } from './task-manager.js?v=2';
-// import { initAiPanel }              from './ai-panel.js'; // file does not exist
+import "./breadcrumb.js";
+import "./error-logger.js";
+import "./metrics.js";
+import "./event-queue.js";
+import "./column-controls.js?v=2";
+import "./status-bar.js";
+import "./table-utils.js?v=2";
+import "./ui-utils.js";
+import "./savings.js?v=2";
+import "./settings.js";
+import "./trash-queue.js";
+import "./websocket.js";
+import { startScan, cancelScan } from "./actions.js?v=2";
+import "./ext-colors.js";
+import "./scan-filter.js";
+import "./scan-grid.js";
+import "./section-handlers.js";
+import "./events.js?v=2";
+import "./keep-list.js";
+import "./recycle-bin.js?v=2";
+import "./task-manager.js?v=2";
+import { wsConnect } from "./websocket.js";
+import { registerHandler } from "./event-queue.js";
+import { registerSectionModule, restoreActiveTab } from "./ui-utils.js";
+import { loadSettings } from "./settings.js";
+import { updateTotalSaved } from "./savings.js?v=2";
+import { apiFetch } from "./ui-utils.js";
+import { pushEvent, pushEventSync } from "./event-queue.js";
+import { _set, _folder } from "./status-bar.js";
+import { loadPage, hasMore, resetPaging, getCacheAge } from "./page-loader.js?v=2";
+import { DuplicatesSection } from "../sections/duplicates.js";
+import { SCAN_TOOLBAR_CONFIGS } from "../models/scan-toolbar-model.js?v=4";
+import { ScanToolbarVM } from "../viewmodels/scan-toolbar-vm.js?v=4";
+import { ScanToolbarView } from "../views/scan-toolbar-view.js?v=4";
+import { initKeepList } from "./keep-list.js";
+import { crumb } from "./breadcrumb.js";
+import { loadTasks } from "./task-manager.js?v=2";
 const _T = window._T || ((tag, msg) => console.log(`[${tag}] ${msg}`));
-_T('INIT', 'all imports resolved');
-// ── Register DuplicatesSection ──────────────────────────────────────────
-registerHandler('duplicates', DuplicatesSection.onEvent);
-registerSectionModule('duplicates', DuplicatesSection);
-registerSectionModule('tasks', { onShow: loadTasks });
-// ── Cache restore (paged, 40KB rule) ─────────────────────────────────────
-// Backend sends 40KB chunks. We load the first page, render it,
-// and show a "Load More" button if there's more data. The .NET
-// heap never holds more than 40KB; the browser DOM handles the rest.
+_T("INIT", "all imports resolved");
+registerHandler("duplicates", DuplicatesSection.onEvent);
+registerSectionModule("duplicates", DuplicatesSection);
+registerSectionModule("tasks", { onShow: loadTasks });
 async function restoreCachedResults() {
-    crumb('init', 'restoreCache:start');
-    _T('CACHE', 'restoreCachedResults START');
-    // Fetch keep-list ONCE so we can filter out kept files from cache
-    let keepSet = new Set();
+  crumb("init", "restoreCache:start");
+  _T("CACHE", "restoreCachedResults START");
+  let keepSet = /* @__PURE__ */ new Set();
+  try {
+    const kl = await apiFetch("/api/keep-list", {}, { timeout: 1e4 });
+    if (kl?.paths?.length) {
+      keepSet = new Set(kl.paths.map((p) => p.toLowerCase()));
+      _T("CACHE", `keep-list loaded: ${keepSet.size} paths`);
+    }
+  } catch {
+  }
+  const STALE_THRESHOLD = 1440;
+  const sections = ["duplicates", "smart-dedup", "stale", "large", "node-modules", "venvs", "empty", "images", "backups", "tiny-files", "html-files", "css-files", "ext-search"];
+  for (const section of sections) {
     try {
-        const kl = await apiFetch('/api/keep-list', {}, { timeout: 10000 });
-        if (kl?.paths?.length) {
-            keepSet = new Set(kl.paths.map(p => p.toLowerCase()));
-            _T('CACHE', `keep-list loaded: ${keepSet.size} paths`);
+      _T("CACHE", `loadPage(${section})`);
+      const { rows, loaded } = await loadPage(section);
+      _T("CACHE", `${section}: ${rows.length} rows`);
+      if (!rows.length) continue;
+      const ageMin = getCacheAge(section);
+      if (ageMin != null && ageMin > STALE_THRESHOLD) {
+        _T("CACHE", `${section}: STALE (${ageMin.toFixed(0)}m old) \u2014 clearing`);
+        fetch(`/api/cache/${section}`, { method: "DELETE" }).catch(() => {
+        });
+        resetPaging(section);
+        continue;
+      }
+      let resultCount = 0;
+      let skippedKept = 0;
+      const CHUNK = 200;
+      for (let i = 0; i < rows.length; i++) {
+        const evt = rows[i];
+        if (evt.type === "started" || evt.type === "progress" || evt.type === "done") continue;
+        const d = evt.data || {};
+        const p = d.path || d.keep || "";
+        if (p && keepSet.has(p.toLowerCase())) {
+          skippedKept++;
+          continue;
         }
+        pushEventSync(section, evt.type, d);
+        resultCount++;
+        if (resultCount % CHUNK === 0) await new Promise((r) => setTimeout(r, 0));
+      }
+      if (skippedKept) _T("CACHE", `${section}: filtered out ${skippedKept} kept files`);
+      if (resultCount > 0) {
+        const SF = window._scanFilter;
+        if (SF?.reset) SF.reset(section);
+        if (SF?.rebuild) SF.rebuild(section);
+        const bar = document.getElementById(`sb-${section}`);
+        if (bar) bar.className = "section-sb done";
+        _sectionStatusMap.set(section, "done");
+        _updateNavButtonStatus(section);
+        _set(section, "status", "\u267B Restored");
+        _set(section, "time", "\u2014");
+        const more = hasMore(section);
+        const moreLabel = more ? " \xB7 more available" : "";
+        let ageLabel = "";
+        if (ageMin != null) {
+          if (ageMin < 60) ageLabel = ` \xB7 ${Math.round(ageMin)}m ago`;
+          else if (ageMin < 1440) ageLabel = ` \xB7 ${(ageMin / 60).toFixed(1)}h ago`;
+          else ageLabel = ` \xB7 ${(ageMin / 1440).toFixed(1)}d ago`;
+        }
+        _folder(section, `Restored \xB7 ${resultCount} results${moreLabel}${ageLabel}`);
+        _updateLoadMoreBtn(section);
+        if (section === "images" && resultCount > 0) {
+          const delBtn = document.getElementById("imgDeleteAllBtn");
+          if (delBtn) delBtn.style.display = "";
+        }
+      }
+    } catch (e) {
+      _T("CACHE", `${section}: error ${e.message}`);
     }
-    catch { /* proceed without filtering */ }
-    const STALE_THRESHOLD = 1440; // 24 hours in minutes
-    const sections = ['duplicates', 'smart-dedup', 'stale', 'large', 'node-modules', 'venvs', 'empty', 'images', 'backups', 'tiny-files', 'html-files', 'css-files', 'ext-search'];
-    for (const section of sections) {
-        try {
-            _T('CACHE', `loadPage(${section})`);
-            const { rows, loaded } = await loadPage(section);
-            _T('CACHE', `${section}: ${rows.length} rows`);
-            if (!rows.length)
-                continue;
-            // Stale cache check — auto-clear if older than 24h
-            const ageMin = getCacheAge(section);
-            if (ageMin != null && ageMin > STALE_THRESHOLD) {
-                _T('CACHE', `${section}: STALE (${ageMin.toFixed(0)}m old) — clearing`);
-                fetch(`/api/cache/${section}`, { method: 'DELETE' }).catch(() => { });
-                resetPaging(section);
-                continue;
-            }
-            // SYNC delivery in chunks: yield every 200 rows so the WS onopen
-            // and other callbacks can fire between batches. Without yielding,
-            // large files (stale 1MB, tiny-files 728KB) freeze the main thread
-            // for seconds, starving the WebSocket handshake.
-            let resultCount = 0;
-            let skippedKept = 0;
-            const CHUNK = 200;
-            for (let i = 0; i < rows.length; i++) {
-                const evt = rows[i];
-                if (evt.type === 'started' || evt.type === 'progress' || evt.type === 'done')
-                    continue;
-                const d = evt.data || {};
-                const p = d.path || d.keep || '';
-                if (p && keepSet.has(p.toLowerCase())) {
-                    skippedKept++;
-                    continue;
-                }
-                pushEventSync(section, evt.type, d);
-                resultCount++;
-                // Yield every CHUNK rows so the event loop stays responsive
-                if (resultCount % CHUNK === 0)
-                    await new Promise(r => setTimeout(r, 0));
-            }
-            if (skippedKept)
-                _T('CACHE', `${section}: filtered out ${skippedKept} kept files`);
-            if (resultCount > 0) {
-                // Rebuild scan-filter dropdown � trackExt ran during addRow but
-                // the 'done' event (which calls SF.rebuild) is skipped on restore
-                const SF = window._scanFilter;
-                if (SF?.reset)
-                    SF.reset(section);
-                if (SF?.rebuild)
-                    SF.rebuild(section);
-                const bar = document.getElementById(`sb-${section}`);
-                if (bar)
-                    bar.className = 'section-sb done';
-                _sectionStatusMap.set(section, 'done');
-                _updateNavButtonStatus(section);
-                _set(section, 'status', '♻ Restored');
-                _set(section, 'time', '—');
-                const more = hasMore(section);
-                const moreLabel = more ? ' · more available' : '';
-                // Show human-readable cache age
-                let ageLabel = '';
-                if (ageMin != null) {
-                    if (ageMin < 60)
-                        ageLabel = ` · ${Math.round(ageMin)}m ago`;
-                    else if (ageMin < 1440)
-                        ageLabel = ` · ${(ageMin / 60).toFixed(1)}h ago`;
-                    else
-                        ageLabel = ` · ${(ageMin / 1440).toFixed(1)}d ago`;
-                }
-                _folder(section, `Restored · ${resultCount} results${moreLabel}${ageLabel}`);
-                // Update toolbar Load More button state
-                _updateLoadMoreBtn(section);
-                // Show Delete All Copies button for images when restored
-                if (section === 'images' && resultCount > 0) {
-                    const delBtn = document.getElementById('imgDeleteAllBtn');
-                    if (delBtn)
-                        delBtn.style.display = '';
-                }
-            }
-        }
-        catch (e) {
-            _T('CACHE', `${section}: error ${e.message}`);
-        }
-        // Yield to event loop between sections so WS onopen / other callbacks
-        // aren't starved by large synchronous pushEventSync batches.
-        await new Promise(r => setTimeout(r, 0));
-    }
-    crumb('init', 'restoreCache:done');
-    _T('CACHE', 'restoreCachedResults DONE');
+    await new Promise((r) => setTimeout(r, 0));
+  }
+  crumb("init", "restoreCache:done");
+  _T("CACHE", "restoreCachedResults DONE");
 }
-// ── Toolbar Load More button management ──────────────────────────────────
-// Each section has a static button #loadMore-{section} in the toolbar.
-// We enable/disable it and toggle the green/red dot based on hasMore().
 function _updateLoadMoreBtn(section) {
-    const btn = document.getElementById(`loadMore-${section}`);
-    if (!btn)
-        return;
-    const dot = btn.querySelector('.lm-dot');
-    const more = hasMore(section);
-    btn.disabled = !more;
-    btn.classList.remove('loading');
-    if (dot) {
-        dot.classList.toggle('green', more);
-        dot.classList.toggle('red', !more);
-    }
-    btn.textContent = '';
-    btn.appendChild(dot || _makeDot(more));
-    btn.appendChild(document.createTextNode(' Load More Results'));
+  const btn = document.getElementById(`loadMore-${section}`);
+  if (!btn) return;
+  const dot = btn.querySelector(".lm-dot");
+  const more = hasMore(section);
+  btn.disabled = !more;
+  btn.classList.remove("loading");
+  if (dot) {
+    dot.classList.toggle("green", more);
+    dot.classList.toggle("red", !more);
+  }
+  btn.textContent = "";
+  btn.appendChild(dot || _makeDot(more));
+  btn.appendChild(document.createTextNode(" Load More Results"));
 }
 function _makeDot(isGreen) {
-    const dot = document.createElement('span');
-    dot.className = `lm-dot ${isGreen ? 'green' : 'red'}`;
-    return dot;
+  const dot = document.createElement("span");
+  dot.className = `lm-dot ${isGreen ? "green" : "red"}`;
+  return dot;
 }
-// ── On-Navigate Cache Restore ────────────────────────────────────────────
-// When the user navigates to a section whose background scan finished while
-// it wasn't visible, the scan-grid is empty even though the cache has rows.
-// This restores the first cache page if the grid is empty and scan is done.
 async function _restoreSectionIfEmpty(section) {
-    if (_sectionStatusMap.get(section) !== 'done')
-        return;
-    if ((window._scanGrid?.rowCount?.(section) ?? 0) > 0)
-        return;
-    _T('CACHE', `onShow restore: ${section}`);
-    try {
-        const { rows } = await loadPage(section);
-        if (!rows.length)
-            return;
-        let count = 0;
-        for (const evt of rows) {
-            if (evt.type === 'started' || evt.type === 'progress' || evt.type === 'done')
-                continue;
-            pushEventSync(section, evt.type, evt.data || {});
-            count++;
-            if (count % 200 === 0)
-                await new Promise(r => setTimeout(r, 0));
-        }
-        if (count > 0) {
-            window._scanFilter?.rebuild?.(section);
-            _folder(section, `Restored · ${count} results`);
-            _updateLoadMoreBtn(section);
-        }
-        _T('CACHE', `onShow restore: ${section} → ${count} rows`);
+  if (_sectionStatusMap.get(section) !== "done") return;
+  if ((window._scanGrid?.rowCount?.(section) ?? 0) > 0) return;
+  _T("CACHE", `onShow restore: ${section}`);
+  try {
+    const { rows } = await loadPage(section);
+    if (!rows.length) return;
+    let count = 0;
+    for (const evt of rows) {
+      if (evt.type === "started" || evt.type === "progress" || evt.type === "done") continue;
+      pushEventSync(section, evt.type, evt.data || {});
+      count++;
+      if (count % 200 === 0) await new Promise((r) => setTimeout(r, 0));
     }
-    catch (e) {
-        _T('CACHE', `onShow restore error: ${section}: ${e.message}`);
+    if (count > 0) {
+      window._scanFilter?.rebuild?.(section);
+      _folder(section, `Restored \xB7 ${count} results`);
+      _updateLoadMoreBtn(section);
     }
+    _T("CACHE", `onShow restore: ${section} \u2192 ${count} rows`);
+  } catch (e) {
+    _T("CACHE", `onShow restore error: ${section}: ${e.message}`);
+  }
 }
 window._restoreSectionIfEmpty = _restoreSectionIfEmpty;
-// ── Section scan status tracker ─────────────────────────────────────────
-// Tracks the current scan state for each section (idle, scanning, done, error)
-const _sectionStatusMap = new Map();
+const _sectionStatusMap = /* @__PURE__ */ new Map();
 window._setSectionStatus = (section, status) => {
-    const validStatuses = ['idle', 'scanning', 'done', 'error'];
-    if (!validStatuses.includes(status))
-        return;
-    _sectionStatusMap.set(section, status);
-    _updateNavButtonStatus(section);
+  const validStatuses = ["idle", "scanning", "done", "error"];
+  if (!validStatuses.includes(status)) return;
+  _sectionStatusMap.set(section, status);
+  _updateNavButtonStatus(section);
 };
 function _updateNavButtonStatus(section) {
-    const btn = document.querySelector(`button[data-section="${section}"]`);
-    if (!btn)
-        return;
-    const light = btn.querySelector('.btn-status-light');
-    if (!light)
-        return;
-    const status = _sectionStatusMap.get(section) || 'idle';
-    light.className = `btn-status-light status-${status}`;
+  const btn = document.querySelector(`button[data-section="${section}"]`);
+  if (!btn) return;
+  const light = btn.querySelector(".btn-status-light");
+  if (!light) return;
+  const status = _sectionStatusMap.get(section) || "idle";
+  light.className = `btn-status-light status-${status}`;
 }
-// Wire up click handlers for all static Load More buttons
 function _wireLoadMoreButtons() {
-    const sections = ['duplicates', 'smart-dedup', 'stale', 'large', 'node-modules', 'venvs', 'empty', 'images', 'backups', 'tiny-files', 'html-files', 'css-files', 'ext-search'];
-    for (const section of sections) {
-        const btn = document.getElementById(`loadMore-${section}`);
-        if (!btn)
-            continue;
-        btn.addEventListener('click', async () => {
-            if (btn.disabled)
-                return;
-            btn.disabled = true;
-            btn.classList.add('loading');
-            const dot = btn.querySelector('.lm-dot');
-            // Keep the dot, update text
-            btn.textContent = '';
-            if (dot)
-                btn.appendChild(dot);
-            btn.appendChild(document.createTextNode(' Loading\u2026'));
-            const { rows } = await loadPage(section);
-            let added = 0;
-            rows.forEach(evt => {
-                if (evt.type === 'started' || evt.type === 'progress' || evt.type === 'done')
-                    return;
-                pushEvent(section, evt.type, evt.data || {});
-                added++;
-            });
-            _updateLoadMoreBtn(section);
-        });
-    }
+  const sections = ["duplicates", "smart-dedup", "stale", "large", "node-modules", "venvs", "empty", "images", "backups", "tiny-files", "html-files", "css-files", "ext-search"];
+  for (const section of sections) {
+    const btn = document.getElementById(`loadMore-${section}`);
+    if (!btn) continue;
+    btn.addEventListener("click", async () => {
+      if (btn.disabled) return;
+      btn.disabled = true;
+      btn.classList.add("loading");
+      const dot = btn.querySelector(".lm-dot");
+      btn.textContent = "";
+      if (dot) btn.appendChild(dot);
+      btn.appendChild(document.createTextNode(" Loading\u2026"));
+      const { rows } = await loadPage(section);
+      let added = 0;
+      rows.forEach((evt) => {
+        if (evt.type === "started" || evt.type === "progress" || evt.type === "done") return;
+        pushEvent(section, evt.type, evt.data || {});
+        added++;
+      });
+      _updateLoadMoreBtn(section);
+    });
+  }
 }
-// Expose update function so other modules (actions.js) can refresh the button
 window._updateLoadMoreBtn = _updateLoadMoreBtn;
-// ── Scan Toolbars — mount MCD toolbar for every scan section ─────────────
-// ONE-TIME-ONE-PLACE: ScanToolbarView owns all toolbar HTML.
-// SCAN_TOOLBAR_CONFIGS is the single source of truth for what each section has.
 const _toolbarVMs = {};
 function _mountScanToolbars() {
-    for (const config of SCAN_TOOLBAR_CONFIGS) {
-        const vm = new ScanToolbarVM(config);
-        const view = new ScanToolbarView(config, {
-            onScan: () => startScan(config.section),
-            onCancel: () => cancelScan(config.section),
-            onSelectAll: () => window._selectAll?.(config.tableId),
-            onSelectNone: () => window._selectNone?.(config.tableId),
-            onDeleteSelected: () => {
-                const sgPaths = window._scanGrid?.getChecked?.(config.section) ?? [];
-                if (sgPaths.length) {
-                    window._scanGrid.removeByPaths(sgPaths);
-                    window.TrashQ?.enqueue(sgPaths);
-                }
-                else {
-                    window._trashSelected?.(config.tableId);
-                }
-            },
-            onKeepSelected: () => window.keepSelected?.(config.tableId),
-            onDeleteAllCopies: () => window._deleteAllCopies?.(config.section),
-            onApplyAll: () => window._applySmartDedup?.(),
-            onHtmlUtility: (utility) => window._runHtmlUtility?.(utility),
-            onCssMergeAnalyze: () => window._runCssMergeAnalyze?.(config.section),
-            onFullView: () => window.open('/tinyfiles-render.html', '_blank'),
-        });
-        vm.bindView(view);
-        view.mount();
-        // Images: expose legacy #imgDeleteAllBtn ID for existing action handlers
-        if (config.section === 'images')
-            view.exposeDeleteAllAsLegacyId();
-        _toolbarVMs[config.section] = vm;
-    }
+  for (const config of SCAN_TOOLBAR_CONFIGS) {
+    const vm = new ScanToolbarVM(config);
+    const view = new ScanToolbarView(config, {
+      onScan: () => startScan(config.section),
+      onCancel: () => cancelScan(config.section),
+      onSelectAll: () => window._selectAll?.(config.tableId),
+      onSelectNone: () => window._selectNone?.(config.tableId),
+      onDeleteSelected: () => {
+        const sgPaths = window._scanGrid?.getChecked?.(config.section) ?? [];
+        if (sgPaths.length) {
+          window._scanGrid.removeByPaths(sgPaths);
+          window.TrashQ?.enqueue(sgPaths);
+        } else {
+          window._trashSelected?.(config.tableId);
+        }
+      },
+      onKeepSelected: () => window.keepSelected?.(config.tableId),
+      onDeleteAllCopies: () => window._deleteAllCopies?.(config.section),
+      onApplyAll: () => window._applySmartDedup?.(),
+      onDeleteAllDevCache: () => window._deleteAllDevCaches?.(),
+      onHtmlUtility: (utility) => window._runHtmlUtility?.(utility),
+      onCssMergeAnalyze: () => window._runCssMergeAnalyze?.(config.section),
+      onFullView: () => window.open("/tinyfiles-render.html", "_blank")
+    });
+    vm.bindView(view);
+    view.mount();
+    if (config.section === "images") view.exposeDeleteAllAsLegacyId();
+    _toolbarVMs[config.section] = vm;
+  }
 }
-// Expose so section controllers can drive toolbar state
 window._scanToolbarVMs = _toolbarVMs;
 async function _copyTextToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
     try {
-        await navigator.clipboard.writeText(text);
-        return true;
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand("copy");
+      ta.remove();
+      return ok;
+    } catch {
+      return false;
     }
-    catch {
-        try {
-            const ta = document.createElement('textarea');
-            ta.value = text;
-            ta.style.position = 'fixed';
-            ta.style.opacity = '0';
-            document.body.appendChild(ta);
-            ta.select();
-            const ok = document.execCommand('copy');
-            ta.remove();
-            return ok;
-        }
-        catch {
-            return false;
-        }
-    }
+  }
 }
 function _buildGithubChatSnapshot() {
-    const conn = document.getElementById('connStatus');
-    const root = document.getElementById('rootDisplay');
-    const saved = document.getElementById('totalSaved');
-    const queued = document.getElementById('queueBadge');
-    const kept = document.getElementById('keepCountBadge');
-    const threadVal = document.getElementById('threadVal');
-    const uptimeVal = document.getElementById('uptimeVal');
-    const lines = [
-        'DiskCleanUp Dashboard Snapshot',
-        `Time: ${new Date().toISOString()}`,
-        `URL: ${location.href}`,
-        `Connection: ${(conn?.textContent || '').trim()} [${conn?.className || 'unknown'}]`,
-        `Root: ${(root?.textContent || '').trim()}`,
-        `Saved: ${(saved?.textContent || '').trim() || '(n/a)'}`,
-        `Queued: ${(queued?.textContent || '').trim() || '(n/a)'}`,
-        `Kept: ${(kept?.textContent || '').trim() || '0'}`,
-        `Threads: ${(threadVal?.textContent || '').trim() || '(n/a)'}`,
-        `Uptime: ${(uptimeVal?.textContent || '').trim() || '(n/a)'}`,
-    ];
-    return lines.join('\n');
+  const conn = document.getElementById("connStatus");
+  const root = document.getElementById("rootDisplay");
+  const saved = document.getElementById("totalSaved");
+  const queued = document.getElementById("queueBadge");
+  const kept = document.getElementById("keepCountBadge");
+  const threadVal = document.getElementById("threadVal");
+  const uptimeVal = document.getElementById("uptimeVal");
+  const lines = [
+    "DiskCleanUp Dashboard Snapshot",
+    `Time: ${(/* @__PURE__ */ new Date()).toISOString()}`,
+    `URL: ${location.href}`,
+    `Connection: ${(conn?.textContent || "").trim()} [${conn?.className || "unknown"}]`,
+    `Root: ${(root?.textContent || "").trim()}`,
+    `Saved: ${(saved?.textContent || "").trim() || "(n/a)"}`,
+    `Queued: ${(queued?.textContent || "").trim() || "(n/a)"}`,
+    `Kept: ${(kept?.textContent || "").trim() || "0"}`,
+    `Threads: ${(threadVal?.textContent || "").trim() || "(n/a)"}`,
+    `Uptime: ${(uptimeVal?.textContent || "").trim() || "(n/a)"}`
+  ];
+  return lines.join("\n");
 }
 function _wireGithubChatCopyButton() {
-    const btn = document.getElementById('copyGithubChatBtn');
-    if (!btn)
-        return;
-    btn.addEventListener('click', async () => {
-        const original = btn.textContent || '📋 Copy for Chat';
-        btn.disabled = true;
-        const snapshot = _buildGithubChatSnapshot();
-        const ok = await _copyTextToClipboard(snapshot);
-        btn.textContent = ok ? '👍 Copied' : '🚫 Copy failed';
-        setTimeout(() => {
-            btn.textContent = original;
-            btn.disabled = false;
-        }, 1400);
-    });
+  const btn = document.getElementById("copyGithubChatBtn");
+  if (!btn) return;
+  btn.addEventListener("click", async () => {
+    const original = btn.textContent || "\u{1F4CB} Copy for Chat";
+    btn.disabled = true;
+    const snapshot = _buildGithubChatSnapshot();
+    const ok = await _copyTextToClipboard(snapshot);
+    btn.textContent = ok ? "\u{1F44D} Copied" : "\u{1F6AB} Copy failed";
+    setTimeout(() => {
+      btn.textContent = original;
+      btn.disabled = false;
+    }, 1400);
+  });
 }
-// ── Background scan driver ───────────────────────────────────────────────
-const SCAN_SECTIONS = ['duplicates', 'smart-dedup', 'stale', 'large', 'node-modules',
-    'venvs', 'empty', 'images', 'backups', 'tiny-files', 'html-files', 'css-files', 'ext-search'];
+const SCAN_SECTIONS = [
+  "duplicates",
+  "smart-dedup",
+  "stale",
+  "large",
+  "node-modules",
+  "venvs",
+  "empty",
+  "images",
+  "backups",
+  "tiny-files",
+  "html-files",
+  "css-files",
+  "ext-search"
+];
 async function _startBackgroundScans() {
-    await new Promise(r => setTimeout(r, 2000));
-    for (const section of SCAN_SECTIONS) {
-        if (_sectionStatusMap.get(section) === 'done')
-            continue;
-        _T('BG_SCAN', `auto-starting ${section}`);
-        startScan(section);
-        await new Promise(resolve => {
-            const CHECK_INTERVAL = 1000;
-            const MAX_WAIT = 5 * 60 * 1000;
-            let waited = 0;
-            const timer = setInterval(() => {
-                waited += CHECK_INTERVAL;
-                const status = _sectionStatusMap.get(section);
-                if (status === 'done' || status === 'error' || waited >= MAX_WAIT) {
-                    clearInterval(timer);
-                    resolve();
-                }
-            }, CHECK_INTERVAL);
-        });
-    }
-    _T('BG_SCAN', 'all background scans complete');
+  await new Promise((r) => setTimeout(r, 2e3));
+  for (const section of SCAN_SECTIONS) {
+    if (_sectionStatusMap.get(section) === "done") continue;
+    _T("BG_SCAN", `auto-starting ${section}`);
+    startScan(section);
+    await new Promise((resolve) => {
+      const CHECK_INTERVAL = 1e3;
+      const MAX_WAIT = 5 * 60 * 1e3;
+      let waited = 0;
+      const timer = setInterval(() => {
+        waited += CHECK_INTERVAL;
+        const status = _sectionStatusMap.get(section);
+        if (status === "done" || status === "error" || waited >= MAX_WAIT) {
+          clearInterval(timer);
+          resolve();
+        }
+      }, CHECK_INTERVAL);
+    });
+  }
+  _T("BG_SCAN", "all background scans complete");
 }
-// Kick everything off
 try {
-    crumb('init', 'boot');
-    _T('INIT', 'wireLoadMoreButtons');
-    _wireLoadMoreButtons();
-    _T('INIT', 'mountScanToolbars');
-    _mountScanToolbars();
-    _T('INIT', 'wireGithubChatCopyButton');
-    _wireGithubChatCopyButton();
-    _T('INIT', 'initNavButtons');
-    for (const btn of Array.from(document.querySelectorAll('nav button[data-section]'))) {
-        _sectionStatusMap.set(btn.dataset.section, 'idle');
-    }
-    _T('INIT', 'restoreActiveTab');
-    restoreActiveTab();
-    _T('INIT', 'restoreCachedResults');
-    restoreCachedResults().then(() => _startBackgroundScans());
-    crumb('init', 'wsConnect');
-    _T('INIT', 'wsConnect');
-    wsConnect();
-    _T('INIT', 'loadSettings');
-    loadSettings();
-    _T('INIT', 'initKeepList');
-    initKeepList();
-    _T('INIT', 'updateTotalSaved');
-    updateTotalSaved();
-    crumb('init', 'boot:done');
-    _T('INIT', 'sync done - main thread free');
+  crumb("init", "boot");
+  _T("INIT", "wireLoadMoreButtons");
+  _wireLoadMoreButtons();
+  _T("INIT", "mountScanToolbars");
+  _mountScanToolbars();
+  _T("INIT", "wireGithubChatCopyButton");
+  _wireGithubChatCopyButton();
+  _T("INIT", "initNavButtons");
+  for (const btn of Array.from(document.querySelectorAll("nav button[data-section]"))) {
+    _sectionStatusMap.set(btn.dataset.section, "idle");
+  }
+  _T("INIT", "restoreActiveTab");
+  restoreActiveTab();
+  _T("INIT", "restoreCachedResults");
+  restoreCachedResults().then(() => _startBackgroundScans());
+  crumb("init", "wsConnect");
+  _T("INIT", "wsConnect");
+  wsConnect();
+  _T("INIT", "loadSettings");
+  loadSettings();
+  _T("INIT", "initKeepList");
+  initKeepList();
+  _T("INIT", "updateTotalSaved");
+  updateTotalSaved();
+  crumb("init", "boot:done");
+  _T("INIT", "sync done - main thread free");
+} catch (e) {
+  console.error("[INIT] boot failed:", e);
 }
-catch (e) {
-    console.error('[INIT] boot failed:', e);
-}
-// Prime session badge silently
-apiFetch('/api/session', {}, { timeout: 20000 }).then(s => {
-    _T('INIT', 'session badge loaded');
-    const b = document.getElementById('sessionBadge');
-    if (b && s?.label)
-        b.textContent = String.fromCodePoint(0x1F4CB) + ' ' + s.label;
-}).catch(() => { });
-//# sourceMappingURL=init.js.map
+apiFetch("/api/session", {}, { timeout: 2e4 }).then((s) => {
+  _T("INIT", "session badge loaded");
+  const b = document.getElementById("sessionBadge");
+  if (b && s?.label) b.textContent = String.fromCodePoint(128203) + " " + s.label;
+}).catch(() => {
+});

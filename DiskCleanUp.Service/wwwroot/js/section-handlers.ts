@@ -136,6 +136,20 @@ try {
     trackResults: true,
   });
 
+  // DEV CACHES (.vscode-test-web, .playwright, __pycache__, etc.)
+  _registerStandardSection({
+    section: 'dev-cache',
+    containerId: 'devCacheResult',
+    columns: [COL.check, COL.delBtn, COL.keepBtn,
+      { key: 'folderName', label: 'Cache Type', width: 180, type: 'badge' },
+      { key: 'path', label: 'Path', flex: 3, minWidth: 150, type: 'path' },
+      COL.size, COL.open],
+    doneMsg: (msg) => `Done — ${msg.results} dev cache folder(s) found`,
+    progressMap: (msg) => ({ results: msg.results, folder: msg.folder }),
+    mapRow: (msg) => ({ path: msg.path, size: msg.size, folderName: msg.folderName }),
+    trackResults: true,
+  });
+
   _registerStandardSection({
     section: 'empty',
     containerId: 'emptyResult',

@@ -30,6 +30,7 @@ export const SCAN_TOOLBAR_CONFIGS = [
   { section: 'stale',        tableId: 'staleTable',   specialty: ['white-bg']                      },
   { section: 'large',        tableId: 'largeTable',   specialty: ['white-bg']                      },
   { section: 'node-modules', tableId: 'nmTable',      specialty: ['white-bg']                      },
+  { section: 'dev-cache',   tableId: 'devCacheTable', specialty: ['delete-all-dev-cache', 'white-bg'] },
   { section: 'venvs',        tableId: 'venvTable',    specialty: ['white-bg']                      },
   { section: 'empty',        tableId: 'emptyTable',   specialty: ['white-bg']                      },
   { section: 'images',       tableId: 'imageTable',   specialty: ['delete-all-copies', 'white-bg'] },

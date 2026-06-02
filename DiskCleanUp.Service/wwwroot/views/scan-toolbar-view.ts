@@ -60,6 +60,12 @@ export class ScanToolbarView {
       this._els.deleteAllCopies.dataset.action = 'trash-all-copies';
     }
 
+    if (specialty.includes('delete-all-dev-cache')) {
+      this._els.deleteAllDevCache = this._btn('btn danger', '🗑 Delete All Caches', () => this._callbacks.onDeleteAllDevCache?.());
+      this._els.deleteAllDevCache.dataset.action = 'delete-all-dev-cache';
+      this._els.deleteAllDevCache.title = 'Permanently delete ALL found dev cache folders — safe, they regenerate automatically';
+    }
+
     if (specialty.includes('apply-all')) {
       this._els.applyAll = this._btn('btn danger', '⚡ Apply All (Delete Copies)', () => this._callbacks.onApplyAll?.());
       this._els.applyAll.dataset.action = 'apply-smart-dedup';
@@ -100,8 +106,16 @@ export class ScanToolbarView {
     }
 
     if (specialty.includes('css-merge-analyze')) {
-      this._els.cssMergeAnalyze = this._btn('btn muted', '🔬 Analyze Merge', () => this._callbacks.onCssMergeAnalyze?.());
+      this._els.cssMergeAnalyze = this._btn('btn muted btn-css-merge-analyze', '🔬 Analyze Merge', () => this._callbacks.onCssMergeAnalyze?.());
       this._els.cssMergeAnalyze.title = 'Dry-run CSS merge analysis — no files are modified';
+      const excludeInput = document.createElement('input');
+      excludeInput.type = 'text';
+      excludeInput.className = 'css-merge-exclude-input';
+      excludeInput.placeholder = 'Exclude folders (e.g. _sass,vendor,lib)';
+      excludeInput.value = '_sass,node_modules,vendor,lib,dist,bower_components,bootstrap,font-awesome';
+      excludeInput.title = 'Comma-separated folder name patterns to exclude from merge analysis';
+      excludeInput.style.cssText = 'font-size:11px;padding:3px 7px;border-radius:4px;border:1px solid var(--border,#444);background:var(--surface,#1e1e1e);color:var(--fg,#eee);width:260px;margin-left:4px';
+      this._els.mergeExcludeInput = excludeInput;
     }
 
     if (specialty.includes('white-bg')) {
@@ -146,10 +160,14 @@ export class ScanToolbarView {
     container.appendChild(this._els.keepSelected);
     if (this._els.deleteAllCopies) container.appendChild(this._els.deleteAllCopies);
     if (this._els.applyAll) container.appendChild(this._els.applyAll);
+    if (this._els.deleteAllDevCache) container.appendChild(this._els.deleteAllDevCache);
     if (this._els.utilities) container.appendChild(this._els.utilities);
     if (this._els.utilityItems?.length) for (const btn of this._els.utilityItems) container.appendChild(btn);
     if (this._els.whiteBg) container.appendChild(this._els.whiteBg);
-    if (this._els.cssMergeAnalyze) container.appendChild(this._els.cssMergeAnalyze);
+    if (this._els.cssMergeAnalyze) {
+      container.appendChild(this._els.cssMergeAnalyze);
+      if (this._els.mergeExcludeInput) container.appendChild(this._els.mergeExcludeInput);
+    }
     container.appendChild(this._els.loadMore);
     if (this._els.fullView) container.appendChild(this._els.fullView);
     container.appendChild(this._els.trace);

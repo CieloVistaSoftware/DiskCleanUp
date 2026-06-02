@@ -165,6 +165,32 @@ Restore with: npm install`)) return;
     formatAlert: (res) => `Freed ${fmt(res?.freed ?? 0)}`
   });
 }
+async function deleteAllDevCaches() {
+  crumb("actions", "deleteAllDevCaches");
+  const paths = SG.getChecked("dev-cache");
+  if (!paths.length) {
+    alert("Scan for Dev Caches first, then click Delete All Caches.");
+    return;
+  }
+  if (!confirm(
+    `Permanently delete ${paths.length} dev cache folder(s)?
+
+These are always safe to delete \u2014 they regenerate automatically.
+
+` + paths.slice(0, 5).join("\n") + (paths.length > 5 ? `
+\u2026 and ${paths.length - 5} more` : "")
+  )) return;
+  window._T?.("TRASH", `DEV-CACHE delete ${paths.length} folders`);
+  await _postAndRescan({
+    endpoint: "/api/delete-permanent",
+    body: { paths },
+    section: "dev-cache",
+    timeout: 12e4,
+    label: `DEV-CACHE (${paths.length} folders)`,
+    formatAlert: (res) => `Freed ${fmt(res?.freed ?? 0)}`,
+    trackSavings: true
+  });
+}
 async function deleteEmpty() {
   crumb("actions", "deleteEmpty");
   let paths = SG.getChecked("empty");
@@ -837,9 +863,11 @@ window._trashSelected = trashSelected;
 window._extractSvgFromSelectedHtml = extractSvgFromSelectedHtml;
 window._runHtmlUtility = runHtmlUtility;
 window._runCssMergeAnalyze = runCssMergeAnalyze;
+window._deleteAllDevCaches = deleteAllDevCaches;
 export {
   applySmartDedup,
   cancelScan,
+  deleteAllDevCaches,
   deleteEmpty,
   deleteNMSelected,
   extractSvgFromSelectedHtml,

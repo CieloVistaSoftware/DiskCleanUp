@@ -1,209 +1,195 @@
-// ═══════════════════════════════════════════════════════════════════════════
-//  SCAN TOOLBAR VIEW — pure DOM renderer for the MCD scan toolbar.
-//
-//  Renders into: <div id="toolbar-{section}"></div>
-//  Knows nothing about: JSONL, APIs, WebSockets, scan logic.
-//
-//  ONE-TIME-ONE-PLACE: the MCD toolbar HTML lives here and only here.
-//  Specialty buttons are added via the config.specialty array.
-// ═══════════════════════════════════════════════════════════════════════════
-import { ErrLog } from '../js/error-logger.js';
-export class ScanToolbarView {
-    constructor(config, callbacks = {}) {
-        this._config = config;
-        this._callbacks = callbacks;
-        this._rendered = false;
-        this._els = {}; // name → element reference
+var __defProp = Object.defineProperty;
+var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
+class ScanToolbarView {
+  constructor(config, callbacks = {}) {
+    __publicField(this, "_config");
+    __publicField(this, "_callbacks");
+    __publicField(this, "_rendered");
+    __publicField(this, "_els");
+    this._config = config;
+    this._callbacks = callbacks;
+    this._rendered = false;
+    this._els = {};
+  }
+  // ── Initial render ────────────────────────────────────────
+  mount() {
+    const { section, tableId, specialty } = this._config;
+    const container = document.getElementById(`toolbar-${section}`);
+    if (!container) return;
+    container.className = "toolbar";
+    const filterBar = document.createElement("div");
+    filterBar.id = `sf-${section}`;
+    filterBar.className = "scan-filter-bar";
+    container.appendChild(filterBar);
+    this._els.scan = this._btn("btn", `\u{1F50D} Scan`, () => this._callbacks.onScan?.());
+    this._els.scan.dataset.action = "scan";
+    this._els.scan.dataset.section = section;
+    this._els.cancel = this._btn("btn muted", `\u2716 Cancel`, () => this._callbacks.onCancel?.());
+    this._els.cancel.dataset.action = "cancel";
+    this._els.cancel.dataset.section = section;
+    this._els.deleteSelected = this._btn("btn danger", "\u{1F5D1} Delete Selected", () => this._callbacks.onDeleteSelected?.());
+    this._els.deleteSelected.dataset.action = "trash-selected";
+    this._els.deleteSelected.dataset.grid = section;
+    this._els.deleteSelected.dataset.table = tableId;
+    this._els.keepSelected = this._btn("btn-keep", "\u{1F512} Keep Selected", () => this._callbacks.onKeepSelected?.());
+    this._els.keepSelected.dataset.gridSection = section;
+    this._els.keepSelected.disabled = true;
+    if (specialty.includes("delete-all-copies")) {
+      this._els.deleteAllCopies = this._btn("btn danger hidden", "\u{1F5D1} Delete All Copies", () => this._callbacks.onDeleteAllCopies?.());
+      this._els.deleteAllCopies.id = `imgDeleteAllBtn-${section}`;
+      this._els.deleteAllCopies.dataset.action = "trash-all-copies";
     }
-    // ── Initial render ────────────────────────────────────────
-    mount() {
-        try {
-        const { section, tableId, specialty } = this._config;
-        const container = document.getElementById(`toolbar-${section}`);
-        if (!container)
-            return;
-        container.className = 'toolbar';
-        const filterBar = document.createElement('div');
-        filterBar.id = `sf-${section}`;
-        filterBar.className = 'scan-filter-bar';
-        container.appendChild(filterBar);
-        this._els.scan = this._btn('btn', `🔍 Scan`, () => this._callbacks.onScan?.());
-        this._els.scan.dataset.action = 'scan';
-        this._els.scan.dataset.section = section;
-        this._els.cancel = this._btn('btn muted', `✖ Cancel`, () => this._callbacks.onCancel?.());
-        this._els.cancel.dataset.action = 'cancel';
-        this._els.cancel.dataset.section = section;
-        this._els.deleteSelected = this._btn('btn danger', '🗑 Delete Selected', () => this._callbacks.onDeleteSelected?.());
-        this._els.deleteSelected.dataset.action = 'trash-selected';
-        this._els.deleteSelected.dataset.grid = section;
-        this._els.deleteSelected.dataset.table = tableId;
-        this._els.keepSelected = this._btn('btn-keep', '🔒 Keep Selected', () => this._callbacks.onKeepSelected?.());
-        this._els.keepSelected.dataset.gridSection = section;
-        this._els.keepSelected.disabled = true;
-        if (specialty.includes('delete-all-copies')) {
-            this._els.deleteAllCopies = this._btn('btn danger hidden', '🗑 Delete All Copies', () => this._callbacks.onDeleteAllCopies?.());
-            this._els.deleteAllCopies.id = `imgDeleteAllBtn-${section}`;
-            this._els.deleteAllCopies.dataset.action = 'trash-all-copies';
-        }
-        if (specialty.includes('apply-all')) {
-            this._els.applyAll = this._btn('btn danger', '⚡ Apply All (Delete Copies)', () => this._callbacks.onApplyAll?.());
-            this._els.applyAll.dataset.action = 'apply-smart-dedup';
-        }
-        if (specialty.includes('html-utilities')) {
-            this._els.utilities = this._btn('btn muted', '🧰 UTILITIES', () => {
-                const items = this._els.utilityItems || [];
-                const anyVisible = items.some((btn) => !btn.classList.contains('hidden'));
-                items.forEach((btn) => btn.classList.toggle('hidden', anyVisible));
-            });
-            this._els.utilities.title = 'Show utility actions';
-            const utilityDefs = [
-                ['extract-svg', 'Extract SVG From HTML'],
-                ['extract-css', 'Extract CSS To .css'],
-                ['extract-js', 'Extract JS To .js'],
-                ['inline-asset-report', 'Inline Asset Report'],
-                ['convert-data-uri-images', 'Convert Data URI Images'],
-                ['remove-dead-tags', 'Remove Dead Tags'],
-                ['normalize-paths', 'Normalize Paths'],
-                ['find-broken-links', 'Find Broken Links'],
-                ['a11y-quick-fix', 'Accessibility Quick Fix'],
-                ['format-html', 'Minify + Pretty Format'],
-                ['split-multi-svg', 'Split Multi-SVG HTML'],
-                ['extract-icons-symbols', 'Extract Icons/Symbols'],
-                ['fingerprint-diff', 'HTML Fingerprint/Diff'],
-            ];
-            this._els.utilityItems = utilityDefs.map(([key, label]) => {
-                const btn = this._btn('btn hidden', `🧩 ${label}`, () => this._callbacks.onHtmlUtility?.(key));
-                btn.dataset.action = 'run-html-utility';
-                btn.dataset.utility = key;
-                btn.dataset.section = section;
-                btn.title = label;
-                return btn;
-            });
-        }
-        if (specialty.includes('css-merge-analyze')) {
-            this._els.cssMergeAnalyze = this._btn('btn muted', '🔬 Analyze Merge', () => this._callbacks.onCssMergeAnalyze?.());
-            this._els.cssMergeAnalyze.title = 'Dry-run CSS merge analysis — no files are modified';
-        }
-        if (specialty.includes('white-bg')) {
-            let _whiteBgOn = false;
-            this._els.whiteBg = this._btn('btn muted', '⬜ White BG', () => {
-                _whiteBgOn = !_whiteBgOn;
-                const resultId = section === 'duplicates' ? 'dupResult'
-                    : section === 'images' ? 'imageResult'
-                        : `${section}Result`;
-                const cont = document.getElementById(resultId);
-                if (!cont)
-                    return;
-                cont.querySelectorAll('.dup-thumb, .img-card img, .sg-thumb')
-                    .forEach(img => { img.style.background = _whiteBgOn ? 'white' : ''; });
-                this._els.whiteBg.textContent = _whiteBgOn ? '⬛ Dark BG' : '⬜ White BG';
-                this._els.whiteBg.classList.toggle('active', _whiteBgOn);
-            });
-            this._els.whiteBg.title = 'Toggle white background on all images';
-        }
-        this._els.loadMore = document.createElement('button');
-        this._els.loadMore.className = 'btn load-more-btn-tb';
-        this._els.loadMore.id = `loadMore-${section}`;
-        this._els.loadMore.disabled = true;
-        const dot = document.createElement('span');
-        dot.className = 'lm-dot red';
-        this._els.loadMore.appendChild(dot);
-        this._els.loadMore.appendChild(document.createTextNode(' Load More Results'));
-        if (specialty.includes('full-view')) {
-            this._els.fullView = this._btn('btn muted', '🔎 Full View', () => this._callbacks.onFullView?.());
-        }
-        this._els.trace = this._btn('btn muted', '📜 Trace', () => {
-            const tag = section.toUpperCase().replace(/-/g, '_');
-            window.open(`/trace-viewer.html?filter=${encodeURIComponent(tag)}`, '_blank');
-        });
-        this._els.trace.title = `Open trace log filtered to ${section}`;
-        container.appendChild(this._els.scan);
-        container.appendChild(this._els.cancel);
-        container.appendChild(this._els.deleteSelected);
-        container.appendChild(this._els.keepSelected);
-        if (this._els.deleteAllCopies)
-            container.appendChild(this._els.deleteAllCopies);
-        if (this._els.applyAll)
-            container.appendChild(this._els.applyAll);
-        if (this._els.utilities)
-            container.appendChild(this._els.utilities);
-        if (this._els.utilityItems?.length)
-            for (const btn of this._els.utilityItems)
-                container.appendChild(btn);
-        if (this._els.whiteBg)
-            container.appendChild(this._els.whiteBg);
-        if (this._els.cssMergeAnalyze)
-            container.appendChild(this._els.cssMergeAnalyze);
-        container.appendChild(this._els.loadMore);
-        if (this._els.fullView)
-            container.appendChild(this._els.fullView);
-        container.appendChild(this._els.trace);
-        this._rendered = true;
-        } catch (e) {
-            ErrLog.log('[scan-toolbar-view]', e?.message || String(e), e?.stack || null, 'MOUNT_ERROR');
-        }
+    if (specialty.includes("delete-all-dev-cache")) {
+      this._els.deleteAllDevCache = this._btn("btn danger", "\u{1F5D1} Delete All Caches", () => this._callbacks.onDeleteAllDevCache?.());
+      this._els.deleteAllDevCache.dataset.action = "delete-all-dev-cache";
+      this._els.deleteAllDevCache.title = "Permanently delete ALL found dev cache folders \u2014 safe, they regenerate automatically";
     }
-    // ── State-driven update ───────────────────────────────────
-    update(state) {
-        if (!this._rendered)
-            return;
-        try {
-        const { scanning, hasRows, hasSelection } = state;
-        const e = this._els;
-        this._setDisabled(e.scan, scanning);
-        this._setDisabled(e.cancel, !scanning);
-        this._setDisabled(e.deleteSelected, scanning || !hasSelection);
-        this._setDisabled(e.keepSelected, scanning || !hasSelection);
-        if (e.deleteAllCopies)
-            this._setDisabled(e.deleteAllCopies, scanning || !hasRows);
-        if (e.applyAll)
-            this._setDisabled(e.applyAll, scanning || !hasRows);
-        if (e.utilities)
-            this._setDisabled(e.utilities, scanning);
-        if (e.utilityItems?.length) {
-            for (const btn of e.utilityItems)
-                this._setDisabled(btn, scanning || !hasSelection);
-        }
-        if (e.commandMenu) {
-            const byValue = (v) => [...e.commandMenu.options].find((o) => o.value === v);
-            const scan = byValue('scan');
-            const cancel = byValue('cancel');
-            const del = byValue('delete-selected');
-            const keep = byValue('keep-selected');
-            const more = byValue('load-more');
-            if (scan)
-                scan.disabled = !!scanning;
-            if (cancel)
-                cancel.disabled = !scanning;
-            if (del)
-                del.disabled = !!scanning || !hasSelection;
-            if (keep)
-                keep.disabled = !!scanning || !hasSelection;
-            if (more)
-                more.disabled = !!e.loadMore?.disabled;
-        }
-        } catch (e) {
-            ErrLog.log('[scan-toolbar-view]', e?.message || String(e), e?.stack || null, 'UPDATE_ERROR');
-        }
+    if (specialty.includes("apply-all")) {
+      this._els.applyAll = this._btn("btn danger", "\u26A1 Apply All (Delete Copies)", () => this._callbacks.onApplyAll?.());
+      this._els.applyAll.dataset.action = "apply-smart-dedup";
     }
-    exposeDeleteAllAsLegacyId() {
-        const el = this._els.deleteAllCopies;
-        if (el && this._config.section === 'images') {
-            el.id = 'imgDeleteAllBtn';
-        }
-    }
-    // ── Helpers ───────────────────────────────────────────────
-    _btn(className, text, handler) {
-        const btn = document.createElement('button');
-        btn.className = className;
-        btn.textContent = text;
-        btn.addEventListener('click', handler);
+    if (specialty.includes("html-utilities")) {
+      this._els.utilities = this._btn("btn muted", "\u{1F9F0} UTILITIES", () => {
+        const items = this._els.utilityItems || [];
+        const anyVisible = items.some((btn) => !btn.classList.contains("hidden"));
+        items.forEach((btn) => btn.classList.toggle("hidden", anyVisible));
+      });
+      this._els.utilities.title = "Show utility actions";
+      const utilityDefs = [
+        ["extract-svg", "Extract SVG From HTML"],
+        ["extract-css", "Extract CSS To .css"],
+        ["extract-js", "Extract JS To .js"],
+        ["inline-asset-report", "Inline Asset Report"],
+        ["convert-data-uri-images", "Convert Data URI Images"],
+        ["remove-dead-tags", "Remove Dead Tags"],
+        ["normalize-paths", "Normalize Paths"],
+        ["find-broken-links", "Find Broken Links"],
+        ["a11y-quick-fix", "Accessibility Quick Fix"],
+        ["format-html", "Minify + Pretty Format"],
+        ["split-multi-svg", "Split Multi-SVG HTML"],
+        ["extract-icons-symbols", "Extract Icons/Symbols"],
+        ["fingerprint-diff", "HTML Fingerprint/Diff"]
+      ];
+      this._els.utilityItems = utilityDefs.map(([key, label]) => {
+        const btn = this._btn("btn hidden", `\u{1F9E9} ${label}`, () => this._callbacks.onHtmlUtility?.(key));
+        btn.dataset.action = "run-html-utility";
+        btn.dataset.utility = key;
+        btn.dataset.section = section;
+        btn.title = label;
         return btn;
+      });
     }
-    _setDisabled(el, disabled) {
-        if (!el)
-            return;
-        el.disabled = !!disabled;
+    if (specialty.includes("css-merge-analyze")) {
+      this._els.cssMergeAnalyze = this._btn("btn muted btn-css-merge-analyze", "\u{1F52C} Analyze Merge", () => this._callbacks.onCssMergeAnalyze?.());
+      this._els.cssMergeAnalyze.title = "Dry-run CSS merge analysis \u2014 no files are modified";
+      const excludeInput = document.createElement("input");
+      excludeInput.type = "text";
+      excludeInput.className = "css-merge-exclude-input";
+      excludeInput.placeholder = "Exclude folders (e.g. _sass,vendor,lib)";
+      excludeInput.value = "_sass,node_modules,vendor,lib,dist,bower_components,bootstrap,font-awesome";
+      excludeInput.title = "Comma-separated folder name patterns to exclude from merge analysis";
+      excludeInput.style.cssText = "font-size:11px;padding:3px 7px;border-radius:4px;border:1px solid var(--border,#444);background:var(--surface,#1e1e1e);color:var(--fg,#eee);width:260px;margin-left:4px";
+      this._els.mergeExcludeInput = excludeInput;
     }
+    if (specialty.includes("white-bg")) {
+      let _whiteBgOn = false;
+      this._els.whiteBg = this._btn("btn muted", "\u2B1C White BG", () => {
+        _whiteBgOn = !_whiteBgOn;
+        const resultId = section === "duplicates" ? "dupResult" : section === "images" ? "imageResult" : `${section}Result`;
+        const cont = document.getElementById(resultId);
+        if (!cont) return;
+        cont.querySelectorAll(".dup-thumb, .img-card img, .sg-thumb").forEach((img) => {
+          img.style.background = _whiteBgOn ? "white" : "";
+        });
+        this._els.whiteBg.textContent = _whiteBgOn ? "\u2B1B Dark BG" : "\u2B1C White BG";
+        this._els.whiteBg.classList.toggle("active", _whiteBgOn);
+      });
+      this._els.whiteBg.title = "Toggle white background on all images";
+    }
+    this._els.loadMore = document.createElement("button");
+    this._els.loadMore.className = "btn load-more-btn-tb";
+    this._els.loadMore.id = `loadMore-${section}`;
+    this._els.loadMore.disabled = true;
+    const dot = document.createElement("span");
+    dot.className = "lm-dot red";
+    this._els.loadMore.appendChild(dot);
+    this._els.loadMore.appendChild(document.createTextNode(" Load More Results"));
+    if (specialty.includes("full-view")) {
+      this._els.fullView = this._btn("btn muted", "\u{1F50E} Full View", () => this._callbacks.onFullView?.());
+    }
+    this._els.trace = this._btn("btn muted", "\u{1F4DC} Trace", () => {
+      const tag = section.toUpperCase().replace(/-/g, "_");
+      window.open(`/trace-viewer.html?filter=${encodeURIComponent(tag)}`, "_blank");
+    });
+    this._els.trace.title = `Open trace log filtered to ${section}`;
+    container.appendChild(this._els.scan);
+    container.appendChild(this._els.cancel);
+    container.appendChild(this._els.deleteSelected);
+    container.appendChild(this._els.keepSelected);
+    if (this._els.deleteAllCopies) container.appendChild(this._els.deleteAllCopies);
+    if (this._els.applyAll) container.appendChild(this._els.applyAll);
+    if (this._els.deleteAllDevCache) container.appendChild(this._els.deleteAllDevCache);
+    if (this._els.utilities) container.appendChild(this._els.utilities);
+    if (this._els.utilityItems?.length) for (const btn of this._els.utilityItems) container.appendChild(btn);
+    if (this._els.whiteBg) container.appendChild(this._els.whiteBg);
+    if (this._els.cssMergeAnalyze) {
+      container.appendChild(this._els.cssMergeAnalyze);
+      if (this._els.mergeExcludeInput) container.appendChild(this._els.mergeExcludeInput);
+    }
+    container.appendChild(this._els.loadMore);
+    if (this._els.fullView) container.appendChild(this._els.fullView);
+    container.appendChild(this._els.trace);
+    this._rendered = true;
+  }
+  // ── State-driven update ───────────────────────────────────
+  update(state) {
+    if (!this._rendered) return;
+    const { scanning, hasRows, hasSelection } = state;
+    const e = this._els;
+    this._setDisabled(e.scan, scanning);
+    this._setDisabled(e.cancel, !scanning);
+    this._setDisabled(e.deleteSelected, scanning || !hasSelection);
+    this._setDisabled(e.keepSelected, scanning || !hasSelection);
+    if (e.deleteAllCopies) this._setDisabled(e.deleteAllCopies, scanning || !hasRows);
+    if (e.applyAll) this._setDisabled(e.applyAll, scanning || !hasRows);
+    if (e.utilities) this._setDisabled(e.utilities, scanning);
+    if (e.utilityItems?.length) {
+      for (const btn of e.utilityItems) this._setDisabled(btn, scanning || !hasSelection);
+    }
+    if (e.commandMenu) {
+      const byValue = (v) => [...e.commandMenu.options].find((o) => o.value === v);
+      const scan = byValue("scan");
+      const cancel = byValue("cancel");
+      const del = byValue("delete-selected");
+      const keep = byValue("keep-selected");
+      const more = byValue("load-more");
+      if (scan) scan.disabled = !!scanning;
+      if (cancel) cancel.disabled = !scanning;
+      if (del) del.disabled = !!scanning || !hasSelection;
+      if (keep) keep.disabled = !!scanning || !hasSelection;
+      if (more) more.disabled = !!e.loadMore?.disabled;
+    }
+  }
+  exposeDeleteAllAsLegacyId() {
+    const el = this._els.deleteAllCopies;
+    if (el && this._config.section === "images") {
+      el.id = "imgDeleteAllBtn";
+    }
+  }
+  // ── Helpers ───────────────────────────────────────────────
+  _btn(className, text, handler) {
+    const btn = document.createElement("button");
+    btn.className = className;
+    btn.textContent = text;
+    btn.addEventListener("click", handler);
+    return btn;
+  }
+  _setDisabled(el, disabled) {
+    if (!el) return;
+    el.disabled = !!disabled;
+  }
 }
-//# sourceMappingURL=scan-toolbar-view.js.map
+export {
+  ScanToolbarView
+};
