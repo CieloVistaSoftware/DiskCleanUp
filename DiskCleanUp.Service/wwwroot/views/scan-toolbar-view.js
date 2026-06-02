@@ -35,27 +35,31 @@ class ScanToolbarView {
     this._els.keepSelected = this._btn("btn-keep", "\u{1F512} Keep Selected", () => this._callbacks.onKeepSelected?.());
     this._els.keepSelected.dataset.gridSection = section;
     this._els.keepSelected.disabled = true;
-    if (specialty.includes("delete-all-copies")) {
-      this._els.deleteAllCopies = this._btn("btn danger hidden", "\u{1F5D1} Delete All Copies", () => this._callbacks.onDeleteAllCopies?.());
-      this._els.deleteAllCopies.id = `imgDeleteAllBtn-${section}`;
-      this._els.deleteAllCopies.dataset.action = "trash-all-copies";
-    }
-    if (specialty.includes("delete-all-dev-cache")) {
-      this._els.deleteAllDevCache = this._btn("btn danger", "\u{1F5D1} Delete All Caches", () => this._callbacks.onDeleteAllDevCache?.());
-      this._els.deleteAllDevCache.dataset.action = "delete-all-dev-cache";
-      this._els.deleteAllDevCache.title = "Permanently delete ALL found dev cache folders \u2014 safe, they regenerate automatically";
-    }
-    if (specialty.includes("apply-all")) {
-      this._els.applyAll = this._btn("btn danger", "\u26A1 Apply All (Delete Copies)", () => this._callbacks.onApplyAll?.());
-      this._els.applyAll.dataset.action = "apply-smart-dedup";
-    }
-    if (specialty.includes("html-utilities")) {
-      this._els.utilities = this._btn("btn muted", "\u{1F9F0} UTILITIES", () => {
-        const items = this._els.utilityItems || [];
-        const anyVisible = items.some((btn) => !btn.classList.contains("hidden"));
-        items.forEach((btn) => btn.classList.toggle("hidden", anyVisible));
-      });
-      this._els.utilities.title = "Show utility actions";
+    const has = (key) => specialty.includes(key);
+    const _grayed = (btn, reason) => {
+      btn.disabled = true;
+      btn.title = `Not available for ${section} \u2014 ${reason}`;
+      btn.style.opacity = "0.35";
+      btn.style.cursor = "not-allowed";
+    };
+    this._els.deleteAllCopies = this._btn("btn danger hidden", "\u{1F5D1} Delete All Copies", () => this._callbacks.onDeleteAllCopies?.());
+    this._els.deleteAllCopies.id = `imgDeleteAllBtn-${section}`;
+    this._els.deleteAllCopies.dataset.action = "trash-all-copies";
+    if (!has("delete-all-copies")) _grayed(this._els.deleteAllCopies, "only on Duplicates and Dup Images");
+    this._els.applyAll = this._btn("btn danger", "\u26A1 Apply All", () => this._callbacks.onApplyAll?.());
+    this._els.applyAll.dataset.action = "apply-smart-dedup";
+    if (!has("apply-all")) _grayed(this._els.applyAll, "only on Smart Dedup");
+    this._els.deleteAllDevCache = this._btn("btn danger", "\u{1F5D1} Delete All Caches", () => this._callbacks.onDeleteAllDevCache?.());
+    this._els.deleteAllDevCache.dataset.action = "delete-all-dev-cache";
+    if (!has("delete-all-dev-cache")) _grayed(this._els.deleteAllDevCache, "only on Dev Caches");
+    this._els.utilities = this._btn("btn muted", "\u{1F9F0} Utilities", () => {
+      if (!has("html-utilities")) return;
+      const items = this._els.utilityItems || [];
+      const anyVisible = items.some((btn) => !btn.classList.contains("hidden"));
+      items.forEach((btn) => btn.classList.toggle("hidden", anyVisible));
+    });
+    if (has("html-utilities")) {
+      this._els.utilities.title = "Show utility actions for HTML files";
       const utilityDefs = [
         ["extract-svg", "Extract SVG From HTML"],
         ["extract-css", "Extract CSS To .css"],
@@ -79,9 +83,11 @@ class ScanToolbarView {
         btn.title = label;
         return btn;
       });
+    } else {
+      _grayed(this._els.utilities, "only on HTML Files");
     }
-    if (specialty.includes("css-merge-analyze")) {
-      this._els.cssMergeAnalyze = this._btn("btn muted btn-css-merge-analyze", "\u{1F52C} Analyze Merge", () => this._callbacks.onCssMergeAnalyze?.());
+    this._els.cssMergeAnalyze = this._btn("btn muted btn-css-merge-analyze", "\u{1F52C} Analyze Merge", () => this._callbacks.onCssMergeAnalyze?.());
+    if (has("css-merge-analyze")) {
       this._els.cssMergeAnalyze.title = "Dry-run CSS merge analysis \u2014 no files are modified";
       const excludeInput = document.createElement("input");
       excludeInput.type = "text";
@@ -91,22 +97,22 @@ class ScanToolbarView {
       excludeInput.title = "Comma-separated folder name patterns to exclude from merge analysis";
       excludeInput.style.cssText = "font-size:11px;padding:3px 7px;border-radius:4px;border:1px solid var(--border,#444);background:var(--surface,#1e1e1e);color:var(--fg,#eee);width:260px;margin-left:4px";
       this._els.mergeExcludeInput = excludeInput;
+    } else {
+      _grayed(this._els.cssMergeAnalyze, "only on CSS Files");
     }
-    if (specialty.includes("white-bg")) {
-      let _whiteBgOn = false;
-      this._els.whiteBg = this._btn("btn muted", "\u2B1C White BG", () => {
-        _whiteBgOn = !_whiteBgOn;
-        const resultId = section === "duplicates" ? "dupResult" : section === "images" ? "imageResult" : `${section}Result`;
-        const cont = document.getElementById(resultId);
-        if (!cont) return;
-        cont.querySelectorAll(".dup-thumb, .img-card img, .sg-thumb").forEach((img) => {
-          img.style.background = _whiteBgOn ? "white" : "";
-        });
-        this._els.whiteBg.textContent = _whiteBgOn ? "\u2B1B Dark BG" : "\u2B1C White BG";
-        this._els.whiteBg.classList.toggle("active", _whiteBgOn);
+    let _whiteBgOn = false;
+    this._els.whiteBg = this._btn("btn muted", "\u2B1C White BG", () => {
+      _whiteBgOn = !_whiteBgOn;
+      const resultId = section === "duplicates" ? "dupResult" : section === "images" ? "imageResult" : `${section}Result`;
+      const cont = document.getElementById(resultId);
+      if (!cont) return;
+      cont.querySelectorAll(".dup-thumb, .img-card img, .sg-thumb").forEach((img) => {
+        img.style.background = _whiteBgOn ? "white" : "";
       });
-      this._els.whiteBg.title = "Toggle white background on all images";
-    }
+      this._els.whiteBg.textContent = _whiteBgOn ? "\u2B1B Dark BG" : "\u2B1C White BG";
+      this._els.whiteBg.classList.toggle("active", _whiteBgOn);
+    });
+    this._els.whiteBg.title = "Toggle white background on all images in this section";
     this._els.loadMore = document.createElement("button");
     this._els.loadMore.className = "btn load-more-btn-tb";
     this._els.loadMore.id = `loadMore-${section}`;
@@ -115,9 +121,8 @@ class ScanToolbarView {
     dot.className = "lm-dot red";
     this._els.loadMore.appendChild(dot);
     this._els.loadMore.appendChild(document.createTextNode(" Load More Results"));
-    if (specialty.includes("full-view")) {
-      this._els.fullView = this._btn("btn muted", "\u{1F50E} Full View", () => this._callbacks.onFullView?.());
-    }
+    this._els.fullView = this._btn("btn muted", "\u{1F50E} Full View", () => this._callbacks.onFullView?.());
+    if (!has("full-view")) _grayed(this._els.fullView, "only on Tiny Files");
     this._els.trace = this._btn("btn muted", "\u{1F4DC} Trace", () => {
       const tag = section.toUpperCase().replace(/-/g, "_");
       window.open(`/trace-viewer.html?filter=${encodeURIComponent(tag)}`, "_blank");
@@ -127,18 +132,16 @@ class ScanToolbarView {
     container.appendChild(this._els.cancel);
     container.appendChild(this._els.deleteSelected);
     container.appendChild(this._els.keepSelected);
-    if (this._els.deleteAllCopies) container.appendChild(this._els.deleteAllCopies);
-    if (this._els.applyAll) container.appendChild(this._els.applyAll);
-    if (this._els.deleteAllDevCache) container.appendChild(this._els.deleteAllDevCache);
-    if (this._els.utilities) container.appendChild(this._els.utilities);
+    container.appendChild(this._els.deleteAllCopies);
+    container.appendChild(this._els.applyAll);
+    container.appendChild(this._els.deleteAllDevCache);
+    container.appendChild(this._els.utilities);
     if (this._els.utilityItems?.length) for (const btn of this._els.utilityItems) container.appendChild(btn);
-    if (this._els.whiteBg) container.appendChild(this._els.whiteBg);
-    if (this._els.cssMergeAnalyze) {
-      container.appendChild(this._els.cssMergeAnalyze);
-      if (this._els.mergeExcludeInput) container.appendChild(this._els.mergeExcludeInput);
-    }
+    container.appendChild(this._els.whiteBg);
+    container.appendChild(this._els.cssMergeAnalyze);
+    if (this._els.mergeExcludeInput) container.appendChild(this._els.mergeExcludeInput);
     container.appendChild(this._els.loadMore);
-    if (this._els.fullView) container.appendChild(this._els.fullView);
+    container.appendChild(this._els.fullView);
     container.appendChild(this._els.trace);
     this._rendered = true;
   }
