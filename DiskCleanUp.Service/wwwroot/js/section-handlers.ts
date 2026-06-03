@@ -13,6 +13,7 @@ import { registerSectionModule }              from './ui-utils.js';
 import { SB, _set, _folder, _getVal }         from './status-bar.js';
 import { removeSkeletons }                    from './table-utils.js';
 import { fmt }                                from './ui-utils.js';
+import { escHtml }                            from '/lib/wb-core/utils/format.js';
 import { resetPaging }                        from './page-loader.js';
 import { keepPaths }                          from './keep-list.js';
 import * as SG                                from './scan-grid.js';
