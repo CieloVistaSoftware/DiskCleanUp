@@ -103,6 +103,7 @@ public sealed class ScanTestHarness : IDisposable
 
     /// <summary>Reflection-based property access — works across assembly boundaries
     /// where dynamic/anonymous-type binding fails at runtime.</summary>
+    public static T? GetPropPublic<T>(object obj, string name) => GetProp<T>(obj, name);
     private static T? GetProp<T>(object obj, string name)
     {
         var prop = obj.GetType().GetProperty(name,
