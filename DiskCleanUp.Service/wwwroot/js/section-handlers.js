@@ -58,6 +58,9 @@ try {
           break;
       }
     });
+  }, _applyImgColumns = function() {
+    const grid = document.getElementById("imageResult");
+    if (grid) grid.style.setProperty("--img-cols", String(_imgColumns));
   }, _wireImgFilter = function() {
     const filterBar = document.getElementById("sf-images");
     if (!filterBar || filterBar.querySelector(".img-filter-input")) return;
@@ -68,12 +71,88 @@ try {
     fi.style.cssText = "margin-left:8px;width:220px;padding:2px 6px;font-size:.85rem;";
     fi.addEventListener("input", () => {
       const q = (fi.value || "").toLowerCase();
-      document.querySelectorAll("#imageResult .img-group").forEach((grp) => {
-        const paths = [...grp.querySelectorAll("p")].map((p) => (p.textContent || "").toLowerCase());
+      document.querySelectorAll("#imageResult .img-group2").forEach((grp) => {
+        const paths = [...grp.querySelectorAll(".img-path-cell")].map((p) => (p.textContent || "").toLowerCase());
         grp.style.display = !q || paths.some((p) => p.includes(q)) ? "" : "none";
       });
     });
     filterBar.appendChild(fi);
+    const colWrap = document.createElement("span");
+    colWrap.style.cssText = "margin-left:12px;display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--muted)";
+    colWrap.textContent = "Cols:";
+    const colInput = document.createElement("input");
+    colInput.type = "number";
+    colInput.min = "1";
+    colInput.max = "6";
+    colInput.value = String(_imgColumns);
+    colInput.style.cssText = "width:44px;padding:2px 4px;font-size:.85rem;text-align:center;margin-left:4px";
+    colInput.addEventListener("change", () => {
+      _imgColumns = Math.max(1, Math.min(6, parseInt(colInput.value) || 3));
+      colInput.value = String(_imgColumns);
+      localStorage.setItem("dcu_img_cols", String(_imgColumns));
+      _applyImgColumns();
+    });
+    colWrap.appendChild(colInput);
+    filterBar.appendChild(colWrap);
+    _applyImgColumns();
+  }, _buildImgCard = function(fp, isOriginal, groupEl) {
+    const card = document.createElement("div");
+    card.className = `img-card2 ${isOriginal ? "img-card2-keep" : "img-card2-copy"}`;
+    card.dataset.path = fp;
+    const img = document.createElement("img");
+    img.src = `/api/file?path=${encodeURIComponent(fp)}`;
+    img.loading = "lazy";
+    img.alt = "";
+    img.className = "img-card2-img";
+    img.onerror = () => {
+      groupEl.querySelector(`.img-path-cell[title="${fp.replace(/"/g, '\\"')}"]`)?.remove();
+      card.style.transition = "opacity .2s";
+      card.style.opacity = "0";
+      setTimeout(() => card.remove(), 220);
+    };
+    card.appendChild(img);
+    const filename = fp.replace(/.*[\\/]/, "");
+    const body = document.createElement("div");
+    body.className = "img-card2-body";
+    body.innerHTML = `<div class="img-card2-label ${isOriginal ? "img-label-original" : "img-label-copy"}">${isOriginal ? "\u2713 Original" : "\u2298 Copy"}</div><div class="img-card2-name" title="${escHtml(fp)}">${escHtml(filename)}</div>`;
+    card.appendChild(body);
+    const foot = document.createElement("div");
+    foot.className = "img-card2-foot";
+    const delBtn = document.createElement("button");
+    delBtn.className = "dup-delete-one-btn";
+    delBtn.textContent = "\u{1F5D1} Delete";
+    delBtn.addEventListener("click", () => {
+      delBtn.disabled = true;
+      delBtn.textContent = "\u23F3";
+      fetch("/api/trash", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ paths: [fp] }) }).then(() => {
+        fetch("/api/cache/images/remove", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ paths: [fp] }) }).catch(() => {
+        });
+        groupEl.querySelector(`.img-path-cell[title="${fp.replace(/"/g, '\\"')}"]`)?.remove();
+        card.style.transition = "opacity .25s";
+        card.style.opacity = "0";
+        setTimeout(() => {
+          card.remove();
+          if (!groupEl.querySelectorAll(".img-card2-copy").length) {
+            groupEl.style.transition = "opacity .25s";
+            groupEl.style.opacity = "0";
+            setTimeout(() => groupEl.remove(), 260);
+          }
+        }, 260);
+      }).catch(() => {
+        delBtn.disabled = false;
+        delBtn.textContent = "\u{1F5D1} Delete";
+      });
+    });
+    foot.appendChild(delBtn);
+    const vscBtn = document.createElement("button");
+    vscBtn.className = "dup-open-btn";
+    vscBtn.textContent = "</>";
+    vscBtn.title = "Open in VS Code";
+    vscBtn.addEventListener("click", () => fetch("/api/open", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: fp }) }).catch(() => {
+    }));
+    foot.appendChild(vscBtn);
+    card.appendChild(foot);
+    return card;
   };
   const COL = {
     check: { key: "check", width: 36, type: "checkbox" },
@@ -237,6 +316,7 @@ try {
     }
   });
   window._imageGroups = {};
+  let _imgColumns = parseInt(localStorage.getItem("dcu_img_cols") || "3", 10) || 3;
   registerHandler("images", (msg) => {
     if (msg.type === "started") {
       window._imageGroups = {};
@@ -251,7 +331,8 @@ try {
         delBtn.textContent = "\u{1F5D1} Delete All Copies";
       }
       _wireImgFilter();
-      document.getElementById("imageResult").innerHTML = '<div class="skel-grid">' + Array.from({ length: 6 }, () => '<div class="skel-card"></div>').join("") + "</div>";
+      const c = document.getElementById("imageResult");
+      if (c) c.innerHTML = '<div class="skel-grid">' + Array.from({ length: 6 }, () => '<div class="skel-card"></div>').join("") + "</div>";
       return;
     }
     if (msg.type === "progress") {
@@ -263,10 +344,8 @@ try {
       SB.done("images", `Done \u2014 ${msg.results} exact duplicate groups`);
       localStorage.setItem("dcu_img_scan_ts", String(Date.now()));
       window._scanToolbarVMs?.["images"]?.scanDone();
-      if (msg.results > 0) {
-        const delBtn = document.getElementById("imgDeleteAllBtn");
-        if (delBtn) delBtn.classList.remove("hidden");
-      }
+      const delBtn = document.getElementById("imgDeleteAllBtn");
+      if (delBtn && msg.results > 0) delBtn.classList.remove("hidden");
       return;
     }
     if (msg.type === "error") {
@@ -278,32 +357,37 @@ try {
       const files = Array.isArray(msg.files) ? msg.files : [];
       window._imageGroups[msg.hash] = files;
       const container = document.getElementById("imageResult");
-      if (!container) {
-        ErrLog.log("[images]", "imageResult container not found", null, "RENDER_ERROR");
-        return;
-      }
-      const skel = container.querySelector(".skel-grid");
-      if (skel) skel.remove();
-      const existing = container.querySelector(`[data-img-hash="${msg.hash}"]`);
-      if (existing) existing.remove();
-      const div = document.createElement("div");
-      div.className = "img-group";
-      div.dataset.imgHash = msg.hash;
-      div.innerHTML = `<span class="badge red">Exact Duplicate Group</span><div class="img-grid">${files.map((fp) => {
-        const escaped = (fp || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
-        return `<div class="img-card">
-            <img src="/api/file?path=${encodeURIComponent(fp)}" loading="lazy" onerror="this.classList.add('img-broken')" alt="">
-            <p>${escHtml(fp)}</p>
-            <div class="img-card-footer">
-            <button class="btn danger btn-sm img-trash-btn" onclick="window.trashImage('${escaped}')">\u{1F5D1} Delete</button>
-            <button class="btn-keep" onclick="window.keepPaths(['${escaped}'])">\u{1F512} Keep</button>
-            </div>
-          </div>`;
-      }).join("")}</div>`;
-      container.appendChild(div);
-      const imgCount = Object.keys(window._imageGroups).length;
-      _set("images", "results", imgCount.toLocaleString());
-      _set("images", "rows", imgCount.toLocaleString());
+      if (!container) return;
+      container.querySelector(".skel-grid")?.remove();
+      container.querySelector(`[data-img-hash="${msg.hash}"]`)?.remove();
+      const group = document.createElement("div");
+      group.className = "img-group2";
+      group.dataset.imgHash = msg.hash;
+      const pathRow = document.createElement("div");
+      pathRow.className = "dup-path-row";
+      files.forEach((fp) => {
+        const cell = document.createElement("div");
+        cell.className = "dup-path-cell img-path-cell";
+        cell.title = fp;
+        cell.textContent = fp;
+        cell.style.cursor = "pointer";
+        cell.addEventListener("click", () => {
+          const folder = fp.replace(/[\\/][^\\/]*$/, "");
+          fetch("/api/open-folder", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: folder }) }).catch(() => {
+          });
+        });
+        pathRow.appendChild(cell);
+      });
+      group.appendChild(pathRow);
+      const cardsRow = document.createElement("div");
+      cardsRow.className = "img-cards-row";
+      files.forEach((fp, i) => cardsRow.appendChild(_buildImgCard(fp, i === 0, group)));
+      group.appendChild(cardsRow);
+      container.appendChild(group);
+      const n = Object.keys(window._imageGroups).length;
+      _set("images", "results", n.toLocaleString());
+      _set("images", "rows", n.toLocaleString());
+      _applyImgColumns();
     }
   });
 } catch (ex) {
