@@ -311,9 +311,11 @@ function _mountScanToolbars() {
         const sgPaths = ((window as any)._scanGrid?.getChecked?.(config.section) as string[]) ?? [];
         if (sgPaths.length) {
           (window as any)._scanGrid.removeByPaths(sgPaths);
-          (window as any).TrashQ?.enqueue(sgPaths);
+          // Pass section so cache is cleared — fixes "Done — 21 empty folders" bug
+          // where status bar showed stale count after Delete Selected + Scan
+          window._trashSelected?.(null, sgPaths, config.section);
         } else {
-          window._trashSelected?.(config.tableId);
+          window._trashSelected?.(config.tableId, undefined, config.section);
         }
       },
       onKeepSelected:    () => window.keepSelected?.(config.tableId),

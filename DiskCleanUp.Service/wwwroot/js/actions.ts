@@ -101,8 +101,8 @@ export function cancelScan(section) {
   SB.done(section, 'Cancelled');
 }
 
-export function trashSelected(tableId, directPaths?) {
-  crumb('actions', 'trashSelected', { tableId, directCount: directPaths?.length });
+export function trashSelected(tableId, directPaths?, section?: string) {
+  crumb('actions', 'trashSelected', { tableId, directCount: directPaths?.length, section });
   let paths;
   if (directPaths && directPaths.length) {
     paths = directPaths;
@@ -125,6 +125,22 @@ export function trashSelected(tableId, directPaths?) {
   }
   if (!paths.length) { alert('Select files first.'); return; }
   TrashQ.enqueue(paths);
+
+  // Clear the section's scan cache so a rescan doesn't show stale results.
+  // Without this the status bar shows the old count after Delete Selected + Scan.
+  if (section) {
+    const ALL_SECTIONS = ['stale','large','empty','node-modules','venvs',
+      'backups','tiny-files','html-files','css-files','duplicates',
+      'images','dev-cache','ext-search'];
+    const sectionsToInvalidate = section === 'all' ? ALL_SECTIONS : [section];
+    sectionsToInvalidate.forEach(sec => {
+      fetch(`/api/cache/${sec}/remove`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paths, trash: false }),
+      }).catch(() => {});
+    });
+  }
 }
 
 export function trashGroup(btn, hash, paths) {

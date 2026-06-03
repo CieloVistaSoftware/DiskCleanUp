@@ -84,8 +84,8 @@ function cancelScan(section) {
   wsSend({ type: "cancel", section });
   SB.done(section, "Cancelled");
 }
-function trashSelected(tableId, directPaths) {
-  crumb("actions", "trashSelected", { tableId, directCount: directPaths?.length });
+function trashSelected(tableId, directPaths, section) {
+  crumb("actions", "trashSelected", { tableId, directCount: directPaths?.length, section });
   let paths;
   if (directPaths && directPaths.length) {
     paths = directPaths;
@@ -111,6 +111,32 @@ function trashSelected(tableId, directPaths) {
     return;
   }
   TrashQ.enqueue(paths);
+  if (section) {
+    const ALL_SECTIONS = [
+      "stale",
+      "large",
+      "empty",
+      "node-modules",
+      "venvs",
+      "backups",
+      "tiny-files",
+      "html-files",
+      "css-files",
+      "duplicates",
+      "images",
+      "dev-cache",
+      "ext-search"
+    ];
+    const sectionsToInvalidate = section === "all" ? ALL_SECTIONS : [section];
+    sectionsToInvalidate.forEach((sec) => {
+      fetch(`/api/cache/${sec}/remove`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paths, trash: false })
+      }).catch(() => {
+      });
+    });
+  }
 }
 function trashGroup(btn, hash, paths) {
   if (!paths.length) return;

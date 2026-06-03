@@ -235,9 +235,9 @@ function _mountScanToolbars() {
         const sgPaths = window._scanGrid?.getChecked?.(config.section) ?? [];
         if (sgPaths.length) {
           window._scanGrid.removeByPaths(sgPaths);
-          window.TrashQ?.enqueue(sgPaths);
+          window._trashSelected?.(null, sgPaths, config.section);
         } else {
-          window._trashSelected?.(config.tableId);
+          window._trashSelected?.(config.tableId, void 0, config.section);
         }
       },
       onKeepSelected: () => window.keepSelected?.(config.tableId),
