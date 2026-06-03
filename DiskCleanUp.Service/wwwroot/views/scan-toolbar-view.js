@@ -21,6 +21,7 @@ class ScanToolbarView {
     const container = document.getElementById(`toolbar-${section}`);
     if (!container) return;
     container.className = "toolbar";
+    container.dataset.section = section;
     const filterBar = document.createElement("div");
     filterBar.id = `sf-${section}`;
     filterBar.className = "scan-filter-bar";

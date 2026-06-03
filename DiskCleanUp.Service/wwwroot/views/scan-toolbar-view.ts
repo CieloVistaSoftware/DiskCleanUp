@@ -34,6 +34,7 @@ export class ScanToolbarView {
     if (!container) return;
 
     container.className = 'toolbar';
+    container.dataset.section = section; // enables scoped querySelector('[data-section=X] .cls')
 
     const filterBar = document.createElement('div');
     filterBar.id = `sf-${section}`;

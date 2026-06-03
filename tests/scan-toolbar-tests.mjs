@@ -237,6 +237,40 @@ group('TOOLBAR-005 — Scan button disabled while scanning');
     `scan button not re-enabled after scan ends`);
 }
 
+// ── TOOLBAR-007: Toolbar container has data-section attribute ────────────
+group('TOOLBAR-007 — Toolbar container has data-section for scoped querySelector');
+{
+  // This test catches the bug where querySelector('.btn-css-merge-analyze')
+  // returns the FIRST match (a grayed Stale toolbar button) instead of the
+  // active CSS-files one. The fix: container.dataset.section = section.
+  const dataSection = await page.evaluate(() => {
+    const container = document.getElementById('toolbar-css-files-test') ||
+                      document.querySelector('[id^="toolbar-css"]');
+    return container?.dataset?.section ?? null;
+  });
+
+  // Check any mounted toolbar has data-section set
+  const hasDataSection = await page.evaluate(() => {
+    // Find any toolbar div and check it has data-section
+    const toolbar = document.querySelector('[id^="toolbar-"][class="toolbar"]');
+    return toolbar ? toolbar.dataset.section !== undefined : false;
+  });
+  assert(hasDataSection,
+    'toolbar containers have data-section attribute set',
+    `toolbar containers missing data-section — querySelector scoping broken, ` +
+    `spinner will target wrong (grayed) button on standardized toolbar`);
+
+  // Verify the scoped query for css-merge-analyze finds the right section's button
+  await mountToolbar('css-files');
+  const cssBtnFound = await page.evaluate(() => {
+    const btn = document.querySelector('[data-section="css-files"] .btn-css-merge-analyze');
+    return !!btn;
+  });
+  assert(cssBtnFound,
+    'scoped selector [data-section=css-files] .btn-css-merge-analyze finds the button',
+    `scoped selector not working — Analyze Merge spinner will target wrong element`);
+}
+
 // ── TOOLBAR-006: All sections mount without error ─────────────────────────
 group('TOOLBAR-006 — Every section mounts cleanly');
 {
