@@ -1,0 +1,278 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LAYOUT UTILITIES CSS — Flexible, reusable layout primitives
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* -- Container Layouts ---------------------------------------------------- */
+
+.layout-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #333;
+  border-radius: 8px;
+  background: #1a1a1a;
+}
+
+.layout-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #333;
+}
+
+.layout-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.layout-desc {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #ccc;
+  line-height: 1.5;
+}
+
+.layout-status-bar,
+.layout-filter-bar,
+.layout-toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: #252525;
+  border-radius: 4px;
+}
+
+.layout-toolbar button {
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  background: #2a2a2a;
+  color: #ddd;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.layout-toolbar button:hover {
+  background: #333;
+  border-color: #444;
+}
+
+.layout-toolbar button.danger {
+  color: #ff5555;
+  border-color: #553333;
+}
+
+.layout-toolbar button.danger:hover {
+  background: #4a2a2a;
+}
+
+.layout-grid-container {
+  flex: 1;
+  overflow: auto;
+  border: 1px solid #333;
+  border-radius: 4px;
+  background: #1a1a1a;
+  min-height: 200px;
+}
+
+.layout-content {
+  flex: 1;
+  overflow: auto;
+  padding: 12px;
+}
+
+.layout-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px;
+  font-size: 0.9rem;
+  color: #888;
+  border-top: 1px solid #333;
+}
+
+/* -- Flex Utilities ------------------------------------------------------- */
+
+.flex-row {
+  display: flex;
+  flex-direction: row;
+}
+
+.flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.flex-justify-start {
+  justify-content: flex-start;
+}
+
+.flex-justify-center {
+  justify-content: center;
+}
+
+.flex-justify-end {
+  justify-content: flex-end;
+}
+
+.flex-justify-between {
+  justify-content: space-between;
+}
+
+.flex-justify-around {
+  justify-content: space-around;
+}
+
+.flex-align-start {
+  align-items: flex-start;
+}
+
+.flex-align-center {
+  align-items: center;
+}
+
+.flex-align-end {
+  align-items: flex-end;
+}
+
+.flex-align-stretch {
+  align-items: stretch;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.flex-0 {
+  flex: 0;
+}
+
+/* -- Gap Utilities -------------------------------------------------------- */
+
+.gap-4 { gap: 4px; }
+.gap-8 { gap: 8px; }
+.gap-12 { gap: 12px; }
+.gap-16 { gap: 16px; }
+.gap-20 { gap: 20px; }
+
+/* -- Spacing Utilities ---------------------------------------------------- */
+
+.p-4  { padding: 4px; }
+.p-8  { padding: 8px; }
+.p-12 { padding: 12px; }
+.p-16 { padding: 16px; }
+
+.px-4  { padding-left: 4px; padding-right: 4px; }
+.px-8  { padding-left: 8px; padding-right: 8px; }
+.px-12 { padding-left: 12px; padding-right: 12px; }
+
+.py-4  { padding-top: 4px; padding-bottom: 4px; }
+.py-8  { padding-top: 8px; padding-bottom: 8px; }
+.py-12 { padding-top: 12px; padding-bottom: 12px; }
+
+.m-4  { margin: 4px; }
+.m-8  { margin: 8px; }
+.m-12 { margin: 12px; }
+.m-16 { margin: 16px; }
+
+.mx-4  { margin-left: 4px; margin-right: 4px; }
+.mx-8  { margin-left: 8px; margin-right: 8px; }
+.mx-12 { margin-left: 12px; margin-right: 12px; }
+
+.my-4  { margin-top: 4px; margin-bottom: 4px; }
+.my-8  { margin-top: 8px; margin-bottom: 8px; }
+.my-12 { margin-top: 12px; margin-bottom: 12px; }
+
+/* -- Grid Utilities ------------------------------------------------------- */
+
+.grid-columns {
+  display: grid;
+}
+
+.grid-auto {
+  grid-auto-flow: row;
+}
+
+.grid-auto-cols {
+  grid-auto-columns: minmax(200px, 1fr);
+}
+
+/* -- Size Utilities ------------------------------------------------------- */
+
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+
+.min-h-200 { min-height: 200px; }
+.min-h-300 { min-height: 300px; }
+.min-h-400 { min-height: 400px; }
+
+.max-w-full { max-width: 100%; }
+.max-h-400 { max-height: 400px; }
+
+/* -- Responsive Design ---------------------------------------------------- */
+
+@media (max-width: 1200px) {
+  .layout-panel {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .gap-4 { gap: 3px; }
+  .gap-8 { gap: 6px; }
+  .gap-12 { gap: 8px; }
+  .gap-16 { gap: 12px; }
+}
+
+@media (max-width: 768px) {
+  .layout-panel {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .layout-toolbar {
+    flex-direction: column;
+  }
+
+  .layout-toolbar button {
+    width: 100%;
+    padding: 8px;
+  }
+
+  .layout-grid-container {
+    min-height: 150px;
+  }
+
+  .gap-4 { gap: 2px; }
+  .gap-8 { gap: 4px; }
+  .gap-12 { gap: 6px; }
+  .gap-16 { gap: 8px; }
+
+  .flex-row-mobile {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .layout-panel {
+    padding: 6px;
+    gap: 6px;
+  }
+
+  .layout-footer {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .gap-4 { gap: 1px; }
+  .gap-8 { gap: 2px; }
+  .gap-12 { gap: 4px; }
+}

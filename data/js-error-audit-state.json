@@ -1,0 +1,66 @@
+{
+  "entries": [
+    {
+      "id": "WRN-001",
+      "file": "DiskCleanUp.Service/wwwroot/js/events.js",
+      "severity": "WARN",
+      "fixKind": "BARE_CATCH",
+      "issues": [
+        "bare catch{} swallows errors silently",
+        "no ErrLog.log call — errors not reaching error log"
+      ],
+      "status": "open"
+    },
+    {
+      "id": "WRN-002",
+      "file": "DiskCleanUp.Service/wwwroot/js/metrics.js",
+      "severity": "WARN",
+      "fixKind": "NO_ERRLOG",
+      "issues": [
+        "no ErrLog.log call — errors not reaching error log"
+      ],
+      "status": "open"
+    },
+    {
+      "id": "WRN-003",
+      "file": "DiskCleanUp.Service/wwwroot/js/page-loader.js",
+      "severity": "WARN",
+      "fixKind": "NO_ERRLOG",
+      "issues": [
+        "no ErrLog.log call — errors not reaching error log"
+      ],
+      "status": "open"
+    },
+    {
+      "id": "WRN-004",
+      "file": "DiskCleanUp.Service/wwwroot/js/scan-filter.js",
+      "severity": "WARN",
+      "fixKind": "NO_ERRLOG",
+      "issues": [
+        "no ErrLog.log call — errors not reaching error log"
+      ],
+      "status": "open"
+    },
+    {
+      "id": "WRN-005",
+      "file": "DiskCleanUp.Service/wwwroot/js/settings.js",
+      "severity": "WARN",
+      "fixKind": "BARE_CATCH",
+      "issues": [
+        "bare catch{} swallows errors silently"
+      ],
+      "status": "open"
+    },
+    {
+      "id": "WRN-006",
+      "file": "DiskCleanUp.Service/wwwroot/js/websocket.js",
+      "severity": "WARN",
+      "fixKind": "BARE_CATCH",
+      "issues": [
+        "bare catch{} swallows errors silently"
+      ],
+      "status": "open"
+    }
+  ],
+  "lastSeen": "2026-05-28T01:21:42.771Z"
+}

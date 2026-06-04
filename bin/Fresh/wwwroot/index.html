@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>Disk Cleanup Dashboard</title>
+<link rel="stylesheet" href="/css/dashboard.css">
+<link rel="stylesheet" href="/lib/wb-core/css/error-logger.css">
+<link rel="stylesheet" href="/lib/wb-core/css/grid-shell.css">
+<link rel="stylesheet" href="/lib/wb-core/css/status-bar.css">
+<link rel="stylesheet" href="/lib/wb-core/css/filter-bar.css">
+<link rel="stylesheet" href="/lib/wb-core/css/toolbar.css">
+<link rel="stylesheet" href="/lib/wb-core/css/row-actions.css">
+</head>
+<body>
+
+<header>
+  <h1>🧹 Disk Cleanup Dashboard</h1>
+  <span id="rootDisplay"></span><button id="rootOpenBtn" class="btn muted btn-xs" title="Open root folder in Explorer" style="margin-left:4px;display:none" onclick="fetch('/api/open-folder',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:document.getElementById('rootDisplay').textContent.trim()})}).catch(()=>{})">📂</button>
+  <span class="conn-tip-wrap">
+    <span id="connStatus" class="disconnected">⚡ Connecting…</span>
+    <div class="conn-tip-diagram">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 780" font-family="Segoe UI, sans-serif">
+        <rect width="840" height="780" rx="12" fill="#0d1117"/>
+        <defs>
+          <marker id="ag" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#3fb950"/></marker>
+          <marker id="ab" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#58a6ff"/></marker>
+          <marker id="ar" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#f85149"/></marker>
+          <marker id="ao" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#e3b341"/></marker>
+        </defs>
+        <text x="420" y="30" text-anchor="middle" fill="#e6edf3" font-size="16" font-weight="700">Dashboard Startup — WebSocket is the Critical Path</text>
+        <text x="420" y="48" text-anchor="middle" fill="#8b949e" font-size="11">Nothing should happen until the WebSocket is connected</text>
+        <rect x="30" y="65" width="240" height="28" rx="6" fill="#161b22" stroke="#58a6ff" stroke-width="1"/>
+        <text x="150" y="84" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="700">🌐 BROWSER (Edge)</text>
+        <rect x="300" y="65" width="240" height="28" rx="6" fill="#161b22" stroke="#e3b341" stroke-width="1"/>
+        <text x="420" y="84" text-anchor="middle" fill="#e3b341" font-size="12" font-weight="700">🔌 WEBSOCKET</text>
+        <rect x="570" y="65" width="240" height="28" rx="6" fill="#161b22" stroke="#3fb950" stroke-width="1"/>
+        <text x="690" y="84" text-anchor="middle" fill="#3fb950" font-size="12" font-weight="700">⚙️ SERVICE (:5100)</text>
+        <line x1="150" y1="93" x2="150" y2="640" stroke="#58a6ff" stroke-width="1" stroke-dasharray="4,6" opacity="0.3"/>
+        <line x1="420" y1="93" x2="420" y2="640" stroke="#e3b341" stroke-width="1" stroke-dasharray="4,6" opacity="0.3"/>
+        <line x1="690" y1="93" x2="690" y2="640" stroke="#3fb950" stroke-width="1" stroke-dasharray="4,6" opacity="0.3"/>
+        <rect x="580" y="110" width="220" height="44" rx="8" fill="#0d2818" stroke="#3fb950" stroke-width="1.5"/>
+        <text x="690" y="130" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="700">① Service starts</text>
+        <text x="690" y="144" text-anchor="middle" fill="#8b949e" font-size="9">Kestrel listens on :5100 (HTTP + WS)</text>
+        <rect x="30" y="170" width="240" height="44" rx="8" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+        <text x="150" y="190" text-anchor="middle" fill="#58a6ff" font-size="11" font-weight="700">② User opens localhost:5100</text>
+        <text x="150" y="204" text-anchor="middle" fill="#8b949e" font-size="9">HTTP GET → index.html + JS + CSS</text>
+        <line x1="270" y1="192" x2="578" y2="145" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#ab)" stroke-dasharray="4,3"/>
+        <text x="420" y="162" text-anchor="middle" fill="#58a6ff" font-size="9">HTTP 200 (static files)</text>
+        <rect x="30" y="230" width="240" height="44" rx="8" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+        <text x="150" y="250" text-anchor="middle" fill="#58a6ff" font-size="11" font-weight="700">③ DOMContentLoaded</text>
+        <text x="150" y="264" text-anchor="middle" fill="#8b949e" font-size="9">init.js → wsConnect()</text>
+        <line x1="150" y1="214" x2="150" y2="228" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#ab)"/>
+        <line x1="270" y1="250" x2="395" y2="295" stroke="#e3b341" stroke-width="2" marker-end="url(#ao)"/>
+        <text x="310" y="280" fill="#e3b341" font-size="9" font-weight="600">new WebSocket("ws://localhost:5100/ws")</text>
+        <rect x="310" y="296" width="220" height="52" rx="8" fill="#1a1a0d" stroke="#e3b341" stroke-width="2"/>
+        <text x="420" y="316" text-anchor="middle" fill="#e3b341" font-size="12" font-weight="700">④ 🔌 WS HANDSHAKE</text>
+        <text x="420" y="332" text-anchor="middle" fill="#8b949e" font-size="9">HTTP → 101 Switching Protocols</text>
+        <text x="420" y="342" text-anchor="middle" fill="#8b949e" font-size="9">Full-duplex channel established</text>
+        <line x1="530" y1="315" x2="578" y2="315" stroke="#3fb950" stroke-width="2" marker-end="url(#ag)"/>
+        <rect x="580" y="296" width="220" height="52" rx="8" fill="#0d2818" stroke="#3fb950" stroke-width="1.5"/>
+        <text x="690" y="316" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="700">WsManager.HandleAsync()</text>
+        <text x="690" y="332" text-anchor="middle" fill="#8b949e" font-size="9">Accepts socket, adds to client list</text>
+        <text x="690" y="342" text-anchor="middle" fill="#8b949e" font-size="9">Begins listening for messages</text>
+        <line x1="310" y1="322" x2="270" y2="368" stroke="#3fb950" stroke-width="2" marker-end="url(#ag)"/>
+        <rect x="30" y="365" width="240" height="44" rx="8" fill="#0d2818" stroke="#3fb950" stroke-width="2"/>
+        <text x="150" y="385" text-anchor="middle" fill="#3fb950" font-size="12" font-weight="700">⑤ ⚡ LIVE</text>
+        <text x="150" y="399" text-anchor="middle" fill="#8b949e" font-size="9">onopen → setConnStatus("connected")</text>
+        <rect x="140" y="420" width="560" height="36" rx="6" fill="#0d2818" stroke="#3fb950" stroke-width="2.5" stroke-dasharray="8,4"/>
+        <text x="420" y="443" text-anchor="middle" fill="#3fb950" font-size="13" font-weight="700">✅ GATE: WebSocket connected — service may now begin work</text>
+        <rect x="580" y="475" width="220" height="52" rx="8" fill="#0d2818" stroke="#3fb950" stroke-width="1.5"/>
+        <text x="690" y="495" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="700">⑥ Scans begin</text>
+        <text x="690" y="509" text-anchor="middle" fill="#8b949e" font-size="9">BackgroundScanService starts</text>
+        <text x="690" y="519" text-anchor="middle" fill="#8b949e" font-size="9">ONLY because a client is connected</text>
+        <line x1="690" y1="456" x2="690" y2="473" stroke="#3fb950" stroke-width="2" marker-end="url(#ag)"/>
+        <line x1="578" y1="490" x2="445" y2="490" stroke="#e3b341" stroke-width="1.5" marker-end="url(#ao)"/>
+        <text x="510" y="484" text-anchor="middle" fill="#e3b341" font-size="8" font-weight="600">started / progress / batch-ready</text>
+        <line x1="445" y1="505" x2="578" y2="505" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#ab)"/>
+        <text x="510" y="518" text-anchor="middle" fill="#58a6ff" font-size="8" font-weight="600">start / cancel commands</text>
+        <line x1="310" y1="490" x2="270" y2="490" stroke="#e3b341" stroke-width="1.5" marker-end="url(#ao)"/>
+        <rect x="30" y="475" width="240" height="44" rx="8" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+        <text x="150" y="495" text-anchor="middle" fill="#58a6ff" font-size="11" font-weight="700">⑦ Dashboard renders results</text>
+        <text x="150" y="509" text-anchor="middle" fill="#8b949e" font-size="9">Tables, progress bars, metrics</text>
+        <line x1="30" y1="545" x2="810" y2="545" stroke="#f85149" stroke-width="1.5"/>
+        <text x="420" y="565" text-anchor="middle" fill="#f85149" font-size="12" font-weight="700">❌ CURRENT PROBLEM: What happens when there's no WS</text>
+        <rect x="30" y="580" width="240" height="52" rx="8" fill="#2a0d0d" stroke="#f85149" stroke-width="2"/>
+        <text x="150" y="600" text-anchor="middle" fill="#f85149" font-size="11" font-weight="700">Browser on :5000</text>
+        <text x="150" y="614" text-anchor="middle" fill="#8b949e" font-size="9">wsConnect() → Connection Refused</text>
+        <text x="150" y="626" text-anchor="middle" fill="#f85149" font-size="10" font-weight="700">⚡ Connecting… forever</text>
+        <line x1="270" y1="606" x2="308" y2="606" stroke="#f85149" stroke-width="2" marker-end="url(#ar)"/>
+        <text x="290" y="598" text-anchor="middle" fill="#f85149" font-size="16" font-weight="900">✖</text>
+        <rect x="310" y="580" width="220" height="52" rx="8" fill="#2a0d0d" stroke="#f85149" stroke-width="2"/>
+        <text x="420" y="600" text-anchor="middle" fill="#f85149" font-size="11" font-weight="700">🔌 No WS connection</text>
+        <text x="420" y="614" text-anchor="middle" fill="#8b949e" font-size="9">Console :5000 is dead</text>
+        <text x="420" y="626" text-anchor="middle" fill="#f85149" font-size="9" font-weight="600">Gate never opens → nothing works</text>
+        <rect x="580" y="580" width="220" height="52" rx="8" fill="#0d2818" stroke="#3fb950" stroke-width="1.5"/>
+        <text x="690" y="600" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="700">⚙️ Service :5100 alive</text>
+        <text x="690" y="614" text-anchor="middle" fill="#8b949e" font-size="9">But browser isn't talking to it</text>
+        <text x="690" y="626" text-anchor="middle" fill="#8b949e" font-size="9">Wrong port → no client → idle</text>
+        <line x1="530" y1="606" x2="578" y2="606" stroke="#30363d" stroke-width="1.5" stroke-dasharray="5,4"/>
+        <text x="554" y="598" text-anchor="middle" fill="#30363d" font-size="8">wrong port</text>
+        <rect x="120" y="655" width="600" height="44" rx="8" fill="#0d2818" stroke="#3fb950" stroke-width="2"/>
+        <text x="420" y="675" text-anchor="middle" fill="#3fb950" font-size="12" font-weight="700">🔧 Fix: Browse to localhost:5100 — or restart console on :5000</text>
+        <text x="420" y="691" text-anchor="middle" fill="#8b949e" font-size="10">WebSocket connects → gate opens → scans begin → dashboard works</text>
+        <rect x="30" y="720" width="780" height="44" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+        <line x1="50" y1="742" x2="80" y2="742" stroke="#3fb950" stroke-width="2"/>
+        <text x="85" y="746" fill="#8b949e" font-size="9">Happy path</text>
+        <line x1="170" y1="742" x2="200" y2="742" stroke="#e3b341" stroke-width="2"/>
+        <text x="205" y="746" fill="#8b949e" font-size="9">WebSocket channel</text>
+        <line x1="310" y1="742" x2="340" y2="742" stroke="#58a6ff" stroke-width="2"/>
+        <text x="345" y="746" fill="#8b949e" font-size="9">Browser actions</text>
+        <line x1="440" y1="742" x2="470" y2="742" stroke="#f85149" stroke-width="2"/>
+        <text x="475" y="746" fill="#8b949e" font-size="9">Failure / current problem</text>
+        <rect x="570" y="735" width="100" height="16" rx="4" fill="none" stroke="#3fb950" stroke-width="2" stroke-dasharray="8,4"/>
+        <text x="680" y="746" fill="#8b949e" font-size="9">Gate (WS required)</text>
+      </svg>
+    </div>
+  </span>
+  <span id="totalSaved"></span>
+  <span id="queueBadge" title="Files queued for delete">🗑 0 queued</span>
+  <span id="keepBadgeBtn" title="Click to view kept files" style="cursor:pointer">🔒 <span id="keepCountBadge" class="keep-badge" style="display:none">0</span></span>
+  <a href="/trace-viewer.html" target="_blank" style="color:#58a6ff;font-size:.85rem;text-decoration:none;border:1px solid #58a6ff;padding:2px 8px;border-radius:4px" title="Open trace log in new tab">📜 Trace</a>
+  <div id="metricsBar">
+    <span>CPU</span><canvas id="cpuCanvas" width="80" height="22" title="System-wide CPU usage %"></canvas><span id="cpuVal" class="metric-val">—</span>
+    <span>MEM</span><canvas id="memCanvas" width="80" height="22" title="System-wide memory usage"></canvas><span id="memVal" class="metric-val">—</span>
+    <span class="metrics-sep">|</span>
+    <span id="threadVal" title="App thread count (dotnet process)">— threads</span>
+    <span class="metrics-sep">|</span>
+    <span id="uptimePulse" class="pulse-dot green" title="System heartbeat — ticks every second"></span>
+    <span id="uptimeVal" class="metric-val" title="Uptime since page load">0:00</span>
+  </div>
+</header>
+
+<nav id="mainNav">
+  <button data-section="duplicates">🔁 Duplicates</button>
+  <button data-section="smart-dedup">🧠 Smart Dedup</button>
+  <button data-section="stale">🕰 Stale Files</button>
+  <button data-section="large">📦 Large Files</button>
+  <button data-section="node-modules">⬡ node_modules</button>
+  <button data-section="venvs">🐍 Venvs</button>
+  <button data-section="empty">📂 Empty Folders</button>
+  <button data-section="images">🖼 Dup Images</button>
+  <button data-section="backups">📦 Backup Folders</button>
+  <button data-section="tiny-files">🔬 Tiny Files</button>
+  <button data-section="html-files">🌐 HTML Files</button>
+  <button data-section="css-files">🎨 CSS Files</button>
+  <button data-section="tasks">📋 Tasks</button>
+  <button data-section="savings">💰 Savings Log</button>
+  <button data-section="settings">⚙️ Settings</button>
+</nav>
+
+<main>
+
+<!-- DUPLICATES -->
+<div id="section-duplicates">
+  <div class="panel">
+    <h2>🔁 Exact Duplicates</h2>
+    <p class="section-desc">Finds files with identical content (byte-for-byte matches) using SHA-256 hashing. Groups duplicates together — keep the original, delete the copies. Click <b>Scan</b> to search your root folder.</p>
+    <div id="sb-duplicates" class="section-sb">
+      <div class="sb-seg status-seg"><span class="label">STATUS</span>&nbsp;<span class="value" id="sbv-duplicates-status">Idle</span></div>
+      <div class="sb-seg"><span class="label">FILES</span>&nbsp;<span class="value" id="sbv-duplicates-files">—</span></div>
+      <div class="sb-seg"><span class="label">DUPES</span>&nbsp;<span class="value" id="sbv-duplicates-results">—</span></div>
+      <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-duplicates-rows">0</span></div>
+      <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-duplicates-time">—</span></div>
+      <div class="sb-folder" id="sbf-duplicates">Click Scan to start</div>
+    </div>
+    <div class="toolbar">
+      <input type="text" placeholder="Filter files..." data-action="filter-duplicates" class="filter-input">
+      <button class="btn" data-action="scan" data-section="duplicates">🔍 Scan</button>
+      <button class="btn muted" data-action="cancel" data-section="duplicates">✖ Cancel</button>
+      <button class="btn muted" data-action="select-all" data-table="dupTable">Select All</button>
+      <button class="btn muted" data-action="select-none" data-table="dupTable">Select None</button>
+      <button class="btn danger" data-action="trash-selected" data-table="dupTable">🗑 Delete Selected</button>
+      <button class="btn-keep" data-grid-section="duplicates" disabled onclick="window.keepSelected('dupTable')">🔒 Keep Selected</button>
+      <button class="btn danger" data-action="trash-all-copies">🗑 Delete All Copies</button>
+      <button class="btn load-more-btn-tb" id="loadMore-duplicates" disabled><span class="lm-dot red"></span> Load More Results</button>
+    </div>
+    <div id="dupResult"></div>
+  </div>
+</div>
+
+<!-- SMART DEDUP -->
+<div id="section-smart-dedup">
+  <div class="panel">
+    <h2>🧠 Smart Dedup — Numbered Copies</h2>
+    <p class="section-desc">Detects auto-numbered copies like <code>report (1).pdf</code>, <code>photo (2).jpg</code>. Keeps the cleanest-named original and flags the numbered copies for removal. Click <b>Scan</b>, then <b>Apply All</b> to clean up.</p>
+    <div id="sb-smart-dedup" class="section-sb">
+      <div class="sb-seg status-seg"><span class="label">STATUS</span>&nbsp;<span class="value" id="sbv-smart-dedup-status">Idle</span></div>
+      <div class="sb-seg"><span class="label">FILES</span>&nbsp;<span class="value" id="sbv-smart-dedup-files">—</span></div>
+      <div class="sb-seg"><span class="label">GROUPS</span>&nbsp;<span class="value" id="sbv-smart-dedup-results">—</span></div>
+      <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-smart-dedup-rows">0</span></div>
+      <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-smart-dedup-time">—</span></div>
+      <div class="sb-folder" id="sbf-smart-dedup">Click Scan to start</div>
+    </div>
+    <div class="toolbar">
+      <div id="sf-smart-dedup" class="scan-filter-bar"></div>
+      <button class="btn" data-action="scan" data-section="smart-dedup">🔍 Scan</button>
+      <button class="btn muted" data-action="cancel" data-section="smart-dedup">✖ Cancel</button>
+      <button class="btn danger" data-action="apply-smart-dedup">⚡ Apply All (Delete Copies)</button>
+      <button class="btn load-more-btn-tb" id="loadMore-smart-dedup" disabled><span class="lm-dot red"></span> Load More Results</button>
+    </div>
+    <div id="smartResult"></div>
+  </div>
+</div>
+
+<!-- STALE -->
+<div id="section-stale">
+  <div class="panel">
+    <h2>🕰 Stale Files</h2>
+    <p class="section-desc">Finds files not modified in over <b>N days</b> (configurable in Settings). Great for clearing out old downloads, temp files, and forgotten projects. Click <b>Scan</b> to find stale files, then select and delete.</p>
+    
+    <!-- Phase 6 Unified Components -->
+    <div id="stale-status-container"></div>
+    <div id="stale-filter-container"></div>
+    <div id="stale-toolbar-container"></div>
+    <div id="stale-grid-container"></div>
+    
+    <!-- Legacy containers (for fallback) -->
+    <div id="sb-stale" class="section-sb" style="display:none">
+      <div class="sb-seg status-seg"><span class="label">STATUS</span>&nbsp;<span class="value" id="sbv-stale-status">Idle</span></div>
+      <div class="sb-seg"><span class="label">FILES</span>&nbsp;<span class="value" id="sbv-stale-files">—</span></div>
+      <div class="sb-seg"><span class="label">STALE</span>&nbsp;<span class="value" id="sbv-stale-results">—</span></div>
+      <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-stale-rows">0</span></div>
+      <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-stale-time">—</span></div>
+      <div class="sb-folder" id="sbf-stale">Click Scan to start</div>
+    </div>
+    <div id="staleResult" style="display:none"></div>
+  </div>
+</div>
+
+<!-- LARGE -->
+<div id="section-large">
+  <div class="panel">
+    <h2>📦 Large Files</h2>
+    <p class="section-desc">Lists files exceeding the size threshold (default 10 MB, configurable in Settings). Quickly spot disk hogs — ISOs, videos, archives, logs. Click <b>Scan</b> to find them, sorted by size.</p>
+    
+    <!-- Phase 6.2 Unified Components -->
+    <div id="large-status-container"></div>
+    <div id="large-filter-container"></div>
+    <div id="large-toolbar-container"></div>
+    <div id="large-grid-container"></div>
+    
+    <!-- Legacy containers (for fallback) -->
+    <div id="sb-large" class="section-sb" style="display:none">
+      <div class="sb-seg status-seg"><span class="label">STATUS</span>&nbsp;<span class="value" id="sbv-large-status">Idle</span></div>
+      <div class="sb-seg"><span class="label">FILES</span>&nbsp;<span class="value" id="sbv-large-files">—</span></div>
+      <div class="sb-seg"><span class="label">LARGE</span>&nbsp;<span class="value" id="sbv-large-results">—</span></div>
+      <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-large-rows">0</span></div>
+      <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-large-time">—</span></div>
+      <div class="sb-folder" id="sbf-large">Click Scan to start</div>
+    </div>
+    <div class="toolbar" style="display:none">
+      <div id="sf-large" class="scan-filter-bar"></div>
+      <button class="btn" data-action="scan" data-section="large">🔍 Scan</button>
+      <button class="btn muted" data-action="cancel" data-section="large">✖ Cancel</button>
+      <button class="btn muted" data-action="select-all" data-grid="large" data-table="largeTable">Select All</button>
+      <button class="btn muted" data-action="select-none" data-grid="large" data-table="largeTable">None</button>
+      <button class="btn danger" data-action="trash-selected" data-grid="large" data-table="largeTable">🗑 Delete Selected</button>
+      <button class="btn-keep" data-grid-section="large" disabled onclick="window.keepSelected('largeTable')">🔒 Keep Selected</button>
+      <button class="btn load-more-btn-tb" id="loadMore-large" disabled><span class="lm-dot red"></span> Load More Results</button>
+    </div>
+    <div id="largeResult" style="display:none"></div>
+  </div>
+</div>
+
+<!-- NODE MODULES -->
+<div id="section-node-modules">
+  <div class="panel">
+    <h2>⬡ node_modules Cleaner</h2>
+    <p class="section-desc">Scans for <code>node_modules</code> folders which can consume gigabytes. Safe to delete — just run <code>npm install</code> to restore. Click <b>Scan</b> to find them, then <b>Delete Permanently</b> to reclaim space.</p>
+    
+    <!-- Phase 6.3 Unified Components -->
+    <div id="nm-status-container"></div>
+    <div id="nm-filter-container"></div>
+    <div id="nm-toolbar-container"></div>
+    <div id="nm-grid-container"></div>
+    
+    <!-- Legacy containers (for fallback) -->
+    <div id="sb-node-modules" class="section-sb" style="display:none">
+      <div class="sb-seg status-seg"><span class="label">STATUS</span>&nbsp;<span class="value" id="sbv-node-modules-status">Idle</span></div>
+      <div class="sb-seg"><span class="label">FOUND</span>&nbsp;<span class="value" id="sbv-node-modules-results">—</span></div>
+      <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-node-modules-rows">0</span></div>
+      <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-node-modules-time">—</span></div>
+      <div class="sb-folder" id="sbf-node-modules">Click Scan to start</div>
+    </div>
+    <div class="toolbar" style="display:none">
+      <div id="sf-node-modules" class="scan-filter-bar"></div>
+      <button class="btn" data-action="scan" data-section="node-modules">🔍 Scan</button>
+      <button class="btn muted" data-action="cancel" data-section="node-modules">✖ Cancel</button>
+      <button class="btn muted" data-action="select-all" data-grid="node-modules" data-table="nmTable">Select All</button>
+      <button class="btn muted" data-action="select-none" data-grid="node-modules" data-table="nmTable">None</button>
+      <button class="btn danger" data-action="delete-nm-selected">🗑 Delete Permanently</button>
+      <button class="btn-keep" data-grid-section="node-modules" disabled onclick="window.keepSelected('nmTable')">🔒 Keep Selected</button>
+      <button class="btn load-more-btn-tb" id="loadMore-node-modules" disabled><span class="lm-dot red"></span> Load More Results</button>
+    </div>
+    <div id="nmResult" style="display:none"></div>
+  </div>
+</div>
+
+<!-- VENVS -->
+<div id="section-venvs">
+  <div class="panel">
+    <h2>🐍 Python Venvs</h2>
+    <p class="section-desc">Finds Python virtual environments (<code>venv</code>, <code>.venv</code>, <code>env</code>) that can grow large with cached packages. Safe to delete — recreate with <code>python -m venv</code>. Click <b>Scan</b> to locate them.</p>
+    <div id="sb-venvs" class="section-sb">
+      <div class="sb-seg status-seg"><span class="label">STATUS</span>&nbsp;<span class="value" id="sbv-venvs-status">Idle</span></div>
+      <div class="sb-seg"><span class="label">VENVS</span>&nbsp;<span class="value" id="sbv-venvs-results">—</span></div>
+      <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-venvs-rows">0</span></div>
+      <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-venvs-time">—</span></div>
+      <div class="sb-folder" id="sbf-venvs">Click Scan to start</div>
+    </div>
+    <div class="toolbar">
+      <div id="sf-venvs" class="scan-filter-bar"></div>
+      <button class="btn" data-action="scan" data-section="venvs">🔍 Scan</button>
+      <button class="btn muted" data-action="cancel" data-section="venvs">✖ Cancel</button>
+      <button class="btn muted" data-action="select-all" data-grid="venvs" data-table="venvTable">Select All</button>
+      <button class="btn muted" data-action="select-none" data-grid="venvs" data-table="venvTable">None</button>
+      <button class="btn danger" data-action="trash-selected" data-grid="venvs" data-table="venvTable">🗑 Delete Selected</button>
+      <button class="btn-keep" data-grid-section="venvs" disabled onclick="window.keepSelected('venvTable')">🔒 Keep Selected</button>
+      <button class="btn load-more-btn-tb" id="loadMore-venvs" disabled><span class="lm-dot red"></span> Load More Results</button>
+    </div>
+    <div id="venvResult"></div>
+  </div>
+</div>
+
+<!-- EMPTY FOLDERS -->
+<div id="section-empty">
+  <div class="panel">
+    <h2>📂 Empty Folders</h2>
+    <p class="section-desc">Finds folders that contain no files — leftover from deleted projects, failed extractions, or uninstalled apps. Click <b>Scan</b> to find them, then select and delete to tidy up your folder tree.</p>
+    <div id="sb-empty" class="section-sb">
+      <div class="sb-seg status-seg"><span class="label">STATUS</span>&nbsp;<span class="value" id="sbv-empty-status">Idle</span></div>
+      <div class="sb-seg"><span class="label">SCANNED</span>&nbsp;<span class="value" id="sbv-empty-files">—</span></div>
+      <div class="sb-seg"><span class="label">EMPTY</span>&nbsp;<span class="value" id="sbv-empty-results">—</span></div>
+      <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-empty-rows">0</span></div>
+      <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-empty-time">—</span></div>
+      <div class="sb-folder" id="sbf-empty">Click Scan to start</div>
+    </div>
+    <div class="toolbar">
+      <div id="sf-empty" class="scan-filter-bar"></div>
+      <button class="btn" data-action="scan" data-section="empty">🔍 Scan</button>
+      <button class="btn muted" data-action="cancel" data-section="empty">✖ Cancel</button>
+      <button class="btn muted" data-action="select-all" data-grid="empty" data-table="emptyTable">Select All</button>
+      <button class="btn muted" data-action="select-none" data-grid="empty" data-table="emptyTable">None</button>
+      <button class="btn danger" data-action="delete-empty">🗑 Delete Selected</button>
+      <button class="btn-keep" data-grid-section="empty" disabled onclick="window.keepSelected('emptyTable')">🔒 Keep Selected</button>
+      <button class="btn load-more-btn-tb" id="loadMore-empty" disabled><span class="lm-dot red"></span> Load More Results</button>
+    </div>
+    <div id="emptyResult"></div>
+  </div>
+</div>
+
+<!-- DUPLICATE IMAGES -->
+<div id="section-images">
+  <div class="panel">
+    <h2>🖼 Duplicate Images</h2>
+    <p class="section-desc">Groups duplicate images by visual hash (PNG, JPG, GIF, WebP, SVG). Previews each group so you can pick the best copy. Click <b>Scan</b> to find them, then delete copies individually or use <b>Delete All Copies</b>.</p>
+    <div id="sb-images" class="section-sb">
+      <div class="sb-seg status-seg"><span class="label">STATUS</span>&nbsp;<span class="value" id="sbv-images-status">Idle</span></div>
+      <div class="sb-seg"><span class="label">GROUPS</span>&nbsp;<span class="value" id="sbv-images-results">—</span></div>
+      <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-images-rows">0</span></div>
+      <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-images-time">—</span></div>
+      <div class="sb-folder" id="sbf-images">Click Scan to start</div>
+    </div>
+    <div class="toolbar">
+      <button class="btn" data-action="scan" data-section="images">🔍 Scan</button>
+      <button class="btn muted" data-action="cancel" data-section="images">✖ Cancel</button>
+      <button class="btn danger" data-action="trash-all-image-copies" id="imgDeleteAllBtn" style="display:none">🗑 Delete All Copies</button>
+      <button class="btn load-more-btn-tb" id="loadMore-images" disabled><span class="lm-dot red"></span> Load More Results</button>
+    </div>
+    <div id="imageResult"></div>
+  </div>
+</div>
+
+<!-- BACKUP FOLDERS -->
+<div id="section-backups">
+  <div class="panel">
+    <h2>📦 Backup Folders</h2>
+    <p class="section-desc">Finds folders named <code>backup</code>, <code>bak</code>, <code>old</code>, <code>archive</code>, <code>copy</code> and similar patterns. Shows folder size and file count. Click <b>Scan</b> to discover forgotten backup clutter.</p>
+    <div id="sb-backups" class="section-sb">
+      <div class="sb-seg status-seg"><span class="label">STATUS</span>&nbsp;<span class="value" id="sbv-backups-status">Idle</span></div>
+      <div class="sb-seg"><span class="label">SCANNED</span>&nbsp;<span class="value" id="sbv-backups-files">&mdash;</span></div>
+      <div class="sb-seg"><span class="label">FOUND</span>&nbsp;<span class="value" id="sbv-backups-results">&mdash;</span></div>
+      <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-backups-rows">0</span></div>
+      <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-backups-time">&mdash;</span></div>
+      <div class="sb-folder" id="sbf-backups">Click Scan to start</div>
+    </div>
+    <div class="toolbar">
+      <div id="sf-backups" class="scan-filter-bar"></div>
+      <button class="btn" data-action="scan" data-section="backups">🔍 Scan</button>
+      <button class="btn muted" data-action="cancel" data-section="backups">✖ Cancel</button>
+      <button class="btn muted" data-action="select-all" data-grid="backups" data-table="backupsTable">Select All</button>
+      <button class="btn muted" data-action="select-none" data-grid="backups" data-table="backupsTable">None</button>
+      <button class="btn danger" data-action="trash-selected" data-grid="backups" data-table="backupsTable">🗑 Delete Selected</button>
+      <button class="btn-keep" data-grid-section="backups" disabled onclick="window.keepSelected('backupsTable')">🔒 Keep Selected</button>
+      <button class="btn load-more-btn-tb" id="loadMore-backups" disabled><span class="lm-dot red"></span> Load More Results</button>
+    </div>
+    <div id="backupsResult"></div>
+  </div>
+</div>
+
+<!-- TINY FILES (≤1KB) -->
+<div id="section-tiny-files">
+  <div class="panel">
+    <h2>🔬 Tiny Files (≤1 KB)</h2>
+    <p class="section-desc">Lists files 1 KB or smaller — empty configs, placeholder files, leftover locks, <code>.gitkeep</code> stubs. Use the extension filter to focus on specific types. Click <b>Scan</b> to find them.</p>
+    <div id="sb-tiny-files" class="section-sb">
+      <div class="sb-seg status-seg"><span class="label">STATUS</span>&nbsp;<span class="value" id="sbv-tiny-files-status">Idle</span></div>
+      <div class="sb-seg"><span class="label">FILES</span>&nbsp;<span class="value" id="sbv-tiny-files-files">&mdash;</span></div>
+      <div class="sb-seg"><span class="label">TINY</span>&nbsp;<span class="value" id="sbv-tiny-files-results">&mdash;</span></div>
+      <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-tiny-files-rows">0</span></div>
+      <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-tiny-files-time">&mdash;</span></div>
+      <div class="sb-folder" id="sbf-tiny-files">Click Scan to start</div>
+    </div>
+    <div class="toolbar">
+      <button class="btn" data-action="scan" data-section="tiny-files">🔍 Scan</button>
+      <button class="btn muted" data-action="cancel" data-section="tiny-files">✖ Cancel</button>
+      <button class="btn muted" data-action="select-all" data-grid="tiny-files" data-table="tinyTable">Select All</button>
+      <button class="btn muted" data-action="select-none" data-grid="tiny-files" data-table="tinyTable">None</button>
+      <button class="btn danger" data-action="trash-selected" data-grid="tiny-files" data-table="tinyTable">🗑 Delete Selected</button>
+      <div id="sf-tiny-files" class="scan-filter-bar"></div>
+      <button class="btn-keep" data-grid-section="tiny-files" disabled onclick="window.keepSelected('tinyTable')">🔒 Keep Selected</button>
+      <button class="btn load-more-btn-tb" id="loadMore-tiny-files" disabled><span class="lm-dot red"></span> Load More Results</button>
+      <button class="btn muted" onclick="window.open('/tinyfiles-render.html','_blank')">&#x1F50E; Full View</button>
+    </div>
+    <div id="tinyResult"></div>
+  </div>
+</div>
+
+<!-- HTML FILES -->
+<div id="section-html-files">
+  <div class="panel">
+    <h2>🌐 HTML Files</h2>
+    <p class="section-desc">Scans for HTML and HTM files — saved web pages, generated docs, exported content. Use the filter bar to narrow by path or extension. Click <b>Scan</b> to list them, then delete or keep as needed.</p>
+    <div id="sb-html-files" class="section-sb">
+      <div class="sb-seg status-seg"><span class="label">STATUS</span>&nbsp;<span class="value" id="sbv-html-files-status">Idle</span></div>
+      <div class="sb-seg"><span class="label">FILES</span>&nbsp;<span class="value" id="sbv-html-files-files">&mdash;</span></div>
+      <div class="sb-seg"><span class="label">HTML</span>&nbsp;<span class="value" id="sbv-html-files-results">&mdash;</span></div>
+      <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-html-files-rows">0</span></div>
+      <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-html-files-time">&mdash;</span></div>
+      <div class="sb-folder" id="sbf-html-files">Click Scan to start</div>
+    </div>
+    <div class="toolbar">
+      <div id="sf-html-files" class="scan-filter-bar"></div>
+      <button class="btn" data-action="scan" data-section="html-files">🔍 Scan</button>
+      <button class="btn muted" data-action="cancel" data-section="html-files">✖ Cancel</button>
+      <button class="btn muted" data-action="select-all" data-grid="html-files" data-table="htmlTable">Select All</button>
+      <button class="btn muted" data-action="select-none" data-grid="html-files" data-table="htmlTable">None</button>
+      <button class="btn danger" data-action="trash-selected" data-grid="html-files" data-table="htmlTable">🗑 Delete Selected</button>
+      <button class="btn-keep" data-grid-section="html-files" disabled onclick="window.keepSelected('htmlTable')">🔒 Keep Selected</button>
+      <button class="btn load-more-btn-tb" id="loadMore-html-files" disabled><span class="lm-dot red"></span> Load More Results</button>
+    </div>
+    <div id="htmlResult"></div>
+  </div>
+</div>
+
+<!-- CSS FILES -->
+<div id="section-css-files">
+  <div class="panel">
+    <h2>🎨 CSS Files</h2>
+    <p class="section-desc">Scans for stylesheets — CSS, SCSS, SASS, and LESS files. Useful for finding orphaned styles from old projects or AI-generated prototypes. Click <b>Scan</b> to list them all.</p>
+    <div id="sb-css-files" class="section-sb">
+      <div class="sb-seg status-seg"><span class="label">STATUS</span>&nbsp;<span class="value" id="sbv-css-files-status">Idle</span></div>
+      <div class="sb-seg"><span class="label">FILES</span>&nbsp;<span class="value" id="sbv-css-files-files">&mdash;</span></div>
+      <div class="sb-seg"><span class="label">CSS</span>&nbsp;<span class="value" id="sbv-css-files-results">&mdash;</span></div>
+      <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-css-files-rows">0</span></div>
+      <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-css-files-time">&mdash;</span></div>
+      <div class="sb-folder" id="sbf-css-files">Click Scan to start</div>
+    </div>
+    <div class="toolbar">
+      <div id="sf-css-files" class="scan-filter-bar"></div>
+      <button class="btn" data-action="scan" data-section="css-files">🔍 Scan</button>
+      <button class="btn muted" data-action="cancel" data-section="css-files">✖ Cancel</button>
+      <button class="btn muted" data-action="select-all" data-grid="css-files" data-table="cssTable">Select All</button>
+      <button class="btn muted" data-action="select-none" data-grid="css-files" data-table="cssTable">None</button>
+      <button class="btn danger" data-action="trash-selected" data-grid="css-files" data-table="cssTable">🗑 Delete Selected</button>
+      <button class="btn-keep" data-grid-section="css-files" disabled onclick="window.keepSelected('cssTable')">🔒 Keep Selected</button>
+      <button class="btn load-more-btn-tb" id="loadMore-css-files" disabled><span class="lm-dot red"></span> Load More Results</button>
+    </div>
+    <div id="cssResult"></div>
+  </div>
+</div>
+
+<!-- TASKS -->
+<div id="section-tasks">
+  <div class="panel">
+    <h2>📋 Running Tasks</h2>
+    <p class="section-desc">Shows all Windows processes with safety classification. <b>🟢 Safe</b> = user apps, ok to kill. <b>🟡 Caution</b> = services/drivers, may break functionality. <b>🔴 Critical</b> = OS core, killing causes BSOD. Toggle <b>Safe Only</b> to filter.</p>
+    <div class="toolbar">
+      <input type="text" placeholder="Filter by name, path, or company…" id="taskFilter" class="filter-input" oninput="window._taskMgr?.filter()">
+      <select id="taskSafetyFilter" class="filter-select" onchange="window._taskMgr?.filter()">
+        <option value="">All Processes</option>
+        <option value="safe">🟢 Safe to Kill</option>
+        <option value="caution">🟡 Caution</option>
+        <option value="critical">🔴 Critical / System</option>
+      </select>
+      <button class="btn" onclick="window._taskMgr?.load()">🔄 Refresh</button>
+      <button class="btn danger" onclick="window._taskMgr?.killSelected()">☠️ Kill Selected</button>
+      <span id="taskCount" style="color:var(--muted);font-size:12px"></span>
+    </div>
+    <div id="taskResult"></div>
+  </div>
+</div>
+
+<!-- SAVINGS LOG -->
+<div id="section-savings">
+  <div class="panel">
+    <h2>💰 Savings Log</h2>
+    <div class="toolbar">
+      <span id="sessionBadge">Session —</span>
+      <button class="btn" data-action="load-savings">🔄 Refresh</button>
+      <button class="btn muted" data-action="export-savings">📤 Export JSON</button>
+      <button class="btn orange" data-action="new-session">🆕 New Session</button>
+      <button class="btn muted" id="recycleBinBtn" onclick="window.loadRecycleBin()">♻️ Recycle Bin</button>
+    </div>
+    <div class="toolbar" style="margin-top:4px">
+      <input type="text" placeholder="Filter by path or action…" id="savingsFilter" class="filter-input" oninput="window.filterSavings()">
+      <select id="savingsActionFilter" class="filter-select" onchange="window.filterSavings()">
+        <option value="">All Actions</option>
+        <option value="trash">trash</option>
+        <option value="delete">delete</option>
+        <option value="smart-dedup">smart-dedup</option>
+      </select>
+      <button class="btn muted" onclick="window.savingsSelectAll()">Select All</button>
+      <button class="btn muted" onclick="window.savingsSelectNone()">Select None</button>
+      <button class="btn green" onclick="window.restoreSavingsSelected()">↩️ Restore Selected</button>
+      <span id="savingsSelCount" style="color:var(--muted);font-size:12px"></span>
+      <span id="savingsFilterStatus" style="color:var(--muted);font-size:12px"></span>
+    </div>
+    <div class="grid2" id="savingsStats"></div>
+    <div id="savingsLog"></div>
+  </div>
+  <!-- Recycle Bin Panel (hidden until button clicked) -->
+  <div class="panel" id="recycleBinPanel" style="display:none">
+    <h2>♻️ Recycle Bin Contents</h2>
+    <div class="toolbar">
+      <input type="text" placeholder="Filter by name or path…" id="rbFilter" class="filter-input" oninput="window.filterRecycleBin()">
+      <select id="rbTypeFilter" class="filter-select" onchange="window.filterRecycleBin()"><option value="">All Types</option></select>
+      <button class="btn muted" onclick="window.rbSelectAll()">Select All</button>
+      <button class="btn muted" onclick="window.rbSelectNone()">Select None</button>
+      <button class="btn green" onclick="window.restoreSelected()">↩️ Restore Selected</button>
+      <button class="btn muted" onclick="document.getElementById('recycleBinPanel').style.display='none'">✖ Close</button>
+      <span id="rbStatus" style="color:var(--muted);font-size:12px"></span>
+    </div>
+    <div id="rbResult"></div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div id="section-settings">
+  <div class="panel">
+    <h2>⚙️ Settings</h2>
+    <div class="settings-split">
+    <div class="settings-form">
+      <div>
+        <label>Primary Root Folder</label>
+        <input type="text" id="cfgRoot">
+      </div>
+      <div>
+        <label>Extra Root Folders (one per line)</label>
+        <textarea id="cfgExtraRoots" rows="4"></textarea>
+      </div>
+      <div class="settings-row">
+        <div>
+          <label>Stale Threshold (days)</label>
+          <input type="number" id="cfgStaleDays">
+        </div>
+        <div>
+          <label>Large File Threshold (MB)</label>
+          <input type="number" id="cfgLargeMb">
+        </div>
+        <div>
+          <label>Max Parallelism</label>
+          <input type="number" id="cfgParallelism">
+        </div>
+      </div>
+      <div>
+        <label>Scheduled Daily Scan</label>
+        <div class="settings-row">
+          <div>
+            <label>Run Time (24h, e.g. 02:00)</label>
+            <input type="text" id="cfgScheduleTime" placeholder="02:00 (empty = disabled)">
+          </div>
+          <div>
+            <label>Sections</label>
+            <input type="text" id="cfgScheduleSections" placeholder="duplicates,backups,large,stale,empty">
+          </div>
+        </div>
+      </div>
+      <div>
+        <label>Diagnostics</label>
+        <div class="settings-row">
+          <label><input type="checkbox" id="cfgTrace"> Enable Trace Logging</label>
+        </div>
+      </div>
+      <div class="settings-actions">
+        <button class="btn green" data-action="save-settings">💾 Save Settings</button>
+        <button class="btn muted" onclick="window.open('/trace-viewer.html','_blank')">📜 View Trace Log</button>
+      </div>
+      <div id="settingsMsg"></div>
+    </div>
+    <div class="settings-help" id="settingsHelp">Loading help…</div>
+    </div><!-- /settings-split -->
+  </div>
+</div>
+
+</main>
+
+<!-- ═══ TRACE SYSTEM ═══ Writes to /api/trace (file-based). Survives freezes. ═══ -->
+<script>
+(function() {
+  const ENABLED = localStorage.getItem('dcu_trace') !== 'false';
+  const T0 = performance.now();
+  const BUFFER = [];
+  let hbN = 0, lastHbMs = 0, flushTimer = null;
+
+  function t(tag, msg) {
+    if (!ENABLED) return;
+    const ms = (performance.now() - T0).toFixed(0);
+    BUFFER.push(`+${ms}ms [${tag}] ${msg}`);
+    // Auto-flush every 300ms (batches writes, reduces HTTP calls)
+    if (!flushTimer) flushTimer = setTimeout(flush, 300);
+  }
+
+  function flush() {
+    flushTimer = null;
+    if (!BUFFER.length) return;
+    const batch = BUFFER.splice(0, BUFFER.length).join('\n');
+    // sendBeacon: fire-and-forget, survives page freeze/unload
+    navigator.sendBeacon('/api/trace', batch);
+  }
+
+  // Heartbeat — detects main thread freeze (800ms threshold)
+  // On freeze: dump the breadcrumb trail so we can trace the call chain backward.
+  if (ENABLED) {
+    setInterval(() => {
+      hbN++;
+      const ms = Math.round(performance.now() - T0);
+      const gap = ms - lastHbMs;
+      if (lastHbMs > 0 && gap > 800) {
+        t('FREEZE', `Main thread blocked for ${gap}ms!`);
+        // Dump breadcrumb trail — the workflow that led to this freeze
+        const trail = window._crumbs?.dump(50);
+        if (trail) {
+          t('FREEZE-TRAIL', `Last 50 breadcrumbs before freeze:\n${trail}`);
+        }
+      }
+      lastHbMs = ms;
+      // Log every 10th heartbeat (5s) to show liveness without spam
+      if (hbN % 10 === 0) t('HB', `#${hbN} +${ms}ms`);
+      if (hbN > 600) return; // stop after 5min
+    }, 500);
+  }
+
+  // Flush on page hide (tab switch, close)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flush();
+  });
+  window.addEventListener('beforeunload', flush);
+
+  // Clear previous trace so each page load starts fresh
+  if (ENABLED) fetch('/api/trace', { method: 'DELETE' }).catch(() => {});
+
+  window._T       = t;
+  window._Tflush  = flush;
+  window._TENABLED = ENABLED;
+  t('PAGE', `Trace system loaded (enabled=${ENABLED})`);
+})();
+</script>
+
+<!-- Markdown renderer for settings help (local copy, no CDN dependency) -->
+<script src="/lib/marked.min.js" defer></script>
+
+<!-- Application modules (ES modules — all sections imported by init.js) -->
+<script type="module" src="/js/init.js?v=2"></script>
+
+
+<!-- Keep-List Viewer Modal -->
+<div id="keepListModal" class="kl-modal-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="kl-modal">
+    <div class="kl-modal-header">
+      <h3>🔒 Kept Files</h3>
+      <span>These files are excluded from all scans</span>
+      <button class="btn muted btn-xs" onclick="document.getElementById('keepListModal').style.display='none'" title="Close">&times;</button>
+    </div>
+    <div id="keepListBody" class="kl-modal-body">
+      <p class="muted">Loading…</p>
+    </div>
+    <div class="kl-modal-footer">
+      <button class="btn muted" onclick="window._keepListClearAll()">🗑 Clear All</button>
+      <button class="btn muted" onclick="window._keepListRemoveChecked()">↩ Un-keep Selected</button>
+      <button class="btn" onclick="document.getElementById('keepListModal').style.display='none'">Close</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

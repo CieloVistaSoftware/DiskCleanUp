@@ -1,0 +1,171 @@
+/* MetricsBar Styling — Real-Time System Metrics */
+
+.mb-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 0;
+  flex-wrap: wrap;
+}
+
+.mb-metric {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #666;
+}
+
+.mb-label {
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  font-size: 10px;
+  opacity: 0.75;
+}
+
+.mb-value {
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+  font-variant-numeric: tabular-nums;
+  min-width: 40px;
+}
+
+/* Canvas styling */
+.mb-metric canvas {
+  border: 1px solid #ddd;
+  border-radius: 2px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mb-metric canvas:hover {
+  border-color: #007bff;
+  box-shadow: 0 1px 3px rgba(0, 123, 255, 0.2);
+}
+
+/* Uptime metric with pulse dot */
+.mb-uptime {
+  gap: 8px;
+  padding: 0 12px;
+  border-left: 1px solid #ddd;
+  border-right: 1px solid #ddd;
+}
+
+.mb-pulse-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4caf50;
+  flex-shrink: 0;
+  animation: mb-pulse 1.5s ease-in-out infinite;
+  box-shadow: 0 0 4px rgba(76, 175, 80, 0.6);
+}
+
+/* Pulse animation */
+@keyframes mb-pulse {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 4px rgba(76, 175, 80, 0.6);
+  }
+  50% {
+    opacity: 0.4;
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.3);
+  }
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
+  .mb-bar {
+    gap: 12px;
+  }
+
+  .mb-metric {
+    gap: 4px;
+  }
+}
+
+@media (max-width: 768px) {
+  .mb-bar {
+    gap: 8px;
+  }
+
+  .mb-metric {
+    font-size: 10px;
+    gap: 3px;
+  }
+
+  .mb-label {
+    font-size: 9px;
+  }
+
+  .mb-value {
+    font-size: 11px;
+    min-width: 30px;
+  }
+
+  .mb-metric canvas {
+    width: 35px;
+    height: 14px;
+  }
+
+  .mb-uptime {
+    gap: 6px;
+    padding: 0 8px;
+  }
+
+  .mb-pulse-dot {
+    width: 5px;
+    height: 5px;
+  }
+}
+
+@media (max-width: 480px) {
+  .mb-bar {
+    gap: 6px;
+    font-size: 9px;
+  }
+
+  .mb-metric {
+    gap: 2px;
+  }
+
+  .mb-label {
+    font-size: 8px;
+    display: none;
+  }
+
+  .mb-value {
+    font-size: 10px;
+    min-width: 25px;
+  }
+
+  .mb-metric canvas {
+    width: 30px;
+    height: 12px;
+  }
+
+  .mb-uptime {
+    gap: 4px;
+    padding: 0 6px;
+  }
+}
+
+/* Accessibility */
+.mb-bar {
+  isolation: isolate;
+}
+
+.mb-metric canvas:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+.mb-metric canvas:focus-visible {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}

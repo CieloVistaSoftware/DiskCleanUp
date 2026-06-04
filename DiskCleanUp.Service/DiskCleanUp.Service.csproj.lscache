@@ -58,13 +58,16 @@ Api/
  AnswersEndpoints.cs
  CacheEndpoints.cs
  ConfigEndpoints.cs
+ CssMergeAnalyzerEndpoints.cs
  DiagEndpoints.cs
  FileEndpoints.cs
  HtmlUtilityEndpoints.cs
+ IssueFileEndpoints.cs
  KeepListEndpoints.cs
  MetricsEndpoints.cs
  RecycleBinEndpoints.cs
  ScanLogEndpoints.cs
+ SymlinkEndpoints.cs
  TaskEndpoints.cs
  TrashEndpoints.cs
 Helpers/SafeFileHelpers.cs
@@ -78,6 +81,7 @@ Scanning/
  Rules/
   BackupsRule.cs
   CssFilesRule.cs
+  DevCacheRule.cs
   DuplicatesRule.cs
   EmptyRule.cs
   ExtSearchRule.cs

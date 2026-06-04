@@ -1,0 +1,51 @@
+<svg viewBox="0 0 1100 280" xmlns="http://www.w3.org/2000/svg">
+      <rect x="10" y="60" width="150" height="60" rx="8" fill="#0c0f14" stroke="#f85149" stroke-width="1.5"/>
+      <text x="85" y="85" text-anchor="middle" fill="#f85149" font-family="Outfit" font-size="11" font-weight="600">Sysmon</text>
+      <text x="85" y="102" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">Kernel ETW hooks</text>
+      <line x1="160" y1="90" x2="195" y2="90" stroke="#f85149" stroke-width="1.5" marker-end="url(#a4)"/>
+
+      <rect x="198" y="60" width="150" height="60" rx="8" fill="#0c0f14" stroke="#e3b341" stroke-width="1.5"/>
+      <text x="273" y="85" text-anchor="middle" fill="#e3b341" font-family="Outfit" font-size="11" font-weight="600">Event Log</text>
+      <text x="273" y="102" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">Persisted events</text>
+      <line x1="348" y1="90" x2="383" y2="90" stroke="#e3b341" stroke-width="1.5" marker-end="url(#a5)"/>
+
+      <rect x="386" y="60" width="150" height="60" rx="8" fill="#0c0f14" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="461" y="80" text-anchor="middle" fill="#58a6ff" font-family="Outfit" font-size="11" font-weight="600">SysmonWatcher</text>
+      <text x="461" y="97" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">EventLogWatcher</text>
+      <text x="461" y="110" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">5s debounce</text>
+      <line x1="536" y1="90" x2="571" y2="90" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#a1)"/>
+
+      <rect x="574" y="60" width="150" height="60" rx="8" fill="#0c0f14" stroke="#e3b341" stroke-width="1.5"/>
+      <text x="649" y="85" text-anchor="middle" fill="#e3b341" font-family="Outfit" font-size="11" font-weight="600">Delta Scan</text>
+      <text x="649" y="102" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">Single directory only</text>
+      <line x1="724" y1="90" x2="759" y2="90" stroke="#3fb950" stroke-width="1.5" marker-end="url(#a3)"/>
+
+      <rect x="762" y="60" width="150" height="60" rx="8" fill="#0c0f14" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="837" y="85" text-anchor="middle" fill="#3fb950" font-family="Outfit" font-size="11" font-weight="600">Cache Update</text>
+      <text x="837" y="102" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">JSONL append/upsert</text>
+      <line x1="912" y1="90" x2="947" y2="90" stroke="#3fb950" stroke-width="1.5" marker-end="url(#a3)"/>
+
+      <rect x="950" y="60" width="140" height="60" rx="8" fill="#0c0f14" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="1020" y="80" text-anchor="middle" fill="#3fb950" font-family="Outfit" font-size="11" font-weight="600">WS Signal</text>
+      <text x="1020" y="97" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">batch-ready &gt;</text>
+      <text x="1020" y="110" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">Dashboard</text>
+
+      <!-- Labels above -->
+      <text x="85" y="46" text-anchor="middle" fill="#f85149" font-family="Outfit" font-size="9" font-weight="600">KERNEL</text>
+      <text x="273" y="46" text-anchor="middle" fill="#e3b341" font-family="Outfit" font-size="9" font-weight="600">WINDOWS</text>
+      <text x="461" y="46" text-anchor="middle" fill="#58a6ff" font-family="Outfit" font-size="9" font-weight="600">SERVICE</text>
+      <text x="649" y="46" text-anchor="middle" fill="#e3b341" font-family="Outfit" font-size="9" font-weight="600">ORCHESTRATOR</text>
+      <text x="837" y="46" text-anchor="middle" fill="#3fb950" font-family="Outfit" font-size="9" font-weight="600">DISK</text>
+      <text x="1020" y="46" text-anchor="middle" fill="#3fb950" font-family="Outfit" font-size="9" font-weight="600">BROWSER</text>
+
+      <!-- Fallback path -->
+      <rect x="386" y="170" width="150" height="50" rx="8" fill="#0c0f14" stroke="#7d8590" stroke-width="1" stroke-dasharray="5,3"/>
+      <text x="461" y="192" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10" font-weight="600">FileSystemWatcher</text>
+      <text x="461" y="207" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">Fallback if no Sysmon</text>
+      <line x1="461" y1="120" x2="461" y2="168" stroke="#7d8590" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="475" y="148" fill="#484f58" font-family="Outfit" font-size="8">graceful</text>
+      <text x="475" y="158" fill="#484f58" font-family="Outfit" font-size="8">degradation</text>
+
+      <text x="550" y="250" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="11">File changed on disk &gt; dashboard updated: &lt; 10 seconds (5s debounce + scan + signal)</text>
+      <text x="550" y="268" text-anchor="middle" fill="#30363d" font-family="Outfit" font-size="10">Without Sysmon: next scheduled full scan (hours)</text>
+    </svg>

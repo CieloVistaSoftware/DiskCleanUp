@@ -317,6 +317,17 @@ public class ConfigService
         return result;
     }
 
+    public async Task ClearErrorsAsync()
+    {
+        await _lock.WaitAsync();
+        try
+        {
+            if (File.Exists(_errorLogFile))
+                File.Delete(_errorLogFile);
+        }
+        finally { _lock.Release(); }
+    }
+
     // ── Scan Result Cache ────────────────────────────────────
     // One JSON file per section in scan-cache/.
     // Written when a scan completes, read back on startup.

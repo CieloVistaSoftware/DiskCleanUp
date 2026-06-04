@@ -1,0 +1,193 @@
+<!-- ═══════════════════════════════════════════════════════════════════════
+     wwwroot/error-viewer.html
+     Client-side error log viewer. Reads from the /api/errors endpoint
+     (backed by errors.jsonl in ProgramData). Shows JavaScript errors
+     captured by error-logger.js across all dashboard pages.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Error Log Viewer</title>
+  <style>
+    :root {
+      --bg: #1f2937; --bg2: #111827; --bg3: #374151;
+      --text: #f9fafb; --muted: #9ca3af; --border: #4b5563;
+      --red: #ef4444; --orange: #f59e0b; --blue: #3b82f6;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; min-height: 100vh; }
+
+    header {
+      background: var(--bg2); border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem; display: flex; align-items: center; gap: 1rem;
+      position: sticky; top: 0; z-index: 10; flex-wrap: wrap;
+    }
+    header h1 { margin: 0; font-size: 1.25rem; }
+    header h1 a { color: var(--muted); text-decoration: none; font-size: 0.85rem; margin-left: 0.5rem; }
+    header h1 a:hover { color: var(--blue); }
+    .badge { background: var(--bg3); color: var(--muted); font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 9999px; }
+
+    .controls { margin-left: auto; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+    .controls input, .controls select {
+      background: var(--bg3); color: var(--text); border: 1px solid var(--border);
+      border-radius: 4px; padding: 0.25rem 0.5rem; font-size: 0.8rem;
+    }
+    .controls label { font-size: 0.75rem; color: var(--muted); }
+
+    main { padding: 2rem; max-width: 1400px; margin: 0 auto; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th { text-align: left; color: var(--muted); padding: 8px 10px; border-bottom: 2px solid var(--border);
+         font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;
+         position: sticky; top: 52px; background: var(--bg); z-index: 5; cursor: pointer; }
+    th:hover { color: var(--text); }
+    td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:hover td { background: var(--bg3); }
+
+    .ts { color: var(--muted); font-size: 0.75rem; white-space: nowrap; }
+    .type-badge {
+      font-size: 0.65rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+      text-transform: uppercase; white-space: nowrap;
+    }
+    .type-UNCAUGHT_ERROR, .type-PROMISE_REJECTION { background: rgba(239,68,68,.2); color: var(--red); }
+    .type-HTTP_ERROR, .type-FETCH_ERROR { background: rgba(245,158,11,.2); color: var(--orange); }
+    .type-WS_RECONNECTING { background: rgba(59,130,246,.2); color: var(--blue); }
+    .type-TIMEOUT { background: rgba(139,92,246,.2); color: #8b5cf6; }
+
+    .msg { font-family: monospace; font-size: 0.8rem; max-width: 500px; word-break: break-all; }
+    .loc { color: var(--muted); font-family: monospace; font-size: 0.75rem; }
+    .hits { font-weight: 700; text-align: center; }
+    .hits-high { color: var(--red); }
+
+    .stack-toggle { color: var(--blue); cursor: pointer; font-size: 0.75rem; border: none; background: none; }
+    .stack-toggle:hover { text-decoration: underline; }
+    .stack-block {
+      display: none; margin-top: 6px; padding: 8px; background: var(--bg2);
+      border: 1px solid var(--border); border-radius: 4px;
+      font: 0.75rem/1.4 monospace; color: var(--muted); white-space: pre-wrap; max-height: 200px; overflow: auto;
+    }
+    .stack-block.open { display: block; }
+
+    .empty-state { text-align: center; color: var(--muted); padding: 4rem 2rem; }
+    .error-banner { background: rgba(239,68,68,.15); color: var(--red); padding: 1rem; border-radius: 8px; text-align: center; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🔴 Error Log <a href="/">← Dashboard</a></h1>
+    <span id="count-badge" class="badge">Loading…</span>
+    <div class="controls">
+      <input type="text" id="search" placeholder="Filter errors…" style="width:200px">
+      <label for="type-filter">Type:</label>
+      <select id="type-filter">
+        <option value="all">All</option>
+      </select>
+    </div>
+  </header>
+
+  <main>
+    <div id="error-msg"></div>
+    <table>
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Type</th>
+          <th>Hits</th>
+          <th>Message</th>
+          <th>Location</th>
+          <th>Stack</th>
+        </tr>
+      </thead>
+      <tbody id="error-body"></tbody>
+    </table>
+    <div id="empty" class="empty-state" style="display:none">No errors match your filter.</div>
+  </main>
+
+  <script type="module">
+    import { escHtml as esc } from '/lib/wb-core/utils/format.js';
+
+    let allErrors = [];
+
+    async function loadErrors() {
+      try {
+        const res = await fetch('/api/errors');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        // API returns array of { id, ts, type, prefix, message, loc, stack, hits, session_id, url }
+        allErrors = Array.isArray(data) ? data : [];
+        // Sort newest first
+        allErrors.sort((a, b) => new Date(b.ts || 0) - new Date(a.ts || 0));
+        populateTypeFilter();
+        render();
+      } catch (e) {
+        document.getElementById('error-msg').innerHTML =
+          `<div class="error-banner">Failed to load error log: ${e.message}<br>Make sure the server is running at <a href="/" style="color:inherit">localhost</a> (port 5000 console / 5100 service)</div>`;
+        document.getElementById('count-badge').textContent = 'Error';
+      }
+    }
+
+    function populateTypeFilter() {
+      const types = [...new Set(allErrors.map(e => e.type).filter(Boolean))].sort();
+      const sel = document.getElementById('type-filter');
+      types.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t; opt.textContent = t.replace(/_/g, ' ');
+        sel.appendChild(opt);
+      });
+    }
+
+    function getVisible() {
+      const q = document.getElementById('search').value.toLowerCase();
+      const typeFilter = document.getElementById('type-filter').value;
+      return allErrors.filter(e => {
+        if (typeFilter !== 'all' && e.type !== typeFilter) return false;
+        if (q) {
+          const hay = [e.id, e.type, e.prefix, e.message, e.loc, e.stack, e.url].join(' ').toLowerCase();
+          if (!q.split(/\s+/).every(tok => hay.includes(tok))) return false;
+        }
+        return true;
+      });
+    }
+
+    function render() {
+      const visible = getVisible();
+      const tbody = document.getElementById('error-body');
+      const empty = document.getElementById('empty');
+      document.getElementById('count-badge').textContent =
+        `${visible.length} of ${allErrors.length} error${allErrors.length !== 1 ? 's' : ''}`;
+
+      if (!visible.length) {
+        tbody.innerHTML = '';
+        empty.style.display = '';
+        return;
+      }
+      empty.style.display = 'none';
+
+      tbody.innerHTML = visible.map((e, idx) => {
+        const ts = e.ts ? new Date(e.ts).toLocaleString() : '—';
+        const hitsClass = (e.hits || 0) >= 10 ? 'hits-high' : '';
+        const hasStack = e.stack && e.stack.trim();
+        return `<tr>
+          <td class="ts">${esc(ts)}</td>
+          <td><span class="type-badge type-${esc(e.type || '')}">${esc(e.type || '—')}</span></td>
+          <td class="hits ${hitsClass}">${e.hits || 1}</td>
+          <td class="msg">${esc(e.message || '')}</td>
+          <td class="loc">${esc(e.loc || '')}</td>
+          <td>${hasStack
+            ? `<button class="stack-toggle" onclick="this.nextElementSibling.classList.toggle('open')">▶ Stack</button><div class="stack-block">${esc(e.stack)}</div>`
+            : '<span style="color:var(--muted)">—</span>'}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    // esc is now imported from wb-core as escHtml
+
+    document.getElementById('search').addEventListener('input', render);
+    document.getElementById('type-filter').addEventListener('change', render);
+
+    loadErrors();
+  </script>
+</body>
+</html>

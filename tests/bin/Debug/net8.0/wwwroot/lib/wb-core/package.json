@@ -1,0 +1,22 @@
+{
+  "name": "@cielovista/wb-core",
+  "version": "1.0.0",
+  "description": "Cielo Vista Software — Reusable web component behaviors and utilities",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./components/*": "./components/*",
+    "./behaviors/*": "./behaviors/*",
+    "./utils/*": "./utils/*"
+  },
+  "files": [
+    "index.js",
+    "components/",
+    "behaviors/",
+    "utils/"
+  ],
+  "keywords": ["web-components", "custom-elements", "behaviors", "ui", "light-dom"],
+  "author": "John Peters <Cielo Vista Software>",
+  "license": "MIT"
+}

@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DiskCleanUp — Fix Registry</title>
+  <style>
+    :root {
+      --bg-primary:   #1f2937;
+      --bg-secondary: #111827;
+      --bg-tertiary:  #374151;
+      --text-primary: #f9fafb;
+      --text-secondary:#d1d5db;
+      --text-muted:   #9ca3af;
+      --border:       #4b5563;
+      --primary:      #3b82f6;
+      --success:      #10b981;
+      --warning:      #f59e0b;
+      --danger:       #ef4444;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      margin: 0; padding: 0;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+    }
+
+    /* ── Header ──────────────────────────────────────────── */
+    header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex; align-items: center; flex-wrap: wrap; gap: 1rem;
+      position: sticky; top: 0; z-index: 10;
+    }
+
+    header h1 { margin: 0; font-size: 1.25rem; font-weight: 700; }
+    header h1 a { color: var(--text-muted); text-decoration: none; font-size: 0.85rem; font-weight: 400; margin-left: 0.5rem; }
+    header h1 a:hover { color: var(--primary); }
+
+    .badge {
+      background: var(--bg-tertiary); color: var(--text-secondary);
+      font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 9999px;
+    }
+
+    .controls {
+      margin-left: auto;
+      display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    }
+
+    .controls label { font-size: 0.75rem; color: var(--text-muted); }
+
+    .controls select,
+    .controls input[type="text"] {
+      background: var(--bg-tertiary); color: var(--text-primary);
+      border: 1px solid var(--border); border-radius: 4px;
+      padding: 0.25rem 0.5rem; font-size: 0.8rem; cursor: pointer;
+    }
+
+    .controls select:focus,
+    .controls input[type="text"]:focus { outline: none; border-color: var(--primary); }
+
+    .btn {
+      background: var(--primary); color: #fff; border: none;
+      padding: 0.25rem 0.75rem; border-radius: 4px;
+      font-size: 0.8rem; font-weight: 600; cursor: pointer;
+    }
+    .btn:hover { opacity: 0.85; }
+
+    /* ── Main ────────────────────────────────────────────── */
+    main {
+      flex: 1; padding: 2rem;
+      max-width: 1400px; margin: 0 auto; width: 100%;
+    }
+
+    .group-header {
+      font-size: 1rem; font-weight: 600; color: var(--text-secondary);
+      margin: 2rem 0 1rem 0; padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .group-header:first-child { margin-top: 0; }
+
+    .fix-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+      gap: 1.25rem;
+    }
+
+    /* ── Cards ───────────────────────────────────────────── */
+    .fix-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      display: flex; flex-direction: column; gap: 0.75rem;
+      transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+      overflow: hidden;
+    }
+    .fix-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--primary);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    }
+
+    .card-top {
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;
+    }
+
+    .fix-id {
+      font-family: monospace; font-size: 0.7rem;
+      background: var(--bg-tertiary); color: var(--text-muted);
+      padding: 0.125rem 0.4rem; border-radius: 4px;
+    }
+
+    .fix-status {
+      font-size: 0.7rem; font-weight: 700;
+      padding: 0.125rem 0.5rem; border-radius: 9999px;
+      text-transform: uppercase; white-space: nowrap;
+    }
+    .status-resolved   { background: rgba(16,185,129,0.2); color: var(--success); }
+    .status-unresolved { background: rgba(245,158,11,0.2); color: var(--warning); }
+
+    .fix-title {
+      font-size: 0.95rem; font-weight: 600; color: var(--text-primary);
+      line-height: 1.4; margin: 0;
+    }
+
+    .fix-meta {
+      display: flex; gap: 1rem; font-size: 0.75rem; color: var(--text-muted);
+      flex-wrap: wrap;
+    }
+
+    .fix-details {
+      background: var(--bg-tertiary); border-radius: 6px;
+      padding: 0.75rem; font-size: 0.85rem; color: var(--text-secondary);
+      display: flex; flex-direction: column; gap: 0.6rem;
+    }
+
+    .detail-row { display: flex; flex-direction: column; gap: 0.25rem; }
+    .detail-label {
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+      color: var(--text-muted); letter-spacing: 0.05em;
+    }
+    .detail-content { line-height: 1.5; }
+
+    .files-list {
+      font-family: monospace; font-size: 0.8rem; color: var(--primary);
+      list-style: none; margin: 0; padding: 0;
+    }
+    .files-list li::before { content: "📄 "; }
+
+    .category-badge {
+      font-size: 0.7rem; background: rgba(59,130,246,0.2); color: var(--primary);
+      padding: 0.125rem 0.4rem; border-radius: 4px; font-weight: 600;
+    }
+
+    .empty-state {
+      text-align: center; color: var(--text-muted);
+      padding: 4rem 2rem; font-size: 1rem;
+    }
+
+    @media (max-width: 600px) {
+      header { padding: 0.75rem 1rem; }
+      main   { padding: 1rem; }
+      .controls { margin-left: 0; width: 100%; }
+      .fix-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🛠 Fix Registry <a href="/">← Dashboard</a></h1>
+    <span id="fix-count" class="badge">Loading…</span>
+
+    <div class="controls">
+      <input type="text" id="search-input" placeholder="Search…" title="Search by ID, title, source, or file">
+
+      <label for="filter-status">Status:</label>
+      <select id="filter-status">
+        <option value="all">All</option>
+        <option value="unresolved">Unresolved</option>
+        <option value="resolved">Resolved</option>
+      </select>
+
+      <label for="sort-by">Sort:</label>
+      <select id="sort-by">
+        <option value="date-desc">Newest</option>
+        <option value="date-asc">Oldest</option>
+        <option value="id">ID</option>
+        <option value="source">Source</option>
+        <option value="category">Category</option>
+      </select>
+
+      <label for="group-by">Group:</label>
+      <select id="group-by">
+        <option value="none">None</option>
+        <option value="resolved">Resolved / Unresolved</option>
+        <option value="category">Category</option>
+        <option value="source">Source</option>
+      </select>
+
+      <button class="btn" id="btn-copy">Copy Filtered</button>
+    </div>
+  </header>
+
+  <main id="content">
+    <div class="empty-state">Loading fixes…</div>
+  </main>
+
+  <script type="module">
+    // ── Data ───────────────────────────────────────────────
+    let allFixes = [];
+
+    async function loadFixes() {
+      try {
+        const res  = await fetch('/api/fixes');
+        if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+        const data = await res.json();
+        const defaultDate = data.metadata?.updated ?? new Date().toISOString();
+
+        allFixes = (data.fixes ?? []).map(f => ({
+          ...f,
+          _date: f.lastSeen ?? f.firstSeen ?? defaultDate
+        }));
+
+        render();
+      } catch (e) {
+        document.getElementById('content').innerHTML =
+          `<div class="empty-state" style="color:var(--danger)">
+            ❌ Failed to load fixes: ${e.message}<br>
+            <span style="font-size:0.85rem;color:var(--text-muted)">Make sure the server is running and <code>data/fixes.json</code> exists.</span>
+          </div>`;
+        document.getElementById('fix-count').textContent = 'Error';
+      }
+    }
+
+    // ── Filter / Sort / Group ─────────────────────────────
+    function filter(fixes) {
+      const q      = document.getElementById('search-input').value.trim().toLowerCase();
+      const status = document.getElementById('filter-status').value;
+
+      return fixes.filter(f => {
+        // status gate
+        if (status === 'resolved'   && !f.resolved) return false;
+        if (status === 'unresolved' &&  f.resolved) return false;
+
+        // text search (AND across tokens)
+        if (q) {
+          const hay = [f.id, f.title, f.problem, f.fix, f.source, f.category,
+                       ...(f.filesChanged ?? [])].join(' ').toLowerCase();
+          if (!q.split(/\s+/).every(tok => hay.includes(tok))) return false;
+        }
+        return true;
+      });
+    }
+
+    function sort(fixes) {
+      const by = document.getElementById('sort-by').value;
+      return [...fixes].sort((a, b) => {
+        if (by === 'date-desc') return new Date(b._date) - new Date(a._date);
+        if (by === 'date-asc')  return new Date(a._date) - new Date(b._date);
+        const va = (a[by === 'source' ? 'source' : by === 'category' ? 'category' : 'id'] ?? '').toLowerCase();
+        const vb = (b[by === 'source' ? 'source' : by === 'category' ? 'category' : 'id'] ?? '').toLowerCase();
+        return va.localeCompare(vb);
+      });
+    }
+
+    function group(fixes) {
+      const by = document.getElementById('group-by').value;
+      if (by === 'none') return { '': fixes };
+
+      const groups = {};
+      fixes.forEach(f => {
+        let key = 'Unknown';
+        if (by === 'resolved')  key = f.resolved ? '✅ Resolved' : '⚠️ Unresolved';
+        if (by === 'category')  key = f.category ?? 'Unknown';
+        if (by === 'source')    key = f.source    ?? 'Unknown';
+        (groups[key] ??= []).push(f);
+      });
+      return groups;
+    }
+
+    // ── Render ─────────────────────────────────────────────
+    function render() {
+      const visible = sort(filter(allFixes));
+      const grouped = group(visible);
+
+      const resolved = visible.filter(f => f.resolved).length;
+      document.getElementById('fix-count').textContent =
+        `${visible.length} fix${visible.length !== 1 ? 'es' : ''} · ${resolved} resolved`;
+
+      const content = document.getElementById('content');
+      content.innerHTML = '';
+
+      if (visible.length === 0) {
+        content.innerHTML = '<div class="empty-state">No fixes match your filters.</div>';
+        return;
+      }
+
+      const sortedKeys = Object.keys(grouped).sort((a, b) => {
+        // Unresolved first when grouped by resolved
+        if (a.startsWith('⚠️')) return -1;
+        if (b.startsWith('⚠️')) return  1;
+        return a.localeCompare(b);
+      });
+
+      const byGrouping = document.getElementById('group-by').value;
+
+      sortedKeys.forEach(key => {
+        const items = grouped[key];
+        if (!items.length) return;
+
+        const section = document.createElement('div');
+        section.className = 'fix-group';
+
+        if (byGrouping !== 'none') {
+          const hdr = document.createElement('div');
+          hdr.className = 'group-header';
+          hdr.innerHTML = `${key} <span class="badge">${items.length}</span>`;
+          section.appendChild(hdr);
+        }
+
+        const grid = document.createElement('div');
+        grid.className = 'fix-grid';
+        items.forEach(f => grid.appendChild(buildCard(f)));
+        section.appendChild(grid);
+        content.appendChild(section);
+      });
+    }
+
+    function buildCard(f) {
+      const card = document.createElement('div');
+      card.className = 'fix-card';
+
+      const statusClass = f.resolved ? 'status-resolved' : 'status-unresolved';
+      const statusText  = f.resolved ? '✅ Resolved'    : '⚠️ Open';
+
+      const seen = f.seenCount > 0
+        ? `Seen ${f.seenCount}× · Last: ${fmtDate(f.lastSeen)}`
+        : 'Seen 0×';
+
+      const files = (f.filesChanged ?? []).length > 0
+        ? `<ul class="files-list">${f.filesChanged.map(p => `<li>${p}</li>`).join('')}</ul>`
+        : '<span class="text-muted">None logged</span>';
+
+      card.innerHTML = `
+        <div class="card-top">
+          <span class="fix-id">${esc(f.id)}</span>
+          <span class="fix-status ${statusClass}">${statusText}</span>
+        </div>
+        <p class="fix-title">${esc(f.title)}</p>
+        <div class="fix-meta">
+          <span>📦 ${esc(f.source ?? 'Unknown')}</span>
+          <span class="category-badge">${esc(f.category)}</span>
+          <span>${seen}</span>
+        </div>
+        <div class="fix-details">
+          <div class="detail-row">
+            <span class="detail-label">Problem</span>
+            <span class="detail-content">${esc(f.problem)}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Fix</span>
+            <span class="detail-content">${esc(f.fix)}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Files Changed</span>
+            <span class="detail-content">${files}</span>
+          </div>
+        </div>`;
+
+      return card;
+    }
+
+    function esc(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+      }[c]));
+    }
+
+    function fmtDate(iso) {
+      if (!iso) return '—';
+      return new Date(iso).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+    }
+
+    // ── Events ─────────────────────────────────────────────
+    ['search-input','filter-status','sort-by','group-by'].forEach(id => {
+      const el = document.getElementById(id);
+      el.addEventListener(id === 'search-input' ? 'input' : 'change', render);
+    });
+
+    document.getElementById('btn-copy').addEventListener('click', () => {
+      const data = sort(filter(allFixes));
+      navigator.clipboard.writeText(JSON.stringify(data, null, 2)).then(() => {
+        const btn = document.getElementById('btn-copy');
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = 'Copy Filtered', 2000);
+      });
+    });
+
+    loadFixes();
+  </script>
+</body>
+</html>

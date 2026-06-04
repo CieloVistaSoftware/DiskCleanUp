@@ -1,18 +1,3 @@
----
-docid: 300.9.migration-wb-core
-id: migration-plan-replace-custom-uiutilities-with-wb-
-title: "Migration Plan: Replace Custom UI/Utilities with wb-core"
-project: DiskCleanUp
-description: "Migrate all custom UI/utility components to wb-core equivalents."
-status: active
-tags: [migration, core, plan]
-category: 300.9 — Meta
-created: 2026-02-24
-updated: 2026-04-27
-version: 1.0.0
-author: CieloVista Software
-relativepath: docs/MIGRATION-WB-CORE.md
----
 # Migration Plan: Replace Custom UI/Utilities with wb-core
 
 ## 1. Inventory & Mapping
@@ -48,3 +33,19 @@ relativepath: docs/MIGRATION-WB-CORE.md
 ## 6. Documentation & Training
 - Document new usage patterns for future contributors.
 - Point to wb-core docs for reference.
+
+---
+docid: 300.9.migration-wb-core
+id: migration-plan-replace-custom-uiutilities-with-wb-
+title: Migration Plan: Replace Custom UI/Utilities with wb-core
+project: DiskCleanUp
+description: Migrate all custom UI/utility components to wb-core equivalents.
+status: active
+tags: [all, components, core, custom, diskcleanup, docs, equivalents, meta, migrate, migration, plan, replace, utilities, utility]
+category: 300.9 — Meta
+created: 2026-02-24
+updated: 2026-04-27
+version: 1.0.0
+author: CieloVista Software
+relativepath: docs/MIGRATION-WB-CORE.md
+---

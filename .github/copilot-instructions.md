@@ -5,7 +5,7 @@ title: copilot instructions
 project: DiskCleanUp
 description: ASP.NET Core 8 Worker Service (Generic Host) + vanilla HTML/JS dashboard for disk cleanup.
 status: active
-tags: [copilot, instructions, project]
+tags: [aspnet, coordination, copilot, core, dashboard, disk, diskcleanup, generic, github, host, html, instructions, project, service, vanilla, worker]
 category: 300.5 — AI Coordination
 created: 2026-02-21
 updated: 2026-04-27

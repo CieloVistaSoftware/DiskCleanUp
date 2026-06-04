@@ -1,0 +1,22 @@
+Hi Jwpmi
+File successfully moved to others folder: .gitignore
+File successfully moved to doc folder: CHANGELOG.md
+File successfully moved to doc folder: CLAUDE.md
+File successfully moved to others folder: claude_desktop_config.json
+File successfully moved to doc folder: diskcleanup.md
+File successfully moved to others folder: DiskCleanUp.sln
+File successfully moved to others folder: fix-conn-status.csx
+File successfully moved to media folder: icon.png
+File successfully moved to others folder: LICENSE
+File successfully moved to doc folder: MIGRATION-START.md
+File successfully moved to others folder: package-lock.json
+File successfully moved to others folder: package.json
+File successfully moved to others folder: patch-index.cjs
+File successfully moved to others folder: playwright.config.ts
+File successfully moved to doc folder: README.md
+File successfully moved to others folder: resume-raw.xml
+File successfully moved to doc folder: tsc-out.txt
+File successfully moved to others folder: tsconfig.json
+File successfully moved to doc folder: WEBSOCKET_FIX_SUMMARY.md
+
+Total number of files organised : 19

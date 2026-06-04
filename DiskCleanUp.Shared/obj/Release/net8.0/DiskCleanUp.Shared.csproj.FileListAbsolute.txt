@@ -1,0 +1,15 @@
+C:\Users\jwpmi\source\repos\DiskCleanUp\DiskCleanUp.Shared\bin\Release\net8.0\DiskCleanUp.Shared.deps.json
+C:\Users\jwpmi\source\repos\DiskCleanUp\DiskCleanUp.Shared\bin\Release\net8.0\DiskCleanUp.Shared.dll
+C:\Users\jwpmi\source\repos\DiskCleanUp\DiskCleanUp.Shared\bin\Release\net8.0\DiskCleanUp.Shared.pdb
+C:\Users\jwpmi\source\repos\DiskCleanUp\DiskCleanUp.Shared\obj\Release\net8.0\DiskCleanUp.Shared.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\jwpmi\source\repos\DiskCleanUp\DiskCleanUp.Shared\obj\Release\net8.0\DiskCleanUp.Shared.AssemblyInfoInputs.cache
+C:\Users\jwpmi\source\repos\DiskCleanUp\DiskCleanUp.Shared\obj\Release\net8.0\DiskCleanUp.Shared.AssemblyInfo.cs
+C:\Users\jwpmi\source\repos\DiskCleanUp\DiskCleanUp.Shared\obj\Release\net8.0\DiskCleanUp.Shared.csproj.CoreCompileInputs.cache
+C:\Users\jwpmi\source\repos\DiskCleanUp\DiskCleanUp.Shared\obj\Release\net8.0\DiskCleanUp.Shared.dll
+C:\Users\jwpmi\source\repos\DiskCleanUp\DiskCleanUp.Shared\obj\Release\net8.0\refint\DiskCleanUp.Shared.dll
+C:\Users\jwpmi\source\repos\DiskCleanUp\DiskCleanUp.Shared\obj\Release\net8.0\DiskCleanUp.Shared.pdb
+C:\Users\jwpmi\source\repos\DiskCleanUp\DiskCleanUp.Shared\obj\Release\net8.0\ref\DiskCleanUp.Shared.dll
+C:\Users\jwpmi\source\repos\DiskCleanUp\bin\Fresh\DiskCleanUp.Shared.deps.json
+C:\Users\jwpmi\source\repos\DiskCleanUp\bin\Fresh\DiskCleanUp.Shared.dll
+C:\Users\jwpmi\source\repos\DiskCleanUp\bin\Fresh\DiskCleanUp.Shared.pdb
+C:\Users\jwpmi\source\repos\DiskCleanUp\DiskCleanUp.Shared\obj\Release\net8.0\DiskCleanUp.Shared.sourcelink.json

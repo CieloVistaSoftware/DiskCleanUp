@@ -1,0 +1,284 @@
+/* StatusBar Styling — Section Status Display */
+/* Dark-theme aware: uses CSS custom properties from dashboard */
+
+.sb-container {
+  width: 100%;
+}
+
+.sb-bar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0;
+  height: 36px;
+  background: var(--panel, #161b22);
+  border: 2px solid var(--border, #30363d);
+  border-radius: 4px;
+  transition: border-color 0.3s ease, background-color 0.3s ease;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+/* ─── Visual States ─────────────────────────────────────────────────────────────────────── */
+
+/* Idle (default) */
+.sb-bar.sb-idle {
+  border-color: var(--border, #30363d);
+  background: var(--panel, #161b22);
+}
+
+.sb-bar.sb-idle .sb-status {
+  color: var(--muted, #7d8590);
+}
+
+/* Scanning (orange) */
+.sb-bar.sb-scanning {
+  border-color: var(--orange, #ff9800);
+  background: rgba(255, 152, 0, 0.08);
+}
+
+.sb-bar.sb-scanning .sb-status {
+  color: var(--orange, #ff9800);
+  font-weight: 500;
+}
+
+/* Done (green) */
+.sb-bar.sb-done {
+  border-color: var(--green, #4caf50);
+  background: rgba(76, 175, 80, 0.08);
+}
+
+.sb-bar.sb-done .sb-status {
+  color: var(--green, #4caf50);
+  font-weight: 500;
+}
+
+/* Error (red) */
+.sb-bar.sb-error {
+  border-color: var(--red, #f44336);
+  background: rgba(244, 67, 54, 0.08);
+}
+
+.sb-bar.sb-error .sb-status {
+  color: var(--red, #f44336);
+  font-weight: 500;
+}
+
+/* ─── Status Indicator ─────────────────────────────────────────────────────────────────── */
+
+.sb-status {
+  flex-shrink: 0;
+  width: 80px;
+  padding: 0 12px;
+  text-align: center;
+  font-weight: 500;
+  border-right: 1px solid var(--border, #30363d);
+  transition: color 0.3s ease;
+}
+
+/* ─── Metric Segments ──────────────────────────────────────────────────────────────────── */
+
+.sb-segment {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 70px;
+  padding: 0 8px;
+  border-right: 1px solid var(--border, #30363d);
+  gap: 2px;
+}
+
+.sb-segment:last-of-type {
+  border-right: none;
+}
+
+.sb-label {
+  font-size: 10px;
+  color: var(--muted, #7d8590);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.sb-value {
+  font-size: 13px;
+  color: var(--text, #e6edf3);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Row Count (built-in) ────────────────────────────────────────────────────────────── */
+
+.sb-bar .sb-segment:nth-last-child(3) {
+  width: 60px;
+}
+
+/* ─── Time (built-in) ──────────────────────────────────────────────────────────────────── */
+
+.sb-bar .sb-segment:nth-last-child(2) {
+  width: 60px;
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.sb-bar .sb-value {
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+/* ─── Folder Ticker (built-in) ─────────────────────────────────────────────────────────── */
+
+.sb-folder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  min-width: 150px;
+  max-width: 400px;
+  overflow: hidden;
+  border-right: 1px solid var(--border, #30363d);
+}
+
+.sb-folder-text {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--muted, #7d8590);
+  font-size: 12px;
+  animation: sb-scroll 8s linear infinite;
+}
+
+/* Scroll animation for long paths */
+@keyframes sb-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  40% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-100%);
+  }
+  90% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.sb-folder-text {
+  animation: none; /* Disable by default, enable only when long */
+}
+
+.sb-folder:has(> .sb-folder-text:hover) .sb-folder-text {
+  animation: sb-scroll 8s linear infinite;
+}
+
+/* ─── Stop Button (built-in) ───────────────────────────────────────────────────────────── */
+
+.sb-stop-btn {
+  flex-shrink: 0;
+  width: 40px;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-left: 1px solid var(--border, #30363d);
+  border-radius: 0 3px 3px 0;
+  background: transparent;
+  color: var(--muted, #7d8590);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sb-bar.sb-scanning .sb-stop-btn:not(:disabled) {
+  color: var(--orange, #ff9800);
+  background: rgba(255, 152, 0, 0.05);
+}
+
+.sb-bar.sb-scanning .sb-stop-btn:not(:disabled):hover {
+  background: rgba(255, 152, 0, 0.15);
+  color: #e65100;
+}
+
+.sb-bar.sb-scanning .sb-stop-btn:not(:disabled):active {
+  background: rgba(255, 152, 0, 0.25);
+}
+
+.sb-stop-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  color: var(--muted, #7d8590);
+}
+
+.sb-stop-btn:focus {
+  outline: 2px solid #007bff;
+  outline-offset: -2px;
+}
+
+.sb-stop-btn:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ─── Responsive Adjustments ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 1200px) {
+  .sb-segment {
+    width: 60px;
+  }
+
+  .sb-folder {
+    max-width: 250px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sb-bar {
+    height: 32px;
+    font-size: 12px;
+  }
+
+  .sb-status {
+    width: 70px;
+    font-size: 12px;
+  }
+
+  .sb-segment {
+    width: 50px;
+  }
+
+  .sb-label {
+    font-size: 9px;
+  }
+
+  .sb-value {
+    font-size: 12px;
+  }
+
+  .sb-folder {
+    max-width: 150px;
+    font-size: 11px;
+  }
+
+  .sb-stop-btn {
+    width: 36px;
+    font-size: 13px;
+  }
+}
+
+/* ─── Accessibility ────────────────────────────────────────────────────────────────────── */
+
+.sb-stop-btn:focus-visible {
+  outline: 2px solid #007bff;
+  outline-offset: -2px;
+}
+
+.sb-bar {
+  isolation: isolate;
+}

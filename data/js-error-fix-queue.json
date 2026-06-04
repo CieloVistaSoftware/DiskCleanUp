@@ -1,0 +1,376 @@
+{
+  "done": [
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/column-controls.js",
+      "fixId": "DCU-014",
+      "doneAt": "2026-03-05T21:32:18.464Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/data-grid.js",
+      "fixId": "DCU-015",
+      "doneAt": "2026-03-05T21:32:45.003Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/error-logger.js",
+      "fixId": "DCU-016",
+      "doneAt": "2026-03-05T21:32:45.143Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/event-queue.js",
+      "fixId": "DCU-017",
+      "doneAt": "2026-03-05T21:32:45.202Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/events.js",
+      "fixId": "DCU-018",
+      "doneAt": "2026-03-05T21:32:45.262Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/section-handlers.js",
+      "fixId": "DCU-019",
+      "doneAt": "2026-03-05T21:32:45.329Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/status-bar.js",
+      "fixId": "DCU-020",
+      "doneAt": "2026-03-05T21:32:45.386Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/table-utils.js",
+      "fixId": "DCU-021",
+      "doneAt": "2026-03-05T21:32:45.448Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/autocomplete.js",
+      "fixId": "DCU-022",
+      "doneAt": "2026-03-05T21:32:45.511Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/collapse.js",
+      "fixId": "DCU-023",
+      "doneAt": "2026-03-05T21:32:45.572Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/connection-badge.js",
+      "fixId": "DCU-024",
+      "doneAt": "2026-03-05T21:32:45.639Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/darkmode.js",
+      "fixId": "DCU-025",
+      "doneAt": "2026-03-05T21:32:45.711Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/draggable.js",
+      "fixId": "DCU-026",
+      "doneAt": "2026-03-05T21:32:45.773Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/dropdown.js",
+      "fixId": "DCU-027",
+      "doneAt": "2026-03-05T21:32:45.864Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/feedback.js",
+      "fixId": "DCU-028",
+      "doneAt": "2026-03-05T21:32:45.951Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/floatinglabel.js",
+      "fixId": "DCU-029",
+      "doneAt": "2026-03-05T21:32:46.020Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/layouts.js",
+      "fixId": "DCU-030",
+      "doneAt": "2026-03-05T21:32:46.083Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/masked.js",
+      "fixId": "DCU-031",
+      "doneAt": "2026-03-05T21:32:46.189Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/metrics-bar.js",
+      "fixId": "DCU-032",
+      "doneAt": "2026-03-05T21:32:46.252Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/overlay.js",
+      "fixId": "DCU-033",
+      "doneAt": "2026-03-05T21:32:46.308Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/password.js",
+      "fixId": "DCU-034",
+      "doneAt": "2026-03-05T21:32:46.370Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/progressbar.js",
+      "fixId": "DCU-035",
+      "doneAt": "2026-03-05T21:32:46.425Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/resizable.js",
+      "fixId": "DCU-036",
+      "doneAt": "2026-03-05T21:32:46.486Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/ripple.js",
+      "fixId": "DCU-037",
+      "doneAt": "2026-03-05T21:32:46.542Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/row-actions.js",
+      "fixId": "DCU-038",
+      "doneAt": "2026-03-05T21:32:46.604Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/search.js",
+      "fixId": "DCU-039",
+      "doneAt": "2026-03-05T21:32:46.663Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/slider.js",
+      "fixId": "DCU-040",
+      "doneAt": "2026-03-05T21:32:46.720Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/status-bar.js",
+      "fixId": "DCU-041",
+      "doneAt": "2026-03-05T21:32:46.786Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/stepper.js",
+      "fixId": "DCU-042",
+      "doneAt": "2026-03-05T21:32:46.845Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/sticky.js",
+      "fixId": "DCU-043",
+      "doneAt": "2026-03-05T21:32:46.921Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/summary-badges.js",
+      "fixId": "DCU-044",
+      "doneAt": "2026-03-05T21:32:46.997Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/tabs.js",
+      "fixId": "DCU-045",
+      "doneAt": "2026-03-05T21:32:47.099Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/tags.js",
+      "fixId": "DCU-046",
+      "doneAt": "2026-03-05T21:32:47.169Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/themecontrol.js",
+      "fixId": "DCU-047",
+      "doneAt": "2026-03-05T21:32:47.231Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/toggle.js",
+      "fixId": "DCU-048",
+      "doneAt": "2026-03-05T21:32:47.299Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/toolbar.js",
+      "fixId": "DCU-049",
+      "doneAt": "2026-03-05T21:32:47.365Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/tooltip.js",
+      "fixId": "DCU-050",
+      "doneAt": "2026-03-05T21:32:47.438Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/validator.js",
+      "fixId": "DCU-051",
+      "doneAt": "2026-03-05T21:32:47.505Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/index.js",
+      "fixId": "DCU-052",
+      "doneAt": "2026-03-05T21:32:47.573Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/utils/config.js",
+      "fixId": "DCU-053",
+      "doneAt": "2026-03-05T21:32:47.636Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/utils/format.js",
+      "fixId": "DCU-054",
+      "doneAt": "2026-03-05T21:32:47.705Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/utils/layout.js",
+      "fixId": "DCU-055",
+      "doneAt": "2026-03-05T21:32:47.767Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/models/duplicates-model.js",
+      "fixId": "DCU-056",
+      "doneAt": "2026-03-05T21:32:47.851Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/models/large-model.js",
+      "fixId": "DCU-057",
+      "doneAt": "2026-03-05T21:32:47.914Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/models/node-modules-model.js",
+      "fixId": "DCU-058",
+      "doneAt": "2026-03-05T21:32:47.972Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/models/scan-toolbar-model.js",
+      "fixId": "DCU-059",
+      "doneAt": "2026-03-05T21:32:48.036Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/models/stale-model.js",
+      "fixId": "DCU-060",
+      "doneAt": "2026-03-05T21:32:48.105Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/viewmodels/scan-toolbar-vm.js",
+      "fixId": "DCU-061",
+      "doneAt": "2026-03-05T21:32:48.190Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/views/grid-view.js",
+      "fixId": "DCU-062",
+      "doneAt": "2026-03-05T21:32:48.290Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/views/scan-toolbar-view.js",
+      "fixId": "DCU-063",
+      "doneAt": "2026-03-05T21:32:48.366Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/data-store.js",
+      "fixId": "DCU-064",
+      "doneAt": "2026-03-05T21:32:48.425Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/metrics.js",
+      "fixId": "DCU-065",
+      "doneAt": "2026-03-05T21:32:48.494Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/page-loader.js",
+      "fixId": "DCU-066",
+      "doneAt": "2026-03-05T21:32:48.555Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/recycle-bin.js",
+      "fixId": "DCU-067",
+      "doneAt": "2026-03-05T21:32:48.643Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/savings.js",
+      "fixId": "DCU-068",
+      "doneAt": "2026-03-05T21:32:48.708Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/scan-filter.js",
+      "fixId": "DCU-069",
+      "doneAt": "2026-03-05T21:32:48.856Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/scan-grid.js",
+      "fixId": "DCU-070",
+      "doneAt": "2026-03-05T21:32:48.927Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/settings.js",
+      "fixId": "DCU-071",
+      "doneAt": "2026-03-05T21:32:48.985Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/task-manager.js",
+      "fixId": "DCU-072",
+      "doneAt": "2026-03-05T21:32:49.049Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/trash-queue.js",
+      "fixId": "DCU-073",
+      "doneAt": "2026-03-05T21:32:49.115Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/ui-utils.js",
+      "fixId": "DCU-074",
+      "doneAt": "2026-03-05T21:32:49.177Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/websocket.js",
+      "fixId": "DCU-075",
+      "doneAt": "2026-03-05T21:32:49.260Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/behaviors/helpers.js",
+      "fixId": "DCU-076",
+      "doneAt": "2026-03-05T21:32:49.327Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/behaviors/table-resize.js",
+      "fixId": "DCU-077",
+      "doneAt": "2026-03-05T21:32:49.396Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/behaviors/table-sort.js",
+      "fixId": "DCU-078",
+      "doneAt": "2026-03-05T21:32:49.461Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/autosize.js",
+      "fixId": "DCU-079",
+      "doneAt": "2026-03-05T21:32:49.538Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/utils/api-fetch.js",
+      "fixId": "DCU-080",
+      "doneAt": "2026-03-05T21:32:49.597Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/lib/wb-core/utils/theme.js",
+      "fixId": "DCU-081",
+      "doneAt": "2026-03-05T21:32:49.662Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/sections/duplicates.js",
+      "fixId": "DCU-082",
+      "doneAt": "2026-03-05T21:32:49.726Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/sections/large-unified.js",
+      "fixId": "DCU-083",
+      "doneAt": "2026-03-05T21:32:49.793Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/sections/node-modules-unified.js",
+      "fixId": "DCU-084",
+      "doneAt": "2026-03-05T21:32:49.857Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/sections/stale-unified.js",
+      "fixId": "DCU-085",
+      "doneAt": "2026-03-05T21:32:49.916Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/signalr.min.js",
+      "fixId": "DCU-086",
+      "doneAt": "2026-03-05T21:32:49.988Z"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/viewmodels/section-vm.js",
+      "fixId": "DCU-087",
+      "doneAt": "2026-03-05T21:32:50.052Z"
+    }
+  ],
+  "skipped": [],
+  "lastApplied": null
+}

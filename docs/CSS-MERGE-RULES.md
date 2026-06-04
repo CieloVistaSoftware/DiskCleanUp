@@ -24,13 +24,13 @@ are never merged. Cross-folder merging changes import paths and breaks reference
 the tool cannot safely track.
 
 **Not a candidate:**
-```
+```text
 pages/about/layout.css
 pages/home/layout.css    ← different folder, separate group at best
 ```
 
 **Candidate:**
-```
+```text
 pages/about/layout.css
 pages/about/responsive.css
 pages/about/print.css    ← same folder, one merge group

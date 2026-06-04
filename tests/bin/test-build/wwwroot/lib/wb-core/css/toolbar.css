@@ -1,0 +1,268 @@
+/* Toolbar Styling — Composable Button Bar */
+/* Dark-theme aware: uses CSS custom properties from dashboard */
+
+.tb-container {
+  width: 100%;
+}
+
+.tb-bar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0;
+  background: var(--panel, #161b22);
+  border: 1px solid var(--border, #30363d);
+  border-radius: 4px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+
+/* ─── Button Base ──────────────────────────────────────────────────────────────────────── */
+
+.tb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  border-right: 1px solid var(--border, #30363d);
+  background: transparent;
+  color: var(--text, #e6edf3);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  position: relative;
+}
+
+.tb-btn:last-child {
+  border-right: none;
+}
+
+.tb-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tb-btn:active:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.tb-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  color: var(--muted, #7d8590);
+}
+
+.tb-btn:focus {
+  outline: 2px solid #007bff;
+  outline-offset: -2px;
+  z-index: 1;
+}
+
+.tb-btn:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.tb-btn:focus-visible {
+  outline: 2px solid #007bff;
+  outline-offset: -2px;
+}
+
+/* ─── Button Variants ──────────────────────────────────────────────────────────────────── */
+
+.tb-btn-primary {
+  color: #58a6ff;
+  font-weight: 600;
+}
+
+.tb-btn-primary:hover:not(:disabled) {
+  background: rgba(88, 166, 255, 0.1);
+  color: #79b8ff;
+}
+
+.tb-btn-muted {
+  color: var(--muted, #7d8590);
+}
+
+.tb-btn-muted:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text, #e6edf3);
+}
+
+.tb-btn-danger {
+  color: var(--red, #f44336);
+  font-weight: 600;
+}
+
+.tb-btn-danger:hover:not(:disabled) {
+  background: rgba(244, 67, 54, 0.1);
+  color: #ff6659;
+}
+
+.tb-btn-keep {
+  color: var(--green, #4caf50);
+  font-weight: 600;
+}
+
+.tb-btn-keep:hover:not(:disabled) {
+  background: rgba(76, 175, 80, 0.1);
+  color: #66bb6a;
+}
+
+.tb-btn-custom {
+  color: var(--muted, #7d8590);
+}
+
+.tb-btn-custom:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text, #e6edf3);
+}
+
+/* ─── Button Label ────────────────────────────────────────────────────────────────────── */
+
+.tb-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  display: none;
+}
+
+/* Show labels on larger screens */
+@media (min-width: 768px) {
+  .tb-label {
+    display: inline;
+  }
+}
+
+/* ─── Separator ────────────────────────────────────────────────────────────────────────── */
+
+.tb-separator {
+  width: 1px;
+  height: 24px;
+  background: var(--border, #30363d);
+  margin: 6px 0;
+}
+
+/* ─── Load More Button ─────────────────────────────────────────────────────────────────── */
+
+.tb-load-more-btn {
+  position: relative;
+  padding: 8px 16px 8px 12px;
+}
+
+.tb-dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  transition: all 0.3s ease;
+}
+
+.tb-dot-red {
+  background: var(--red, #f44336);
+  opacity: 0.7;
+}
+
+.tb-dot-green {
+  background: var(--green, #4caf50);
+  box-shadow: 0 0 6px rgba(76, 175, 80, 0.6), 0 0 12px rgba(76, 175, 80, 0.3);
+  animation: tb-dot-pulse 2s ease-in-out infinite;
+}
+
+@keyframes tb-dot-pulse {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(76, 175, 80, 0.6), 0 0 12px rgba(76, 175, 80, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.8), 0 0 16px rgba(76, 175, 80, 0.5);
+  }
+}
+
+.tb-load-more-btn.tb-loading {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.tb-load-more-btn.tb-loading .tb-dot {
+  animation: tb-dot-spin 1s linear infinite;
+}
+
+@keyframes tb-dot-spin {
+  0% {
+    transform: translateY(-50%) rotate(0deg);
+  }
+  100% {
+    transform: translateY(-50%) rotate(360deg);
+  }
+}
+
+/* ─── Responsive Design ────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .tb-btn {
+    padding: 6px 8px;
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  .tb-label {
+    display: none !important;
+  }
+
+  .tb-separator {
+    height: 20px;
+    margin: 4px 0;
+  }
+
+  .tb-load-more-btn {
+    padding: 6px 12px 6px 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .tb-btn {
+    padding: 6px 6px;
+    font-size: 11px;
+    border-right: none;
+  }
+
+  .tb-label {
+    display: none !important;
+  }
+
+  .tb-bar {
+    gap: 4px;
+    padding: 4px;
+  }
+}
+
+/* ─── Accessibility ────────────────────────────────────────────────────────────────────── */
+
+.tb-bar {
+  isolation: isolate;
+}
+
+.tb-btn:focus-visible {
+  outline: 2px solid #007bff;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: more) {
+  .tb-btn {
+    border: 1px solid var(--border, #30363d);
+  }
+
+  .tb-btn:hover:not(:disabled) {
+    border-color: var(--muted, #7d8590);
+  }
+
+  .tb-dot-green {
+    border: 1px solid #2e7d32;
+  }
+}

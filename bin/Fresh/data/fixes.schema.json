@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DiskCleanUp Fixes Registry",
+  "description": "Registry schema for tracking DiskCleanUp bugs, root causes, and their resolutions.",
+  "schemaFor": "fixes",
+  "type": "object",
+  "required": ["metadata", "fixes"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": ["description", "updated", "project", "resolutionTypes"],
+      "properties": {
+        "description":    { "type": "string" },
+        "updated":        { "type": "string" },
+        "project":        { "type": "string" },
+        "resolutionTypes": { "type": "object" }
+      }
+    },
+    "fixes": {
+      "type": "array",
+      "default": [],
+      "items": { "$ref": "#/definitions/fix" }
+    }
+  },
+  "definitions": {
+    "fix": {
+      "type": "object",
+      "required": ["id", "source", "title", "problem", "fix", "category", "resolved", "seenCount"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^DCU-\\d{3}$",
+          "description": "Unique ID in format DCU-001"
+        },
+        "source":       { "type": ["string", "null"] },
+        "title":        { "type": "string", "minLength": 1 },
+        "problem":      { "type": "string", "minLength": 1 },
+        "fix":          { "type": "string", "minLength": 1 },
+        "category": {
+          "type": "string",
+          "enum": ["runtime", "ui", "config", "performance", "security", "data-loss", "startup", "api"]
+        },
+        "resolved":     { "type": "boolean" },
+        "seenCount":    { "type": "integer", "minimum": 0 },
+        "firstSeen":    { "type": ["string", "null"] },
+        "lastSeen":     { "type": ["string", "null"] },
+        "filesChanged": { "type": "array", "items": { "type": "string" } },
+        "resolution": {
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["code-change", "config-change", "ignore", "workaround", "external"]
+            }
+          }
+        }
+      }
+    }
+  }
+}

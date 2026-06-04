@@ -1,0 +1,67 @@
+/* index.css — one-off styles that have no home in wb-core or dashboard.css */
+/* DO NOT add styles here that belong in a component. Keep this list short.  */
+
+#rootOpenBtn   { margin-left: 4px; }
+#keepBadgeBtn  { cursor: pointer; }
+#traceLogBtn   { color: var(--accent); font-size: .85rem; text-decoration: none; border: 1px solid var(--accent); padding: 2px 8px; border-radius: 4px; }
+#copyGithubChatBtn { font-size: .82rem; padding: 2px 8px; border: 1px solid var(--accent); color: var(--accent); background: transparent; border-radius: 4px; }
+#copyGithubChatBtn:hover { opacity: .9; background: rgba(88,166,255,.12); }
+.toolbar + .toolbar { margin-top: 4px; }
+
+/* Nav pill bar — wraps when narrow */
+#mainNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px 8px;
+}
+
+/* Status lights on nav buttons */
+.btn[data-section] {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+
+.btn-status-light {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #666;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
+  flex-shrink: 0;
+  transition: background-color 0.2s ease;
+}
+
+.btn[data-section] .btn-status-light.status-idle {
+  background: #999;
+}
+
+.btn[data-section] .btn-status-light.status-scanning {
+  background: #ffd700;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.3), 0 0 6px rgba(255,215,0,0.6);
+  animation: pulse-yellow 1.2s ease-in-out infinite;
+}
+
+.btn[data-section] .btn-status-light.status-done {
+  background: #2ecc71;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.3), 0 0 6px rgba(46,204,113,0.4);
+}
+
+.btn[data-section] .btn-status-light.status-error {
+  background: #e74c3c;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.3), 0 0 6px rgba(231,76,60,0.5);
+  animation: pulse-red 0.8s ease-in-out infinite;
+}
+
+@keyframes pulse-yellow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes pulse-red {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

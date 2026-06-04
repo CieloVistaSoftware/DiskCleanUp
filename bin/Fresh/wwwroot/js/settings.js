@@ -1,0 +1,73 @@
+// ═══════════════════════════════════════════════════════════════════════════
+//  SETTINGS — load / save configuration via REST
+// ═══════════════════════════════════════════════════════════════════════════
+
+import { apiFetch } from './ui-utils.js';
+
+export async function loadSettings() {
+  try {
+    const cfg = await apiFetch('/api/config');
+    document.getElementById('cfgRoot').value          = cfg.root || '';
+    document.getElementById('cfgExtraRoots').value    = (cfg.extra_roots || cfg.extraRoots || []).join('\n');
+    document.getElementById('cfgStaleDays').value     = cfg.stale_days || cfg.staleDays || 90;
+    document.getElementById('cfgLargeMb').value       = cfg.large_file_mb || cfg.largeFileMb || 50;
+    document.getElementById('cfgParallelism').value   = cfg.max_parallelism || cfg.maxParallelism || 4;
+    document.getElementById('rootDisplay').textContent = cfg.root || '';
+    const _rb = document.getElementById('rootOpenBtn');
+    if (_rb) _rb.style.display = cfg.root ? '' : 'none';
+    // Trace toggle (localStorage, not server config)
+    const traceEl = document.getElementById('cfgTrace');
+    if (traceEl) traceEl.checked = localStorage.getItem('dcu_trace') !== 'false';
+  } catch {
+    document.getElementById('cfgStaleDays').value     = 90;
+    document.getElementById('cfgLargeMb').value       = 50;
+    document.getElementById('cfgParallelism').value   = 4;
+    document.getElementById('rootDisplay').textContent = '⚠️ Offline';
+  }
+}
+
+export async function saveSettings() {
+  const cfg = {
+    root:            document.getElementById('cfgRoot').value.trim(),
+    extra_roots:     document.getElementById('cfgExtraRoots').value.split('\n').map(s => s.trim()).filter(Boolean),
+    stale_days:      parseInt(document.getElementById('cfgStaleDays').value) || 90,
+    large_file_mb:   parseInt(document.getElementById('cfgLargeMb').value) || 50,
+    max_parallelism: parseInt(document.getElementById('cfgParallelism').value) || 4,
+  };
+  await apiFetch('/api/config', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(cfg)
+  });
+  const msg = document.getElementById('settingsMsg');
+  if (msg) { msg.textContent = '✅ Saved!'; setTimeout(() => msg.textContent = '', 2500); }
+  document.getElementById('rootDisplay').textContent = cfg.root;
+  const _rb2 = document.getElementById('rootOpenBtn');
+  if (_rb2) _rb2.style.display = cfg.root ? '' : 'none';
+  // Save trace toggle to localStorage (takes effect on next page load)
+  const traceEl = document.getElementById('cfgTrace');
+  if (traceEl) localStorage.setItem('dcu_trace', traceEl.checked ? 'true' : 'false');
+}
+
+// ── Settings help panel — fetch markdown, render with marked.js ──
+export async function loadSettingsHelp() {
+  const el = document.getElementById('settingsHelp');
+  if (!el) return;
+  try {
+    const res = await fetch('/settings-help.md', { cache: 'no-store' });
+    if (!res.ok) { el.textContent = '(help file not found)'; return; }
+    const md = await res.text();
+    // marked.js loaded via CDN <script> tag — available as window.marked
+    if (typeof marked !== 'undefined' && marked.parse) {
+      el.innerHTML = marked.parse(md);
+    } else {
+      // Fallback: render as preformatted text
+      el.innerHTML = '<pre style="white-space:pre-wrap">' + md.replace(/</g,'&lt;') + '</pre>';
+    }
+  } catch (e) {
+    el.textContent = '(failed to load help: ' + e.message + ')';
+  }
+}
+
+// Kick off help load when settings module loads
+loadSettingsHelp();

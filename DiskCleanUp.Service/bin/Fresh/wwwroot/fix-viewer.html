@@ -1,0 +1,737 @@
+<!-- ═══════════════════════════════════════════════════════════════════════
+     wwwroot/fix-viewer.html
+     Fix registry viewer. Reads docs/fixes.json (known bugs and their fixes)
+     and renders them as a searchable table. Used during development to track
+     recurring issues and their resolutions.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fix Registry — DiskCleanUp</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg:        #0d0f12;
+    --bg2:       #13161b;
+    --bg3:       #1a1e25;
+    --border:    #2a2f3a;
+    --text:      #c9d1e0;
+    --muted:     #5a6270;
+    --accent:    #4fc3f7;
+    --green:     #4caf7d;
+    --amber:     #f5a623;
+    --red:       #ef5350;
+    --purple:    #9c77e0;
+    --mono:      'JetBrains Mono', monospace;
+    --sans:      'Syne', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-title {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    color: #fff;
+  }
+  .header-title span { color: var(--accent); }
+  .header-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .header-right { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+
+  /* ── Stats bar ── */
+  .stats {
+    display: flex;
+    gap: 1px;
+    background: var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .stat {
+    flex: 1;
+    background: var(--bg2);
+    padding: 14px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .stat-val {
+    font-family: var(--mono);
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+  .stat-val.green  { color: var(--green); }
+  .stat-val.amber  { color: var(--amber); }
+  .stat-val.red    { color: var(--red);   }
+  .stat-val.blue   { color: var(--accent);}
+  .stat-val.purple { color: var(--purple);}
+
+  /* ── Toolbar ── */
+  .toolbar {
+    padding: 12px 28px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    flex-wrap: wrap;
+  }
+  .search-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+    max-width: 360px;
+  }
+  .search-wrap input {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 7px 10px 7px 30px;
+    border-radius: 4px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-icon {
+    position: absolute;
+    left: 9px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 13px;
+    pointer-events: none;
+  }
+  .filter-btn {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .filter-btn:hover  { border-color: var(--accent); color: var(--accent); }
+  .filter-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(79,195,247,.08); }
+  .sort-label { font-size: 11px; color: var(--muted); margin-left: 6px; }
+  select.sort-sel {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    color: var(--text);
+    outline: none;
+    cursor: pointer;
+  }
+
+  /* ── Main layout ── */
+  .layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: calc(100vh - 160px);
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    background: var(--bg2);
+    overflow-y: auto;
+    position: sticky;
+    top: 57px;
+    height: calc(100vh - 57px);
+  }
+  .sidebar-section {
+    padding: 14px 16px 6px;
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .sidebar-item {
+    padding: 8px 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    border-left: 2px solid transparent;
+    transition: all .12s;
+    color: var(--text);
+  }
+  .sidebar-item:hover  { background: var(--bg3); }
+  .sidebar-item.active { border-left-color: var(--accent); color: var(--accent); background: rgba(79,195,247,.06); }
+  .sidebar-badge {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 10px;
+    background: var(--bg3);
+    color: var(--muted);
+  }
+  .sidebar-item.active .sidebar-badge { background: rgba(79,195,247,.15); color: var(--accent); }
+
+  /* ── Fix list ── */
+  .fix-list {
+    padding: 16px 20px;
+  }
+  .fix-count {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .fix-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    transition: border-color .15s;
+    cursor: pointer;
+  }
+  .fix-card:hover { border-color: #3a4050; }
+  .fix-card.expanded { border-color: var(--accent); }
+
+  .fix-card-header {
+    padding: 12px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .fix-id {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    white-space: nowrap;
+    min-width: 62px;
+    padding-top: 1px;
+  }
+  .fix-header-right { flex: 1; min-width: 0; }
+  .fix-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #e8edf5;
+    line-height: 1.35;
+    margin-bottom: 5px;
+  }
+  .fix-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    border: 1px solid;
+    white-space: nowrap;
+  }
+  .tag-cat-error-handling { color: var(--amber);  border-color: rgba(245,166,35,.3);  background: rgba(245,166,35,.07); }
+  .tag-cat-runtime        { color: var(--red);    border-color: rgba(239,83,80,.3);   background: rgba(239,83,80,.07);  }
+  .tag-cat-ui             { color: var(--purple); border-color: rgba(156,119,224,.3); background: rgba(156,119,224,.07);}
+  .tag-cat-devops         { color: var(--accent); border-color: rgba(79,195,247,.3);  background: rgba(79,195,247,.07); }
+  .tag-cat-default        { color: var(--muted);  border-color: var(--border);        background: var(--bg3);           }
+  .tag-resolved   { color: var(--green); border-color: rgba(76,175,125,.3); background: rgba(76,175,125,.07); }
+  .tag-unresolved { color: var(--red);   border-color: rgba(239,83,80,.3);  background: rgba(239,83,80,.07);  }
+  .tag-audit-err  { color: var(--red);   border-color: rgba(239,83,80,.3);  background: rgba(239,83,80,.07);  }
+  .tag-audit-warn { color: var(--amber); border-color: rgba(245,166,35,.3); background: rgba(245,166,35,.07); }
+  .tag-audit-ok   { color: var(--green); border-color: rgba(76,175,125,.3); background: rgba(76,175,125,.07); }
+
+  .fix-date {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .fix-source {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 300px;
+  }
+
+  /* ── Expanded detail ── */
+  .fix-body {
+    display: none;
+    border-top: 1px solid var(--border);
+    padding: 16px;
+    background: var(--bg);
+    gap: 14px;
+    flex-direction: column;
+  }
+  .fix-card.expanded .fix-body { display: flex; }
+
+  .detail-row { display: flex; gap: 12px; }
+  .detail-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    min-width: 76px;
+    padding-top: 2px;
+  }
+  .detail-val {
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.55;
+    flex: 1;
+  }
+  .detail-val.mono { font-family: var(--mono); font-size: 11px; }
+  .file-chip {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    margin: 2px 4px 2px 0;
+  }
+
+  /* ── Audit section ── */
+  .audit-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 8px;
+    padding: 11px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .audit-file {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .audit-issues {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    flex: 1;
+  }
+
+  /* ── Empty / loading ── */
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 80px;
+    gap: 10px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3a4050; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title">Fix <span>Registry</span></div>
+    <div class="header-sub">fixes.json + js-error-audit.json — DiskCleanUp</div>
+  </div>
+  <div class="header-right">
+    <button class="filter-btn" onclick="refreshAll()" title="Reload both files">↻ Refresh</button>
+  </div>
+</div>
+
+<div class="stats" id="stats">
+  <div class="stat"><div class="stat-val blue"  id="s-total">—</div><div class="stat-label">Total Fixes</div></div>
+  <div class="stat"><div class="stat-val green"  id="s-resolved">—</div><div class="stat-label">Resolved</div></div>
+  <div class="stat"><div class="stat-val amber"  id="s-unresolved">—</div><div class="stat-label">Open</div></div>
+  <div class="stat"><div class="stat-val purple" id="s-categories">—</div><div class="stat-label">Categories</div></div>
+  <div class="stat"><div class="stat-val red"    id="s-violations">—</div><div class="stat-label">Audit Violations</div></div>
+  <div class="stat"><div class="stat-val amber"  id="s-warnings">—</div><div class="stat-label">Audit Warnings</div></div>
+  <div class="stat"><div class="stat-val green"  id="s-clean">—</div><div class="stat-label">Audit Clean</div></div>
+</div>
+
+<div class="toolbar">
+  <div class="search-wrap">
+    <span class="search-icon">⌕</span>
+    <input type="text" id="search" placeholder="Search id, file, title, problem…" oninput="applyFilters()">
+  </div>
+  <button class="filter-btn active" data-filter="all"            onclick="setFilter(this)">All</button>
+  <button class="filter-btn"        data-filter="error-handling" onclick="setFilter(this)">Error Handling</button>
+  <button class="filter-btn"        data-filter="runtime"        onclick="setFilter(this)">Runtime</button>
+  <button class="filter-btn"        data-filter="ui"             onclick="setFilter(this)">UI</button>
+  <button class="filter-btn"        data-filter="devops"         onclick="setFilter(this)">DevOps</button>
+  <button class="filter-btn"        data-filter="unresolved"     onclick="setFilter(this)">Open</button>
+  <button class="filter-btn"        data-filter="audit"          onclick="setFilter(this)">Audit</button>
+  <span class="sort-label">Sort:</span>
+  <select class="sort-sel" id="sort-sel" onchange="applyFilters()">
+    <option value="newest">Newest first</option>
+    <option value="oldest">Oldest first</option>
+    <option value="id-desc">ID ↓</option>
+    <option value="id-asc">ID ↑</option>
+  </select>
+</div>
+
+<div class="layout">
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-section">Categories</div>
+    <div id="cat-list"></div>
+    <div class="sidebar-section" style="margin-top:10px">Audit Status</div>
+    <div id="audit-sidebar"></div>
+  </div>
+  <div class="fix-list" id="fix-list">
+    <div class="loading"><div class="spinner"></div> Loading…</div>
+  </div>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────
+let fixes      = [];
+let auditData  = { violations: [], warnings: [], clean: [] };
+let activeFilter  = 'all';
+let activeCatSide = null;
+
+// ── Fetch ─────────────────────────────────────────────────────────────────
+async function loadFixes() {
+  try {
+    const r = await fetch('/api/fixes', { cache: 'no-store' });
+    const d = await r.json();
+    fixes = (d.fixes || []).sort((a,b) => (b.id||'').localeCompare(a.id||''));
+  } catch(ex) {
+    console.error('fixes load failed:', ex);
+    fixes = [];
+  }
+}
+
+async function loadAudit() {
+  try {
+    // Audit report is a static file served from /data/ — try both paths
+    const paths = ['/data/js-error-audit.json', '/api/audit-report'];
+    for (const p of paths) {
+      try {
+        const r = await fetch(p, { cache: 'no-store' });
+        if (r.ok) { auditData = await r.json(); return; }
+      } catch {}
+    }
+  } catch(ex) {
+    console.error('audit load failed:', ex);
+  }
+}
+
+async function refreshAll() {
+  document.getElementById('fix-list').innerHTML = '<div class="loading"><div class="spinner"></div> Loading…</div>';
+  await Promise.all([loadFixes(), loadAudit()]);
+  buildStats();
+  buildSidebar();
+  applyFilters();
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────
+function buildStats() {
+  const resolved   = fixes.filter(f => f.resolved).length;
+  const unresolved = fixes.filter(f => !f.resolved).length;
+  const cats       = new Set(fixes.map(f => f.category || 'other')).size;
+
+  document.getElementById('s-total').textContent      = fixes.length;
+  document.getElementById('s-resolved').textContent   = resolved;
+  document.getElementById('s-unresolved').textContent = unresolved;
+  document.getElementById('s-categories').textContent = cats;
+  document.getElementById('s-violations').textContent = (auditData.violations||[]).length;
+  document.getElementById('s-warnings').textContent   = (auditData.warnings||[]).length;
+  document.getElementById('s-clean').textContent      = (auditData.clean||[]).length;
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────
+function buildSidebar() {
+  const catCounts = {};
+  fixes.forEach(f => {
+    const c = f.category || 'other';
+    catCounts[c] = (catCounts[c] || 0) + 1;
+  });
+
+  const catList = document.getElementById('cat-list');
+  catList.innerHTML = `
+    <div class="sidebar-item ${activeCatSide === null ? 'active' : ''}" onclick="setSideCat(null, this)">
+      <span>All</span><span class="sidebar-badge">${fixes.length}</span>
+    </div>
+    ${Object.entries(catCounts).sort((a,b) => b[1]-a[1]).map(([cat, n]) => `
+      <div class="sidebar-item ${activeCatSide === cat ? 'active' : ''}" onclick="setSideCat('${cat}', this)">
+        <span>${cat}</span><span class="sidebar-badge">${n}</span>
+      </div>
+    `).join('')}
+  `;
+
+  const auditSide = document.getElementById('audit-sidebar');
+  auditSide.innerHTML = `
+    <div class="sidebar-item" onclick="setFilter(document.querySelector('[data-filter=audit]'))">
+      <span style="color:var(--red)">❌ Violations</span>
+      <span class="sidebar-badge" style="color:var(--red)">${(auditData.violations||[]).length}</span>
+    </div>
+    <div class="sidebar-item">
+      <span style="color:var(--amber)">⚠ Warnings</span>
+      <span class="sidebar-badge" style="color:var(--amber)">${(auditData.warnings||[]).length}</span>
+    </div>
+    <div class="sidebar-item">
+      <span style="color:var(--green)">✓ Clean</span>
+      <span class="sidebar-badge" style="color:var(--green)">${(auditData.clean||[]).length}</span>
+    </div>
+  `;
+}
+
+function setSideCat(cat, el) {
+  activeCatSide = cat;
+  document.querySelectorAll('#cat-list .sidebar-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+  // Reset the top filter to 'all' and let category drive it
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('[data-filter=all]').classList.add('active');
+  activeFilter = 'all';
+  applyFilters();
+}
+
+// ── Filters ───────────────────────────────────────────────────────────────
+function setFilter(btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  activeFilter = btn.dataset.filter;
+  activeCatSide = null;
+  document.querySelectorAll('#cat-list .sidebar-item').forEach(i => i.classList.remove('active'));
+  document.querySelector('#cat-list .sidebar-item')?.classList.add('active');
+  applyFilters();
+}
+
+function applyFilters() {
+  const q    = document.getElementById('search').value.toLowerCase().trim();
+  const sort = document.getElementById('sort-sel').value;
+
+  if (activeFilter === 'audit') {
+    renderAudit(q);
+    return;
+  }
+
+  let list = [...fixes];
+
+  // Category sidebar
+  if (activeCatSide) list = list.filter(f => (f.category||'other') === activeCatSide);
+
+  // Top filter
+  if (activeFilter === 'unresolved') list = list.filter(f => !f.resolved);
+  else if (activeFilter !== 'all')   list = list.filter(f => (f.category||'') === activeFilter);
+
+  // Search
+  if (q) list = list.filter(f =>
+    (f.id||'').toLowerCase().includes(q) ||
+    (f.title||'').toLowerCase().includes(q) ||
+    (f.problem||'').toLowerCase().includes(q) ||
+    (f.fix||'').toLowerCase().includes(q) ||
+    (f.source||'').toLowerCase().includes(q) ||
+    (f.filesChanged||[]).some(fc => fc.toLowerCase().includes(q))
+  );
+
+  // Sort
+  const sorters = {
+    newest:  (a,b) => (b.resolvedOn||b.firstSeen||'').localeCompare(a.resolvedOn||a.firstSeen||''),
+    oldest:  (a,b) => (a.resolvedOn||a.firstSeen||'').localeCompare(b.resolvedOn||b.firstSeen||''),
+    'id-desc': (a,b) => (b.id||'').localeCompare(a.id||''),
+    'id-asc':  (a,b) => (a.id||'').localeCompare(b.id||''),
+  };
+  list.sort(sorters[sort] || sorters.newest);
+
+  renderFixes(list);
+}
+
+// ── Render fixes ──────────────────────────────────────────────────────────
+function catTag(cat) {
+  const cls = `tag tag-cat-${cat || 'default'}`;
+  return `<span class="${cls}">${cat || 'other'}</span>`;
+}
+
+function renderFixes(list) {
+  const el = document.getElementById('fix-list');
+  if (!list.length) {
+    el.innerHTML = '<div class="empty">No fixes match the current filter.</div>';
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="fix-count">${list.length} fix${list.length !== 1 ? 'es' : ''}</div>
+    ${list.map(f => {
+      const resolvedTag = f.resolved
+        ? '<span class="tag tag-resolved">✓ resolved</span>'
+        : '<span class="tag tag-unresolved">open</span>';
+      const date = (f.resolvedOn||f.firstSeen||'').slice(0,10) || '—';
+      const files = (f.filesChanged||[]).map(fc =>
+        `<span class="file-chip">${fc.split('/').pop()}</span>`
+      ).join('');
+
+      return `
+        <div class="fix-card" onclick="toggleCard(this)">
+          <div class="fix-card-header">
+            <div class="fix-id">${f.id||'—'}</div>
+            <div class="fix-header-right">
+              <div class="fix-title">${esc(f.title||'Untitled')}</div>
+              <div class="fix-meta">
+                ${catTag(f.category)}
+                ${resolvedTag}
+                <span class="fix-date">${date}</span>
+                <span class="fix-source">${esc(f.source||'')}</span>
+              </div>
+            </div>
+          </div>
+          <div class="fix-body">
+            <div class="detail-row">
+              <div class="detail-label">Problem</div>
+              <div class="detail-val">${esc(f.problem||'—')}</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">Fix</div>
+              <div class="detail-val">${esc(f.fix||'—')}</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">Files</div>
+              <div class="detail-val">${files || '<span style="color:var(--muted)">—</span>'}</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">Seen</div>
+              <div class="detail-val mono">${f.seenCount||1}× &nbsp;·&nbsp; First: ${(f.firstSeen||'').slice(0,10)} &nbsp;·&nbsp; Last: ${(f.lastSeen||'').slice(0,10)}</div>
+            </div>
+            <div class="detail-row">
+              <div class="detail-label">Resolution</div>
+              <div class="detail-val mono">${f.resolution?.type||'—'}</div>
+            </div>
+          </div>
+        </div>`;
+    }).join('')}
+  `;
+}
+
+// ── Render audit ──────────────────────────────────────────────────────────
+function renderAudit(q) {
+  const el = document.getElementById('fix-list');
+  const violations = auditData.violations || [];
+  const warnings   = auditData.warnings   || [];
+  const clean      = auditData.clean      || [];
+
+  const filterItems = (arr) => q
+    ? arr.filter(i => (i.file||'').toLowerCase().includes(q) || (i.issue||'').toLowerCase().includes(q) || (i.issues||[]).some(x => x.toLowerCase().includes(q)))
+    : arr;
+
+  const fv = filterItems(violations);
+  const fw = filterItems(warnings);
+  const fc = filterItems(clean);
+
+  const renderSection = (title, color, items, tagClass, issueKey) => {
+    if (!items.length) return '';
+    return `
+      <div style="margin-bottom:18px">
+        <div style="font-family:var(--mono);font-size:11px;color:${color};margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)">
+          ${title} (${items.length})
+        </div>
+        ${items.map(i => `
+          <div class="audit-card">
+            <span class="tag ${tagClass}">${i.severity||'?'}</span>
+            <span class="audit-file">${esc(i.file||'')}</span>
+            <span class="audit-issues">${esc(Array.isArray(i.issues) ? i.issues.join(' · ') : (i.issue||''))}</span>
+            <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">ErrLog: ${i.hasErrLog ? '✓' : '✗'}</span>
+          </div>`).join('')}
+      </div>`;
+  };
+
+  el.innerHTML = `
+    <div class="fix-count">Audit report · ${(auditData.scannedAt||'').slice(0,16).replace('T',' ')}</div>
+    ${renderSection('❌ Violations — No try/catch at all', 'var(--red)',    fv, 'tag-audit-err',  'issue')}
+    ${renderSection('⚠ Warnings — Poor catch quality',    'var(--amber)',  fw, 'tag-audit-warn', 'issues')}
+    ${renderSection('✓ Clean files',                       'var(--green)',  fc, 'tag-audit-ok',   '')}
+    ${(!fv.length && !fw.length && !fc.length) ? '<div class="empty">No audit data. Run npm run audit:errors first.</div>' : ''}
+  `;
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function toggleCard(card) {
+  const wasExpanded = card.classList.contains('expanded');
+  document.querySelectorAll('.fix-card.expanded').forEach(c => c.classList.remove('expanded'));
+  if (!wasExpanded) card.classList.add('expanded');
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────
+refreshAll();
+</script>
+</body>
+</html>

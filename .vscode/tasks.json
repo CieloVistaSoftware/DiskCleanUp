@@ -1,0 +1,46 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Restart",
+			"type": "shell",
+			"command": "npm start",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": { "kind": "build", "isDefault": true },
+			"presentation": { "reveal": "always", "panel": "shared", "clear": true }
+		},
+		{
+			"label": "Build",
+			"type": "shell",
+			"command": "dotnet build DiskCleanUp.sln",
+			"problemMatcher": ["$msCompile"],
+			"group": "build"
+		},
+		{
+			"label": "Run Console",
+			"type": "shell",
+			"command": "dotnet run --project DiskCleanUp.Service -- --console",
+			"isBackground": true,
+			"problemMatcher": ["$msCompile"],
+			"group": "build"
+		},
+		{
+			"label": "Start MCP Server",
+			"type": "shell",
+			"command": "node mcp-server/server.js",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Open Browser",
+			"type": "shell",
+			"command": "Start-Process 'http://localhost:5000'",
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "never",
+				"panel": "shared"
+			}
+		}
+	]
+}

@@ -1,0 +1,37 @@
+{
+  "metadata": {
+    "description": "DiskCleanUp runtime error and bug registry — tracks observed errors, root causes, and their resolutions.",
+    "updated": "2026-02-21T00:00:00.000Z",
+    "project": "DiskCleanUp",
+    "resolutionTypes": {
+      "code-change": "Fix applied by modifying source code.",
+      "config-change": "Fix applied by changing configuration.",
+      "ignore": "Known benign issue — no action needed.",
+      "workaround": "Temporary workaround applied, proper fix still needed.",
+      "external": "Caused by external dependency — no fix available."
+    }
+  },
+  "fixes": [
+    {
+      "id": "DCU-001",
+      "source": "ConfigService.AppendSavingsAsync",
+      "title": "File lock on savings_log.jsonl — Windows OS-level conflict",
+      "problem": "File.AppendAllTextAsync opens with FileShare.None on Windows. The SemaphoreSlim lock protects against concurrent requests within the process, but an external OS process (Windows Search indexer, Defender, VS file watcher) can grab the file between requests, causing a System.IO.IOException that surfaces as an unhandled HTTP 500, crashing the trash/delete endpoint for that request.",
+      "fix": "Replace File.AppendAllTextAsync with a FileStream using FileMode.Append and FileShare.ReadWrite in ConfigService — apply to AppendSavingsAsync, AppendSavingsBatchAsync, and AppendErrorAsync. Also wrap all AppendSavingsAsync calls in Program.cs (trash, delete-permanent, smart-dedup/apply endpoints) in try-catch so a log failure never crashes a user-facing action.",
+      "category": "runtime",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-02-21T00:00:00.000Z",
+      "lastSeen": "2026-02-21T00:00:00.000Z",
+      "filesChanged": [
+        "ConfigService.cs",
+        "Program.cs",
+        "DiskCleanupDashboard.csproj"
+      ],
+      "resolvedOn": "2026-02-21T00:00:00.000Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    }
+  ]
+}

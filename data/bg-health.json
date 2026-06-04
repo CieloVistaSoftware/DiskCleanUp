@@ -1,0 +1,40 @@
+{
+  "lastRun": "2026-06-04T20:58:08.786Z",
+  "totalChecks": 6490,
+  "bugs": [
+    {
+      "id": "bug-regression-tests",
+      "checkId": "chk-regression-tests",
+      "title": "Regression tests failing",
+      "detail": "Check the CieloVista Tools output channel for full output.",
+      "evidence": [],
+      "priority": "high",
+      "category": "Quality",
+      "recommendation": "Run node scripts/run-regression-tests.js and fix the failing tests.",
+      "detectedAt": "2026-05-30T20:18:50.801Z",
+      "fixed": false
+    },
+    {
+      "id": "bug-untagged-code",
+      "checkId": "chk-untagged-code-blocks",
+      "title": "6 untagged fenced code block(s) across all docs",
+      "detail": "Code blocks without language tags will not get syntax highlighting. Showing 6 example location(s).",
+      "recommendation": "Replace bare fences with tagged fences such as ```ts, ```js, ```powershell, ```json, or ```bash so docs render with the right syntax highlighting.",
+      "evidence": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\css-containment-guide.md:75",
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\css-containment-guide.md:216",
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\css-merge-guide.md:15",
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\css-merge-guide.md:87",
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\docs\\CSS-MERGE-RULES.md:27",
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\docs\\CSS-MERGE-RULES.md:33"
+      ],
+      "priority": "low",
+      "category": "Documentation",
+      "fixCommandId": "cvs.audit.codeHighlight",
+      "fixLabel": "Open Code Highlight Audit",
+      "detectedAt": "2026-05-30T20:20:30.300Z",
+      "fixed": true
+    }
+  ],
+  "checkIndex": 2
+}

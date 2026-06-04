@@ -1,0 +1,678 @@
+<!-- ═══════════════════════════════════════════════════════════════════════
+     wwwroot/grid-shell-test.html
+     Test harness for the GridShell / scan-grid.js component. Renders a
+     standalone grid with mock data to validate row rendering, selection,
+     sorting, and virtual scrolling outside the full dashboard context.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GridShell Test Harness</title>
+  <link rel="stylesheet" href="lib/wb-core/css/grid-shell.css">
+  <link rel="stylesheet" href="lib/wb-core/css/row-actions.css">
+  <link rel="stylesheet" href="lib/wb-core/css/status-bar.css">
+  <link rel="stylesheet" href="lib/wb-core/css/filter-bar.css">
+  <link rel="stylesheet" href="lib/wb-core/css/toolbar.css">
+  <link rel="stylesheet" href="lib/wb-core/css/metrics-bar.css">
+  <link rel="stylesheet" href="lib/wb-core/css/connection-badge.css">
+  <link rel="stylesheet" href="lib/wb-core/css/summary-badges.css">
+  <style>
+    * {
+      --border-color: #ddd;
+      --header-bg: #f5f5f5;
+      --header-hover-bg: #efefef;
+      --row-bg-odd: transparent;
+      --row-bg-even: #fafafa;
+      --row-hover-bg: #f0f8ff;
+      --text-primary: #333;
+      --text-secondary: #666;
+      --text-muted: #999;
+      --focus-color: #007bff;
+      --sort-color: #007bff;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 20px;
+      background: #fafafa;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #333;
+    }
+
+    .controls {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 8px 16px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: #f9f9f9;
+      color: #333;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.15s ease;
+    }
+
+    button:hover {
+      background: #efefef;
+      border-color: #bbb;
+    }
+
+    button.primary {
+      background: #007bff;
+      color: white;
+      border-color: #0056b3;
+    }
+
+    button.primary:hover {
+      background: #0056b3;
+    }
+
+    button.danger {
+      background: #f44336;
+      color: white;
+      border-color: #d32f2f;
+    }
+
+    button.danger:hover {
+      background: #d32f2f;
+    }
+
+    #grid-container {
+      min-height: 300px;
+      max-height: 600px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    .stats {
+      margin-top: 20px;
+      padding: 10px;
+      background: #f9f9f9;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #666;
+    }
+
+    #statusbar-controls {
+      margin: 20px 0;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    #status-container {
+      margin: 20px 0;
+      min-height: 40px;
+    }
+
+    .code-example {
+      background: #f5f5f5;
+      border-left: 3px solid #007bff;
+      padding: 10px;
+      margin-top: 20px;
+      font-family: 'Monaco', monospace;
+      font-size: 12px;
+      overflow-x: auto;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>GridShell Test Harness</h1>
+    
+    <h2>GridShell Component</h2>
+    
+    <div class="controls">
+      <button class="primary" onclick="loadSampleData()">Load Sample Data</button>
+      <button onclick="showSkeleton()">Show Skeleton</button>
+      <button onclick="removeSkeleton()">Hide Skeleton</button>
+      <button onclick="toggleAll()">Toggle All Checkboxes</button>
+      <button class="danger" onclick="deleteSelected()">Delete Selected</button>
+      <button onclick="clearGrid()">Clear Grid</button>
+      <button onclick="testActions()">Test Row Actions</button>
+    </div>
+
+    <div id="grid-container"></div>
+
+    <div class="stats">
+      <p>Row count: <strong id="row-count">0</strong> | 
+         Selected: <strong id="selected-count">0</strong> |
+         Has rows: <strong id="has-rows">false</strong></p>
+    </div>
+
+    <h2>All Unified Components Test Suite</h2>
+
+    <h3>StatusBar Component</h3>
+    <div id="statusbar-controls">
+      <button class="primary" onclick="testStatusBar()">Create Status Bar</button>
+      <button onclick="statusBarBegin()">Begin Scanning</button>
+      <button onclick="statusBarSimulate()">Simulate Progress</button>
+      <button onclick="statusBarDone()">Mark Complete</button>
+      <button onclick="statusBarError()">Show Error</button>
+      <button onclick="statusBarReset()">Reset to Idle</button>
+    </div>
+    <div id="status-container"></div>
+
+    <h3>FilterBar Component</h3>
+    <div id="filterbar-controls">
+      <button class="primary" onclick="testFilterBar()">Create Filter Bar</button>
+      <button onclick="filterBarAddOptions()">Add Options</button>
+      <button onclick="filterBarApply()">Apply Filter</button>
+      <button onclick="filterBarReset()">Reset Filters</button>
+    </div>
+    <div id="filter-container"></div>
+
+    <h3>Toolbar Component</h3>
+    <div id="toolbar-controls">
+      <button class="primary" onclick="testToolbar()">Create Toolbar</button>
+      <button onclick="toolbarLoadMoreOn()">Enable Load More</button>
+      <button onclick="toolbarLoadMoreOff()">Disable Load More</button>
+      <button onclick="toolbarKeepEnable()">Enable Keep Button</button>
+      <button onclick="toolbarKeepDisable()">Disable Keep Button</button>
+    </div>
+    <div id="toolbar-container"></div>
+
+    <h3>MetricsBar Component</h3>
+    <div id="metricsbar-controls">
+      <button class="primary" onclick="testMetricsBar()">Create Metrics Bar</button>
+      <button onclick="metricsSimulate()">Simulate Metrics</button>
+      <button onclick="metricsStop()">Stop Metrics</button>
+    </div>
+    <div id="metrics-container"></div>
+
+    <h3>ConnectionBadge Component</h3>
+    <div id="connbadge-controls">
+      <button class="primary" onclick="testConnectionBadge()">Create Badge</button>
+      <button onclick="connBadgeConnected()">Connected</button>
+      <button onclick="connBadgeDisconnected()">Disconnected</button>
+      <button onclick="connBadgeReconnecting()">Reconnecting</button>
+    </div>
+    <div id="connbadge-container"></div>
+
+    <h3>SummaryBadges Component</h3>
+    <div id="summarybadges-controls">
+      <button class="primary" onclick="testSummaryBadges()">Create Badges</button>
+      <button onclick="updateTotalSaved()">Update Total Saved</button>
+      <button onclick="updateQueue()">Update Queue</button>
+      <button onclick="updateKeepCount()">Update Keep Count</button>
+    </div>
+    <div id="summarybadges-container"></div>
+
+    <div class="code-example">
+      <pre>// Example: Create and populate a grid
+const columns = [
+  { key: 'path', label: 'File', type: 'path', width: 'flex(3, min 150px)' },
+  { key: 'size', label: 'Size', type: 'size', width: '90px' },
+  { key: 'modified', label: 'Modified', type: 'text', width: '140px' }
+];
+
+GridShell.create('demo', 'grid-container', columns, {
+  lineNumbers: true,
+  colorFn: (path) => getColorForExtension(path),
+  persistWidths: true
+});
+
+GridShell.addRows('demo', [
+  { path: 'C:\\Users\\john\\file1.ts', size: 5120, modified: '2 days ago' },
+  { path: 'C:\\Users\\john\\file2.js', size: 3240, modified: '1 hour ago' }
+]);</pre>
+    </div>
+  </div>
+
+  <script type="module">
+    import { GridShell } from './lib/wb-core/components/grid-shell.js';
+    import { RowActions } from './lib/wb-core/components/row-actions.js';
+    import { StatusBar } from './lib/wb-core/components/status-bar.js';
+    import { FilterBar } from './lib/wb-core/components/filter-bar.js';
+    import { Toolbar } from './lib/wb-core/components/toolbar.js';
+    import { MetricsBar } from './lib/wb-core/components/metrics-bar.js';
+    import { ConnectionBadge } from './lib/wb-core/components/connection-badge.js';
+    import { SummaryBadges } from './lib/wb-core/components/summary-badges.js';
+    
+    // Make globally available for testing
+    window.GridShell = GridShell;
+    window.RowActions = RowActions;
+    window.StatusBar = StatusBar;
+    window.FilterBar = FilterBar;
+    window.Toolbar = Toolbar;
+    window.MetricsBar = MetricsBar;
+    window.ConnectionBadge = ConnectionBadge;
+    window.SummaryBadges = SummaryBadges;
+
+    // Sample data generator
+    const sampleData = [
+      { path: 'C:\\Users\\john\\Documents\\report.pdf', size: 2456743, modified: '3 days ago' },
+      { path: 'C:\\Users\\john\\Downloads\\installer.exe', size: 98765432, modified: '1 day ago' },
+      { path: 'C:\\Users\\john\\Pictures\\vacation.jpg', size: 4567890, modified: '2 weeks ago' },
+      { path: 'D:\\Archive\\project.zip', size: 654321098, modified: '1 month ago' },
+      { path: 'E:\\Backups\\system.bak', size: 13579246, modified: '5 days ago' },
+      { path: 'C:\\Users\\john\\Desktop\\notes.txt', size: 1234, modified: '10 minutes ago' },
+      { path: 'C:\\Users\\john\\Videos\\tutorial.mp4', size: 987654321, modified: '2 hours ago' },
+      { path: 'F:\\Data\\database.db', size: 76543210, modified: '30 minutes ago' },
+    ];
+
+    // Color function for extensions
+    function colorForExt(path) {
+      const ext = path.split('.').pop().toLowerCase();
+      const colors = {
+        pdf: '#f44336',
+        exe: '#ff9800',
+        jpg: '#4caf50',
+        zip: '#2196f3',
+        bak: '#9c27b0',
+        txt: '#607d8b',
+        mp4: '#e91e63',
+        db: '#00bcd4'
+      };
+      return colors[ext] || '#999';
+    }
+
+    // Initialize grid
+    const columns = [
+      { key: 'path', label: 'File Path', type: 'path', width: 'flex(4, min 200px)' },
+      { key: 'size', label: 'Size', type: 'size', width: '100px' },
+      { key: 'modified', label: 'Modified', type: 'text', width: '120px' }
+    ];
+
+    GridShell.create('demo', 'grid-container', columns, {
+      lineNumbers: true,
+      colorFn: colorForExt,
+      persistWidths: true,
+      onRowClick: (data, row) => {
+        console.log('Row clicked:', data);
+      },
+      onRowDblClick: (data, row) => {
+        console.log('Row double-clicked:', data);
+      }
+    });
+
+    // Create action set (not yet integrated with grid)
+    const rowActions = RowActions.create([
+      {
+        icon: '🗑️',
+        title: 'Delete File',
+        className: 'btn-danger',
+        onClick: (data, row) => {
+          console.log('Delete action triggered:', data.path);
+          alert(`Would delete: ${data.path}`);
+        }
+      },
+      {
+        icon: '📁',
+        title: 'Open Folder',
+        className: 'btn-secondary',
+        onClick: (data, row) => {
+          console.log('Open folder action:', data.path);
+          alert(`Would open folder: ${data.path}`);
+        }
+      },
+      {
+        icon: '👁️',
+        title: 'View in VS Code',
+        className: 'btn-primary',
+        onClick: (data, row) => {
+          console.log('View action:', data.path);
+          alert(`Would open in VS Code: ${data.path}`);
+        }
+      }
+    ]);
+
+    // Global test functions
+    window.loadSampleData = function() {
+      GridShell.removeSkeleton('demo');
+      GridShell.clear('demo');
+      GridShell.addRows('demo', sampleData);
+      updateStats();
+    };
+
+    window.showSkeleton = function() {
+      GridShell.clear('demo');
+      GridShell.showSkeleton('demo', 5);
+    };
+
+    window.removeSkeleton = function() {
+      GridShell.removeSkeleton('demo');
+    };
+
+    window.toggleAll = function() {
+      const checked = document.querySelector('.sg-checkbox:checked');
+      GridShell.selectAll('demo', !checked);
+      updateStats();
+    };
+
+    window.deleteSelected = function() {
+      const selected = GridShell.getChecked('demo', 'path');
+      if (selected.length === 0) {
+        alert('No items selected');
+        return;
+      }
+      
+      if (confirm(`Delete ${selected.length} item(s)?`)) {
+        GridShell.removeByPaths('demo', selected);
+        updateStats();
+      }
+    };
+
+    window.clearGrid = function() {
+      GridShell.clear('demo');
+      updateStats();
+    };
+
+    window.testActions = function() {
+      // Demonstrate RowActions rendering
+      const testCell = document.createElement('div');
+      const testData = sampleData[0];
+      
+      RowActions.render(testCell, rowActions, testData);
+      
+      // Show in alert
+      alert('RowActions rendered with 3 action buttons. Check browser console to see click handlers work.');
+      console.log('RowActions test cell:', testCell);
+      console.log('Available actions:', rowActions.actions.map(a => a.title));
+    };
+
+    function updateStats() {
+      document.getElementById('row-count').textContent = GridShell.rowCount('demo');
+      document.getElementById('has-rows').textContent = GridShell.hasRows('demo');
+      
+      const selected = GridShell.getChecked('demo').length;
+      document.getElementById('selected-count').textContent = selected;
+    }
+
+    // ─── StatusBar Tests ──────────────────────────────────────────────────────────────────
+    let statusBarSimInterval = null;
+
+    window.testStatusBar = function() {
+      StatusBar.create('test-scan', {
+        container: document.getElementById('status-container'),
+        segments: ['files', 'results', 'size'],
+        onStop: () => {
+          console.log('Stop button clicked');
+          alert('Scan cancelled (simulated)');
+          statusBarReset();
+        },
+        onError: (msg) => console.error('StatusBar error:', msg)
+      });
+      alert('Status bar created with segments: files, results, size');
+    };
+
+    window.statusBarBegin = function() {
+      StatusBar.begin('test-scan');
+      alert('Status bar: Scanning started (watch the timer)');
+    };
+
+    window.statusBarSimulate = function() {
+      // Simulate progress updates
+      if (statusBarSimInterval) clearInterval(statusBarSimInterval);
+      
+      let count = 0;
+      const files = [
+        'C:\\Windows\\Temp\\file1.tmp',
+        'C:\\Users\\john\\AppData\\Local\\cache.db',
+        'C:\\Program Files\\Old\\backup.bak',
+        'D:\\Archive\\old_project.zip',
+        'E:\\Downloads\\installer.exe'
+      ];
+
+      statusBarSimInterval = setInterval(() => {
+        count++;
+        const fileCount = Math.floor(Math.random() * 500) + count * 10;
+        const resultCount = Math.floor(Math.random() * 100);
+        const sizeVal = (Math.random() * 5 + 1).toFixed(1);
+        const folderIdx = Math.floor(Math.random() * files.length);
+
+        StatusBar.progress('test-scan', {
+          files: fileCount,
+          results: resultCount,
+          size: sizeVal + ' GB',
+          folder: files[folderIdx],
+          rowCount: resultCount
+        });
+
+        if (count >= 10) {
+          clearInterval(statusBarSimInterval);
+          alert('Simulation complete (10 updates). Click "Begin Scanning" again to continue.');
+        }
+      }, 500);
+    };
+
+    window.statusBarDone = function() {
+      StatusBar.done('test-scan', {
+        files: 542,
+        results: 89,
+        size: '3.7 GB'
+      });
+      if (statusBarSimInterval) clearInterval(statusBarSimInterval);
+      alert('Status bar: Scan complete');
+    };
+
+    window.statusBarError = function() {
+      StatusBar.error('test-scan', 'Access denied to C:\\System32');
+      if (statusBarSimInterval) clearInterval(statusBarSimInterval);
+      alert('Status bar: Error state shown');
+    };
+
+    window.statusBarReset = function() {
+      StatusBar.reset('test-scan');
+      if (statusBarSimInterval) clearInterval(statusBarSimInterval);
+      alert('Status bar: Reset to idle');
+    };
+
+    // ─── FilterBar Tests ──────────────────────────────────────────────────────────────────
+
+    window.testFilterBar = function() {
+      FilterBar.create('test-filter', {
+        container: document.getElementById('filter-container'),
+        onApply: (state) => {
+          console.log('Filter applied:', state);
+          alert('Filter applied: ' + JSON.stringify(state));
+        }
+      });
+      alert('FilterBar created with dropdown, mode toggle, and text input');
+    };
+
+    window.filterBarAddOptions = function() {
+      const options = ['Documents', 'Downloads', 'Desktop', 'AppData', 'Temp'];
+      options.forEach(opt => FilterBar.addOption('test-filter', opt));
+      alert(`Added ${options.length} filter options`);
+    };
+
+    window.filterBarApply = function() {
+      FilterBar.apply('test-filter');
+      alert('Filter applied');
+    };
+
+    window.filterBarReset = function() {
+      FilterBar.reset('test-filter');
+      alert('FilterBar reset to default state');
+    };
+
+    // ─── Toolbar Tests ────────────────────────────────────────────────────────────────────
+
+    let toolbarInstance = null;
+
+    window.testToolbar = function() {
+      toolbarInstance = Toolbar.create('test-toolbar', {
+        container: document.getElementById('toolbar-container'),
+        customButtons: [
+          { label: '🔍 Scan', onClick: () => alert('Scan clicked') },
+          { label: '✖ Cancel', className: 'muted', onClick: () => alert('Cancel clicked') },
+        ],
+        onSelectAll: () => alert('Select All clicked'),
+        onSelectNone: () => alert('Select None clicked'),
+        onDelete: () => alert('Delete clicked'),
+        onKeep: () => alert('Keep clicked'),
+        onLoadMore: () => alert('Load More clicked'),
+      });
+      alert('Toolbar created with standard and custom buttons');
+    };
+
+    window.toolbarLoadMoreOn = function() {
+      if (toolbarInstance) {
+        toolbarInstance.setLoadMoreState(true);
+        alert('Load More button enabled (green dot)');
+      }
+    };
+
+    window.toolbarLoadMoreOff = function() {
+      if (toolbarInstance) {
+        toolbarInstance.setLoadMoreState(false);
+        alert('Load More button disabled (red dot)');
+      }
+    };
+
+    window.toolbarKeepEnable = function() {
+      if (toolbarInstance) {
+        toolbarInstance.setKeepEnabled(true);
+        alert('Keep button enabled');
+      }
+    };
+
+    window.toolbarKeepDisable = function() {
+      if (toolbarInstance) {
+        toolbarInstance.setKeepEnabled(false);
+        alert('Keep button disabled');
+      }
+    };
+
+    // ─── MetricsBar Tests ─────────────────────────────────────────────────────────────────
+
+    let metricsInstance = null;
+    let metricsInterval = null;
+
+    window.testMetricsBar = function() {
+      metricsInstance = MetricsBar.create('test-metrics', {
+        container: document.getElementById('metrics-container')
+      });
+      alert('MetricsBar created with CPU, memory, threads, and uptime');
+    };
+
+    window.metricsSimulate = function() {
+      if (!metricsInstance) {
+        alert('Create MetricsBar first');
+        return;
+      }
+
+      if (metricsInterval) clearInterval(metricsInterval);
+
+      metricsInstance.startUptimeTimer();
+      
+      metricsInterval = setInterval(() => {
+        const cpu = Math.floor(Math.random() * 100);
+        const mem = Math.floor(Math.random() * 100);
+        const threads = Math.floor(Math.random() * 50) + 10;
+
+        metricsInstance.update({
+          cpu, mem, threads
+        });
+      }, 1000);
+
+      alert('Metrics simulating (updates every second)');
+    };
+
+    window.metricsStop = function() {
+      if (metricsInstance) {
+        metricsInstance.stopUptimeTimer();
+      }
+      if (metricsInterval) clearInterval(metricsInterval);
+      alert('Metrics simulation stopped');
+    };
+
+    // ─── ConnectionBadge Tests ────────────────────────────────────────────────────────────
+
+    let badgeInstance = null;
+
+    window.testConnectionBadge = function() {
+      badgeInstance = ConnectionBadge.create('test-badge', {
+        container: document.getElementById('connbadge-container')
+      });
+      badgeInstance.setConnected(true);
+      alert('ConnectionBadge created (showing connected state)');
+    };
+
+    window.connBadgeConnected = function() {
+      if (badgeInstance) {
+        badgeInstance.setConnected(true);
+        badgeInstance.setReconnecting(false);
+        alert('Badge state: Connected');
+      }
+    };
+
+    window.connBadgeDisconnected = function() {
+      if (badgeInstance) {
+        badgeInstance.setConnected(false);
+        badgeInstance.setReconnecting(false);
+        alert('Badge state: Disconnected');
+      }
+    };
+
+    window.connBadgeReconnecting = function() {
+      if (badgeInstance) {
+        badgeInstance.setConnected(false);
+        badgeInstance.setReconnecting(true);
+        alert('Badge state: Reconnecting');
+      }
+    };
+
+    // ─── SummaryBadges Tests ──────────────────────────────────────────────────────────────
+
+    let badgesInstance = null;
+
+    window.testSummaryBadges = function() {
+      badgesInstance = SummaryBadges.create('test-badges', {
+        container: document.getElementById('summarybadges-container'),
+        options: {}
+      });
+      alert('SummaryBadges created with totalSaved, queue, and keepCount');
+    };
+
+    window.updateTotalSaved = function() {
+      if (badgesInstance) {
+        const saved = (Math.random() * 50 + 5).toFixed(1);
+        SummaryBadges.update('test-badges', 'totalSaved', saved + ' GB');
+        alert(`Updated: Total Saved = ${saved} GB`);
+      }
+    };
+
+    window.updateQueue = function() {
+      if (badgesInstance) {
+        const queue = Math.floor(Math.random() * 100);
+        SummaryBadges.update('test-badges', 'queue', queue);
+        alert(`Updated: Queue = ${queue} files`);
+      }
+    };
+
+    window.updateKeepCount = function() {
+      if (badgesInstance) {
+        const kept = Math.floor(Math.random() * 200);
+        SummaryBadges.update('test-badges', 'keepCount', kept);
+        alert(`Updated: Keep Count = ${kept} files`);
+      }
+    };
+
+    // Initial update
+    updateStats();
+  </script>
+</body>
+</html>

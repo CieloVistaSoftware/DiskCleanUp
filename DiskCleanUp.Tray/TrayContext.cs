@@ -92,6 +92,22 @@ public class TrayContext : ApplicationContext
         _pollTimer.Tick += async (_, _) => await PollAsync();
         _pollTimer.Start();
         _ = PollAsync();
+        
+        // Auto-start service on tray launch if not already running
+        _ = AutoStartServiceAsync();
+    }
+
+    // ── Auto-start on launch ──────────────────────────────────────────────
+    private async Task AutoStartServiceAsync()
+    {
+        // Wait a moment for initial poll to complete
+        await Task.Delay(1000);
+        
+        // If service is not running, start it automatically
+        if (_state != ServiceState.Running)
+        {
+            OnStart(null, EventArgs.Empty);
+        }
     }
 
     // Handler for Help menu item

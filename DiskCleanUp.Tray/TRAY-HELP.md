@@ -1,18 +1,3 @@
----
-docid: 300.9.tray-help
-id: diskcleanup-tray-app-help
-title: DiskCleanUp Tray App Help
-project: DiskCleanUp
-description: The DiskCleanUp Tray App is a small program that sits in your Windows system tray and provides quick access to control the DiskCleanUp backend serv…
-status: active
-tags: [tray, help, diskcleanup]
-category: 300.9 — Meta
-created: 2026-03-25
-updated: 2026-04-27
-version: 1.0.0
-author: CieloVista Software
-relativepath: DiskCleanUp.Tray/TRAY-HELP.md
----
 # DiskCleanUp Tray App Help
 
 ## What is the Tray App?
@@ -39,4 +24,17 @@ The DiskCleanUp Tray App is a small program that sits in your Windows system tra
 - If you encounter issues, use the Help menu for guidance or contact support.
 
 ---
-Cielo Vista Software — DiskCleanUp Project
+docid: 300.9.tray-help
+id: diskcleanup-tray-app-help
+title: DiskCleanUp Tray App Help
+project: DiskCleanUp
+description: The DiskCleanUp Tray App is a small program that sits in your Windows system tray and provides quick access to control the DiskCleanUp backend serv…
+status: active
+tags: [app, diskcleanup, diskcleanuptray, help, meta, program, sits, small, system, tray, windows, your]
+category: 300.9 — Meta
+created: 2026-03-25
+updated: 2026-04-27
+version: 1.0.0
+author: CieloVista Software
+relativepath: DiskCleanUp.Tray/TRAY-HELP.md
+---

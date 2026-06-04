@@ -1,0 +1,164 @@
+<!-- ═══════════════════════════════════════════════════════════════════════
+     wwwroot/trace-viewer.html
+     In-app trace log viewer served by the ASP.NET service. Reads
+     breadcrumb events from the /api/trace endpoint and renders them as a
+     filterable, searchable log. Accessible from the dashboard toolbar.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Trace Viewer — DiskCleanUp</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #e0e0e0; padding: 16px; }
+  h1 { font-size: 1.3rem; margin-bottom: 12px; color: #58a6ff; }
+  .toolbar { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; flex-wrap: wrap; }
+  .toolbar button { padding: 6px 14px; border: 1px solid #444; border-radius: 4px; background: #2a2a3e; color: #e0e0e0; cursor: pointer; font-size: .85rem; }
+  .toolbar button:hover { background: #3a3a5e; }
+  .toolbar .status { font-size: .8rem; color: #888; margin-left: auto; }
+  #filter { padding: 6px 10px; border: 1px solid #444; border-radius: 4px; background: #2a2a3e; color: #e0e0e0; width: 200px; font-size: .85rem; }
+
+  #log { background: #0d1117; border: 1px solid #333; border-radius: 6px; overflow-y: auto; max-height: calc(100vh - 150px); font-family: 'Cascadia Code','Fira Code',monospace; font-size: .78rem; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { position: sticky; top: 0; background: #1e2a3a; color: #c9d1d9; font-weight: 700; font-size: .75rem; text-transform: uppercase; padding: 8px 10px; border-bottom: 2px solid #58a6ff; text-align: left; white-space: nowrap; letter-spacing: .04em; }
+  thead th:nth-child(1) { width: 52px;  text-align: right; }
+  thead th:nth-child(2) { width: 90px; }
+  thead th:nth-child(3) { width: 80px; }
+  thead th:nth-child(4) { width: 110px; }
+  tbody tr { border-bottom: 1px solid #1a1a2e; line-height: 1.55; }
+  tbody tr:hover { background: #1c2333; }
+  td { padding: 2px 10px; vertical-align: top; }
+
+  .col-num  { color: #888; text-align: right; user-select: none; }
+  .col-time { color: #888; white-space: nowrap; }
+  .col-ago  { color: #6a9fd8; white-space: nowrap; }
+  .col-tag  { white-space: nowrap; }
+  .col-msg  { color: #ccc; word-break: break-all; }
+
+  .tag-page        { color: #58a6ff; }
+  .tag-init        { color: #7ee787; }
+  .tag-cache       { color: #d2a8ff; }
+  .tag-ws          { color: #ffa657; }
+  .tag-dup         { color: #ff7b72; }
+  .tag-trash       { color: #f778ba; }
+  .tag-del         { color: #f778ba; }
+  .tag-store       { color: #d2a8ff; }
+  .tag-hb          { color: #333; }
+  .tag-sg          { color: #58a6ff; }
+  .tag-err         { color: #ff4444; }
+  .tag-freeze      { color: #ff2222; font-weight: bold; }
+  .tag-freezetrail { color: #ff6666; }
+  .tag-wf          { color: #b4a0ff; }
+
+  tr.is-freeze { background: #1a0000 !important; }
+  tr.is-freeze td { color: #ff6666; }
+  tr.is-freeze .col-tag span { color: #ff2222; font-weight: bold; }
+
+  .empty { color: #555; font-style: italic; padding: 40px; text-align: center; }
+</style>
+</head>
+<body>
+<h1>Trace Viewer</h1>
+
+<div class="toolbar">
+  <button onclick="loadTrace()">Refresh</button>
+  <input type="text" id="filter" placeholder="Filter (e.g. FREEZE, sg, WS)" oninput="applyFilter()">
+  <span class="status" id="status">Loading...</span>
+</div>
+<div id="log"><div class="empty">Loading trace...</div></div>
+
+<script>
+// Minimal trace viewer: fetch, parse, display. No polling, no side effects.
+let allLines = [];
+let loadedAtMs = Date.now();
+let maxSessionMs = 0;
+
+function parseLine(raw) {
+  const m = raw.match(/^\s*(?:#(\d+)\s+)?(\+(\d+)ms)\s+\[([^\]]+)\]\s+([\s\S]*)$/);
+  if (!m) return null;
+  return { num: m[1] || '', sessionMs: parseInt(m[3], 10), tag: m[4], msg: m[5] };
+}
+
+function fmtAgo(ms) {
+  if (ms < 0) ms = 0;
+  if (ms < 1000) return ms + 'ms ago';
+  if (ms < 60000) return (ms / 1000).toFixed(1) + 's ago';
+  return Math.floor(ms / 60000) + 'm ago';
+}
+
+function tagClass(tag) {
+  const t = tag.toLowerCase();
+  if (t.startsWith('wf:')) return 'tag-wf';
+  if (t === 'freeze-trail') return 'tag-freezetrail';
+  return 'tag-' + t.replace(/[^a-z0-9]/g, '');
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function calcMax(lines) {
+  let max = 0;
+  for (const l of lines) {
+    const m = l.match(/\+(\d+)ms/);
+    if (m) { const v = parseInt(m[1], 10); if (v > max) max = v; }
+  }
+  return max;
+}
+
+function applyFilter() {
+  const filter = document.getElementById('filter').value.toLowerCase();
+  const filtered = allLines.filter(l => !filter || l.toLowerCase().includes(filter));
+  const el = document.getElementById('log');
+
+  document.getElementById('displayed').textContent = filtered.length;
+
+  if (!filtered.length) {
+    el.innerHTML = '<div class="empty">No entries' + (filter ? ' matching filter' : '') + '</div>';
+    return;
+  }
+
+  const nowMs = Date.now();
+  const reversed = filtered.slice().reverse();
+  const rows = reversed.map(raw => {
+    const p = parseLine(raw);
+    if (!p) return '<tr><td colspan="5">' + esc(raw.trim()) + '</td></tr>';
+    
+    const agoMs = nowMs - entryWallMs;
+    const isFr = p.tag.toUpperCase().startsWith('FREEZE') ? ' class="is-freeze"' : '';
+    const cls = tagClass(p.tag);
+
+    return '<tr' + isFr + '>' +
+      '<td class="col-num">' + entryId + '</td>' +
+      '<td class="col-time">+' + p.sessionMs + 'ms</td>' +
+      '<td class="col-ago">' + fmtAgo(agoMs) + '</td>' +
+      '<td class="col-tag"><span class="' + cls + '">[' + esc(p.tag) + ']</span></td>' +
+      '<td class="col-msg">' + esc(p.msg) + '</td>' +
+      '</tr>';
+  }).join('');
+
+  el.innerHTML = 
+    '<table><thead><tr><th>#</th><th>Session</th><th>Elapsed</th><th>Tag</th><th>Message</th></tr></thead>' +
+    '<tbody>' + rows + '</tbody></table>';
+}
+
+async function loadTrace() {
+  try {
+    document.getElementById('status').textContent = 'Loading...';
+    const r = await fetch('/api/trace');
+    const r = await fetch('/api/trace');
+    const data = await r.json();
+    allLines = data.lines || [];
+    loadedAtMs = Date.now();
+    maxSessionMs = calcMax(allLines);
+    applyFilter();
+    document.getElementById('status').textContent = allLines.length + ' entries';
+  } catch (e) {
+    document.getElementById('status').textContent = 'Error: ' + e.message;
+    document.getElementById('log').innerHTML = '<div class="empty">Failed to load trace
+
+loadTrace();
+</script>
+</body>
+</html>

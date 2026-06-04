@@ -1,0 +1,712 @@
+<!-- ═══════════════════════════════════════════════════════════════════════
+     wwwroot/architecture.html
+     Service architecture reference page. Renders the arch/ markdown docs
+     as HTML — covers the browser pipeline, WebSocket message flow, scan
+     orchestration, and data file layout. Dev reference only.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DiskCleanUp - Service Architecture v2.1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&amp;family=Outfit:wght@300;400;600;700;800&amp;display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>
+<style>
+/* === RESET & BASE === */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: #080b10;
+  color: #c9d1d9;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 300;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* === GRAIN OVERLAY === */
+body::after {
+  content: ''; position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+}
+
+/* === LAYOUT === */
+.page { max-width: 1280px; margin: 0 auto; padding: 0 32px 120px; }
+
+/* === HERO === */
+.hero {
+  text-align: center; padding: 100px 0 80px;
+  background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(56,139,253,0.08) 0%, transparent 70%);
+}
+.hero h1 {
+  font-size: 52px; font-weight: 800; letter-spacing: -2px;
+  background: linear-gradient(135deg, #58a6ff 0%, #a371f7 40%, #f778ba 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero .sub { font-size: 18px; color: #7d8590; margin-top: 12px; font-weight: 300; }
+.hero .version {
+  display: inline-block; margin-top: 20px; padding: 4px 14px; border-radius: 20px;
+  background: rgba(56,139,253,0.1); border: 1px solid rgba(56,139,253,0.25);
+  font-size: 12px; color: #58a6ff; font-weight: 600; letter-spacing: 1px;
+}
+.hero .vision {
+  max-width: 680px; margin: 32px auto 0; font-size: 16px; color: #8b949e; line-height: 1.8;
+}
+.hero .vision em { color: #c9d1d9; font-style: normal; font-weight: 400; }
+
+/* === NAV PILLS === */
+.nav-pills {
+  display: flex; justify-content: center; gap: 6px; flex-wrap: wrap;
+  padding: 20px 0; position: sticky; top: 0; z-index: 100;
+  background: rgba(8,11,16,0.85); backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(48,54,61,0.5);
+}
+.nav-pills a {
+  padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;
+  color: #7d8590; text-decoration: none; transition: all 0.2s;
+  border: 1px solid transparent;
+}
+.nav-pills a:hover { color: #c9d1d9; background: rgba(56,139,253,0.08); border-color: rgba(56,139,253,0.2); }
+
+/* === SECTION HEADERS === */
+section { padding: 80px 0 0; }
+.section-head { display: flex; align-items: center; gap: 14px; margin-bottom: 40px; }
+.section-num {
+  font-size: 48px; font-weight: 800; line-height: 1;
+  background: linear-gradient(135deg, #58a6ff, #a371f7);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; opacity: 0.4;
+}
+.section-head h2 { font-size: 28px; font-weight: 700; color: #e6edf3; letter-spacing: -0.5px; }
+
+/* === SVG DIAGRAMS === */
+.diagram-wrap {
+  background: #0d1117; border: 1px solid #21262d; border-radius: 12px;
+  padding: 32px; margin: 24px 0 40px; overflow-x: auto;
+}
+.diagram-wrap svg { width: 100%; display: block; }
+.diagram-caption { text-align: center; font-size: 12px; color: #484f58; margin-top: 12px; }
+
+/* === INFO CARDS === */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 24px 0; }
+.card {
+  background: #0d1117; border: 1px solid #21262d; border-radius: 10px;
+  padding: 24px; transition: border-color 0.3s;
+}
+.card:hover { border-color: #30363d; }
+.card .icon { font-size: 28px; margin-bottom: 10px; }
+.card h3 { font-size: 16px; font-weight: 600; color: #e6edf3; margin-bottom: 6px; }
+.card p { font-size: 13px; color: #7d8590; line-height: 1.6; }
+.card.blue   { border-left: 3px solid #58a6ff; }
+.card.green  { border-left: 3px solid #3fb950; }
+.card.purple { border-left: 3px solid #a371f7; }
+.card.amber  { border-left: 3px solid #e3b341; }
+.card.red    { border-left: 3px solid #f85149; }
+
+/* === DECISION TABLE === */
+.dec-table { width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 13px; }
+.dec-table th {
+  text-align: left; padding: 10px 14px; font-weight: 600; color: #58a6ff;
+  border-bottom: 2px solid #21262d; background: #0d1117;
+}
+.dec-table td { padding: 10px 14px; border-bottom: 1px solid #161b22; color: #8b949e; }
+.dec-table tr:hover td { background: rgba(56,139,253,0.03); }
+.dec-table td:first-child { color: #c9d1d9; font-weight: 400; }
+
+/* === MD-HTML COMPONENT === */
+md-html {
+  display: block; margin: 24px 0;
+  background: #0d1117; border: 1px solid #21262d; border-radius: 12px; overflow: hidden;
+}
+md-html .md-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; cursor: pointer; user-select: none;
+  background: linear-gradient(135deg, rgba(56,139,253,0.04), rgba(163,113,247,0.04));
+  border-bottom: 1px solid #21262d; transition: background 0.2s;
+}
+md-html .md-header:hover { background: rgba(56,139,253,0.06); }
+md-html .md-header .md-title {
+  font-size: 14px; font-weight: 600; color: #c9d1d9;
+  display: flex; align-items: center; gap: 8px;
+}
+md-html .md-header .md-file {
+  font-size: 11px; font-family: 'JetBrains Mono', monospace;
+  color: #484f58; padding: 2px 8px; background: #161b22; border-radius: 4px;
+}
+md-html .md-header .md-chevron { font-size: 14px; color: #484f58; transition: transform 0.3s; }
+md-html[open] .md-header .md-chevron { transform: rotate(180deg); }
+md-html .md-body { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
+md-html[open] .md-body { max-height: 5000px; }
+md-html .md-content { padding: 24px 28px; }
+md-html .md-loading { padding: 40px; text-align: center; color: #484f58; font-size: 13px; }
+
+/* === MARKDOWN RENDERED STYLES === */
+md-html h1 { font-size: 22px; font-weight: 700; color: #e6edf3; margin: 0 0 16px; padding-bottom: 8px; border-bottom: 1px solid #21262d; }
+md-html h2 { font-size: 17px; font-weight: 600; color: #c9d1d9; margin: 28px 0 10px; }
+md-html h3 { font-size: 14px; font-weight: 600; color: #8b949e; margin: 20px 0 8px; }
+md-html p  { margin: 0 0 12px; font-size: 14px; line-height: 1.7; color: #8b949e; }
+md-html strong { color: #c9d1d9; font-weight: 600; }
+md-html em { color: #a5d6ff; font-style: italic; }
+md-html a  { color: #58a6ff; text-decoration: none; }
+md-html a:hover { text-decoration: underline; }
+md-html ul, md-html ol { margin: 8px 0 16px 20px; font-size: 14px; color: #8b949e; }
+md-html li { margin: 4px 0; }
+md-html hr { border: none; border-top: 1px solid #21262d; margin: 24px 0; }
+md-html code {
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  background: #161b22; padding: 2px 6px; border-radius: 4px; color: #e3b341;
+}
+md-html pre {
+  background: #0c0f14; border: 1px solid #1c2128; border-radius: 8px;
+  padding: 16px 20px; margin: 12px 0 16px; overflow-x: auto; line-height: 1.5;
+}
+md-html pre code { background: none; padding: 0; color: #c9d1d9; font-size: 12px; }
+md-html table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: 13px; }
+md-html th {
+  text-align: left; padding: 8px 12px; font-weight: 600; color: #58a6ff;
+  border-bottom: 2px solid #21262d; background: rgba(13,17,23,0.5);
+}
+md-html td { padding: 8px 12px; border-bottom: 1px solid #161b22; color: #8b949e; }
+md-html blockquote {
+  border-left: 3px solid #a371f7; padding: 8px 16px; margin: 12px 0 16px;
+  background: rgba(163,113,247,0.04); border-radius: 0 6px 6px 0;
+}
+md-html blockquote p { color: #a5d6ff; margin: 0; }
+
+/* === PROCESS PILLS === */
+.process-row { display: flex; gap: 12px; margin: 24px 0; flex-wrap: wrap; }
+.pill {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 40px; font-size: 13px; font-weight: 600;
+  border: 1px solid; flex: 1; min-width: 180px; justify-content: center;
+}
+.pill.svc     { background: rgba(56,139,253,0.08); border-color: rgba(56,139,253,0.25); color: #58a6ff; }
+.pill.tray    { background: rgba(163,113,247,0.08); border-color: rgba(163,113,247,0.25); color: #a371f7; }
+.pill.browser { background: rgba(63,185,80,0.08); border-color: rgba(63,185,80,0.25); color: #3fb950; }
+.pill.sysmon  { background: rgba(248,81,73,0.08); border-color: rgba(248,81,73,0.25); color: #f85149; }
+
+/* === FOOTER === */
+.footer {
+  text-align: center; padding: 60px 0 20px; color: #30363d; font-size: 12px;
+  border-top: 1px solid #161b22; margin-top: 80px;
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <h1>DiskCleanUp</h1>
+  <p class="sub">Windows Service Architecture</p>
+  <span class="version">DESIGN v2.1 &middot; 2026-03-01</span>
+  <p class="vision">
+    Mark Russinovich's <em>Sysmon</em> is one of the most powerful system monitoring tools ever built &mdash;
+    kernel-level hooks, zero missed events, battle-tested in enterprise security.
+    But its interface is XML config files and Event Viewer.
+    <br><br>
+    DiskCleanUp <em>decorates</em> that raw power with a beautiful, accessible web dashboard &mdash;
+    real-time scan results, color-coded file types, one-click cleanup, animated progress.
+    <em>Sysmon is the engine. We're the windshield.</em>
+  </p>
+</header>
+
+<!-- NAV -->
+<nav class="nav-pills">
+  <a href="#arch">Architecture</a>
+  <a href="#processes">Processes</a>
+  <a href="#sysmon">Sysmon</a>
+  <a href="#scan-modes">Scan Modes</a>
+  <a href="#service">Service</a>
+  <a href="#tray">Tray App</a>
+  <a href="#migration">Migration</a>
+  <a href="#decisions">Decisions</a>
+</nav>
+
+<!-- 01 - ARCHITECTURE OVERVIEW -->
+<section id="arch">
+  <div class="section-head">
+    <span class="section-num">01</span>
+    <h2>Architecture Overview</h2>
+  </div>
+
+  <div class="process-row">
+    <div class="pill svc">DiskCleanUp.Service</div>
+    <div class="pill tray">DiskCleanUp.Tray</div>
+    <div class="pill browser">Browser Dashboard</div>
+    <div class="pill sysmon">Sysmon Kernel Driver</div>
+  </div>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 1100 520" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="a1" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#58a6ff"/></marker>
+        <marker id="a2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#a371f7"/></marker>
+        <marker id="a3" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#3fb950"/></marker>
+        <marker id="a4" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#f85149"/></marker>
+        <marker id="a5" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#e3b341"/></marker>
+      </defs>
+
+      <!-- SYSMON KERNEL LAYER -->
+      <rect x="10" y="10" width="1080" height="80" rx="8" fill="#0c0f14" stroke="#f85149" stroke-width="1" stroke-dasharray="6,3"/>
+      <text x="550" y="35" text-anchor="middle" fill="#f85149" font-family="Outfit" font-size="11" font-weight="700">WINDOWS KERNEL - SYSMON ETW DRIVER</text>
+      <text x="550" y="55" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="10">Event ID 11 (FileCreate) / 23 (FileDelete) / 26 (FileDeleteDetected) &gt; Event Log</text>
+      <text x="550" y="72" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="10">Filtered to configured scan roots only / ~0.1% CPU overhead</text>
+
+      <!-- SERVICE BOX -->
+      <rect x="10" y="110" width="620" height="400" rx="10" fill="#0d1117" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="320" y="136" text-anchor="middle" fill="#58a6ff" font-family="Outfit" font-size="12" font-weight="700">DiskCleanUp.Service / Windows Service / localhost:5100</text>
+
+      <!-- SysmonWatcher -->
+      <rect x="30" y="152" width="200" height="60" rx="6" fill="#0c0f14" stroke="#f85149" stroke-width="1"/>
+      <text x="130" y="172" text-anchor="middle" fill="#f85149" font-family="Outfit" font-size="10" font-weight="600">SysmonWatcher</text>
+      <text x="130" y="188" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">EventLogWatcher subscription</text>
+      <text x="130" y="201" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">5s debounce &gt; DeltaScan</text>
+
+      <!-- ScanOrchestrator -->
+      <rect x="250" y="152" width="200" height="60" rx="6" fill="#0c0f14" stroke="#e3b341" stroke-width="1"/>
+      <text x="350" y="172" text-anchor="middle" fill="#e3b341" font-family="Outfit" font-size="10" font-weight="600">ScanOrchestrator</text>
+      <text x="350" y="188" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">Channel&lt;ScanEvent&gt; per section</text>
+      <text x="350" y="201" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">Parallel.ForEachAsync workers</text>
+
+      <!-- BackgroundScanService -->
+      <rect x="470" y="152" width="148" height="60" rx="6" fill="#0c0f14" stroke="#a371f7" stroke-width="1"/>
+      <text x="544" y="172" text-anchor="middle" fill="#a371f7" font-family="Outfit" font-size="10" font-weight="600">Scheduled Scans</text>
+      <text x="544" y="188" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">BackgroundScanService</text>
+      <text x="544" y="201" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">Startup + Interval + Daily</text>
+
+      <!-- Kestrel + WS -->
+      <rect x="30" y="232" width="250" height="56" rx="6" fill="#0c0f14" stroke="#3fb950" stroke-width="1"/>
+      <text x="155" y="252" text-anchor="middle" fill="#3fb950" font-family="Outfit" font-size="10" font-weight="600">Kestrel HTTP + WebSocket</text>
+      <text x="155" y="268" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">REST API / WS /ws / Static files (wwwroot)</text>
+      <text x="155" y="281" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">CORS: localhost only</text>
+
+      <!-- ConfigService -->
+      <rect x="300" y="232" width="148" height="56" rx="6" fill="#0c0f14" stroke="#58a6ff" stroke-width="1"/>
+      <text x="374" y="252" text-anchor="middle" fill="#58a6ff" font-family="Outfit" font-size="10" font-weight="600">ConfigService</text>
+      <text x="374" y="268" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">config.json / keep-list</text>
+      <text x="374" y="281" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">savings / errors</text>
+
+      <!-- MetricsService -->
+      <rect x="468" y="232" width="148" height="56" rx="6" fill="#0c0f14" stroke="#7d8590" stroke-width="1"/>
+      <text x="542" y="252" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10" font-weight="600">MetricsService</text>
+      <text x="542" y="268" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">CPU / Memory / Threads</text>
+      <text x="542" y="281" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">5s interval &gt; WS broadcast</text>
+
+      <!-- JSONL Disk Storage -->
+      <rect x="30" y="310" width="585" height="56" rx="6" fill="#0c0f14" stroke="#7d8590" stroke-width="1" stroke-dasharray="5,3"/>
+      <text x="322" y="332" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10" font-weight="600">%ProgramData%\DiskCleanUp\</text>
+      <text x="322" y="350" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">scan-cache/*.json (JSONL) / config.json / keep-list.json / sysmon-config.xml / savings.jsonl / logs/</text>
+
+      <!-- API Endpoints -->
+      <rect x="30" y="386" width="585" height="56" rx="6" fill="#0c0f14" stroke="#3fb950" stroke-width="1"/>
+      <text x="322" y="406" text-anchor="middle" fill="#3fb950" font-family="Outfit" font-size="10" font-weight="600">REST API Endpoints</text>
+      <text x="322" y="422" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">/api/cache / /api/config / /api/trash / /api/keep-list / /api/metrics / /api/scan / /api/sysmon</text>
+      <text x="322" y="436" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">/api/debug / /api/trace / /api/errors / /api/file / /api/preview / /api/open*</text>
+
+      <!-- Scan Workers -->
+      <rect x="30" y="462" width="585" height="38" rx="6" fill="#0c0f14" stroke="#e3b341" stroke-width="1"/>
+      <text x="322" y="486" text-anchor="middle" fill="#e3b341" font-family="Outfit" font-size="9" font-weight="600">SCAN WORKERS: duplicates / smart-dedup / stale / large / node-modules / venvs / empty / images / backups / tiny / html / css</text>
+
+      <!-- TRAY APP BOX -->
+      <rect x="660" y="110" width="200" height="200" rx="10" fill="#0d1117" stroke="#a371f7" stroke-width="1.5"/>
+      <text x="760" y="136" text-anchor="middle" fill="#a371f7" font-family="Outfit" font-size="12" font-weight="700">DiskCleanUp.Tray</text>
+      <text x="760" y="158" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="10">WinForms NotifyIcon</text>
+      <text x="760" y="184" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">Open Dashboard</text>
+      <text x="760" y="202" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">Start / Stop / Restart Service</text>
+      <text x="760" y="220" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">Green / Blue / Gray / Red icons</text>
+      <text x="760" y="238" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">Health poll: GET /api/service/info</text>
+      <text x="760" y="256" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">every 10s</text>
+
+      <!-- BROWSER BOX -->
+      <rect x="660" y="340" width="430" height="170" rx="10" fill="#0d1117" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="875" y="366" text-anchor="middle" fill="#3fb950" font-family="Outfit" font-size="12" font-weight="700">Browser Dashboard / http://localhost:5100</text>
+      <text x="875" y="392" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">Existing wwwroot/ - HTML / JS / CSS</text>
+      <text x="875" y="410" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">WebSocket &gt; event-queue &gt; RAF &gt; scan-grid</text>
+      <text x="875" y="428" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">Batch fetch: /api/cache/{section}</text>
+      <text x="875" y="456" text-anchor="middle" fill="#e3b341" font-family="Outfit" font-size="10" font-weight="600">Zero frontend code changes</text>
+      <text x="875" y="472" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">Relative URLs work - same origin (service serves static + API)</text>
+      <text x="875" y="490" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">Activity feed + heatmap + scan freshness (NEW)</text>
+
+      <!-- ARROWS -->
+      <line x1="130" y1="90" x2="130" y2="150" stroke="#f85149" stroke-width="1.5" marker-end="url(#a4)"/>
+      <text x="140" y="122" fill="#f85149" font-family="Outfit" font-size="8">ETW events</text>
+      <line x1="230" y1="182" x2="248" y2="182" stroke="#e3b341" stroke-width="1.5" marker-end="url(#a5)"/>
+      <line x1="470" y1="182" x2="452" y2="182" stroke="#e3b341" stroke-width="1.5" marker-end="url(#a5)"/>
+      <line x1="300" y1="212" x2="200" y2="232" stroke="#3fb950" stroke-width="1.5" marker-end="url(#a3)"/>
+      <line x1="660" y1="200" x2="630" y2="260" stroke="#a371f7" stroke-width="1.5" marker-end="url(#a2)"/>
+      <text x="654" y="240" text-anchor="end" fill="#a371f7" font-family="Outfit" font-size="8">HTTP health</text>
+      <line x1="760" y1="310" x2="760" y2="338" stroke="#3fb950" stroke-width="1.5" marker-end="url(#a3)"/>
+      <text x="775" y="328" fill="#3fb950" font-family="Outfit" font-size="8">launch</text>
+      <line x1="280" y1="288" x2="658" y2="400" stroke="#3fb950" stroke-width="2" marker-end="url(#a3)"/>
+      <text x="460" y="336" fill="#3fb950" font-family="Outfit" font-size="9" font-weight="600">WS signals + REST data</text>
+
+      <!-- Legend -->
+      <rect x="880" y="110" width="200" height="120" rx="6" fill="#0c0f14" stroke="#21262d" stroke-width="1"/>
+      <text x="980" y="130" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10" font-weight="600">Legend</text>
+      <line x1="895" y1="144" x2="925" y2="144" stroke="#f85149" stroke-width="1.5"/><text x="932" y="148" fill="#8b949e" font-family="Outfit" font-size="9">Sysmon kernel events</text>
+      <line x1="895" y1="162" x2="925" y2="162" stroke="#e3b341" stroke-width="1.5"/><text x="932" y="166" fill="#8b949e" font-family="Outfit" font-size="9">Scan orchestration</text>
+      <line x1="895" y1="180" x2="925" y2="180" stroke="#3fb950" stroke-width="1.5"/><text x="932" y="184" fill="#8b949e" font-family="Outfit" font-size="9">Data flow (WS + REST)</text>
+      <line x1="895" y1="198" x2="925" y2="198" stroke="#a371f7" stroke-width="1.5"/><text x="932" y="202" fill="#8b949e" font-family="Outfit" font-size="9">Tray app control</text>
+      <line x1="895" y1="216" x2="925" y2="216" stroke="#7d8590" stroke-width="1" stroke-dasharray="4,3"/><text x="932" y="220" fill="#8b949e" font-family="Outfit" font-size="9">Disk storage</text>
+    </svg>
+    <p class="diagram-caption">Two-process architecture: service owns all state, dashboard is a disposable UI layer</p>
+  </div>
+</section>
+
+<!-- 02 - FOUR PROCESSES -->
+<section id="processes">
+  <div class="section-head">
+    <span class="section-num">02</span>
+    <h2>The Four Players</h2>
+  </div>
+
+  <div class="cards">
+    <div class="card red">
+      <div class="icon">&#9889;</div>
+      <h3>Sysmon Kernel Driver</h3>
+      <p>Russinovich's ETW hooks capture every file create/delete/rename at the kernel level. Filtered to scan roots only. ~0.1% CPU. Events persist in Windows Event Log &mdash; survives everything.</p>
+    </div>
+    <div class="card blue">
+      <div class="icon">&#9881;</div>
+      <h3>DiskCleanUp.Service</h3>
+      <p>Windows Service on port 5100. Owns all business logic, scan orchestration, JSONL cache, config, keep-list. Subscribes to Sysmon events. Starts on boot, survives logoff.</p>
+    </div>
+    <div class="card purple">
+      <div class="icon">&#128276;</div>
+      <h3>DiskCleanUp.Tray</h3>
+      <p>System tray icon. Polls service health every 10s. Right-click for service controls. Double-click opens dashboard. Starts on user login. Killing it doesn't stop the service.</p>
+    </div>
+    <div class="card green">
+      <div class="icon">&#127760;</div>
+      <h3>Browser Dashboard</h3>
+      <p>Your existing wwwroot/ &mdash; HTML, JS, CSS. Served by the service itself on :5100. Zero code changes needed. WebSocket for live events, REST for data. Opens and closes freely.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 03 - SYSMON -->
+<section id="sysmon">
+  <div class="section-head">
+    <span class="section-num">03</span>
+    <h2>Sysmon Integration</h2>
+  </div>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 1100 280" xmlns="http://www.w3.org/2000/svg">
+      <rect x="10" y="60" width="150" height="60" rx="8" fill="#0c0f14" stroke="#f85149" stroke-width="1.5"/>
+      <text x="85" y="85" text-anchor="middle" fill="#f85149" font-family="Outfit" font-size="11" font-weight="600">Sysmon</text>
+      <text x="85" y="102" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">Kernel ETW hooks</text>
+      <line x1="160" y1="90" x2="195" y2="90" stroke="#f85149" stroke-width="1.5" marker-end="url(#a4)"/>
+
+      <rect x="198" y="60" width="150" height="60" rx="8" fill="#0c0f14" stroke="#e3b341" stroke-width="1.5"/>
+      <text x="273" y="85" text-anchor="middle" fill="#e3b341" font-family="Outfit" font-size="11" font-weight="600">Event Log</text>
+      <text x="273" y="102" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">Persisted events</text>
+      <line x1="348" y1="90" x2="383" y2="90" stroke="#e3b341" stroke-width="1.5" marker-end="url(#a5)"/>
+
+      <rect x="386" y="60" width="150" height="60" rx="8" fill="#0c0f14" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="461" y="80" text-anchor="middle" fill="#58a6ff" font-family="Outfit" font-size="11" font-weight="600">SysmonWatcher</text>
+      <text x="461" y="97" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">EventLogWatcher</text>
+      <text x="461" y="110" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">5s debounce</text>
+      <line x1="536" y1="90" x2="571" y2="90" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#a1)"/>
+
+      <rect x="574" y="60" width="150" height="60" rx="8" fill="#0c0f14" stroke="#e3b341" stroke-width="1.5"/>
+      <text x="649" y="85" text-anchor="middle" fill="#e3b341" font-family="Outfit" font-size="11" font-weight="600">Delta Scan</text>
+      <text x="649" y="102" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">Single directory only</text>
+      <line x1="724" y1="90" x2="759" y2="90" stroke="#3fb950" stroke-width="1.5" marker-end="url(#a3)"/>
+
+      <rect x="762" y="60" width="150" height="60" rx="8" fill="#0c0f14" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="837" y="85" text-anchor="middle" fill="#3fb950" font-family="Outfit" font-size="11" font-weight="600">Cache Update</text>
+      <text x="837" y="102" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">JSONL append/upsert</text>
+      <line x1="912" y1="90" x2="947" y2="90" stroke="#3fb950" stroke-width="1.5" marker-end="url(#a3)"/>
+
+      <rect x="950" y="60" width="140" height="60" rx="8" fill="#0c0f14" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="1020" y="80" text-anchor="middle" fill="#3fb950" font-family="Outfit" font-size="11" font-weight="600">WS Signal</text>
+      <text x="1020" y="97" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">batch-ready &gt;</text>
+      <text x="1020" y="110" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">Dashboard</text>
+
+      <!-- Labels above -->
+      <text x="85" y="46" text-anchor="middle" fill="#f85149" font-family="Outfit" font-size="9" font-weight="600">KERNEL</text>
+      <text x="273" y="46" text-anchor="middle" fill="#e3b341" font-family="Outfit" font-size="9" font-weight="600">WINDOWS</text>
+      <text x="461" y="46" text-anchor="middle" fill="#58a6ff" font-family="Outfit" font-size="9" font-weight="600">SERVICE</text>
+      <text x="649" y="46" text-anchor="middle" fill="#e3b341" font-family="Outfit" font-size="9" font-weight="600">ORCHESTRATOR</text>
+      <text x="837" y="46" text-anchor="middle" fill="#3fb950" font-family="Outfit" font-size="9" font-weight="600">DISK</text>
+      <text x="1020" y="46" text-anchor="middle" fill="#3fb950" font-family="Outfit" font-size="9" font-weight="600">BROWSER</text>
+
+      <!-- Fallback path -->
+      <rect x="386" y="170" width="150" height="50" rx="8" fill="#0c0f14" stroke="#7d8590" stroke-width="1" stroke-dasharray="5,3"/>
+      <text x="461" y="192" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10" font-weight="600">FileSystemWatcher</text>
+      <text x="461" y="207" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="9">Fallback if no Sysmon</text>
+      <line x1="461" y1="120" x2="461" y2="168" stroke="#7d8590" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="475" y="148" fill="#484f58" font-family="Outfit" font-size="8">graceful</text>
+      <text x="475" y="158" fill="#484f58" font-family="Outfit" font-size="8">degradation</text>
+
+      <text x="550" y="250" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="11">File changed on disk &gt; dashboard updated: &lt; 10 seconds (5s debounce + scan + signal)</text>
+      <text x="550" y="268" text-anchor="middle" fill="#30363d" font-family="Outfit" font-size="10">Without Sysmon: next scheduled full scan (hours)</text>
+    </svg>
+    <p class="diagram-caption">Sysmon event pipeline &mdash; kernel to browser in under 10 seconds</p>
+  </div>
+
+  <md-html src="arch/sysmon-integration.md" title="Sysmon Technical Details"></md-html>
+</section>
+
+<!-- 04 - SCAN MODES -->
+<section id="scan-modes">
+  <div class="section-head">
+    <span class="section-num">04</span>
+    <h2>Scan Modes</h2>
+  </div>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 1100 380" xmlns="http://www.w3.org/2000/svg">
+      <text x="550" y="20" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="11" font-weight="600" letter-spacing="2">CURRENT - IN PRIORITY ORDER</text>
+
+      <!-- P1: User On-Demand -->
+      <rect x="10" y="35" width="250" height="140" rx="10" fill="#0c0f14" stroke="#f85149" stroke-width="1.5"/>
+      <text x="135" y="60" text-anchor="middle" fill="#f85149" font-family="Outfit" font-size="13" font-weight="700">User On-Demand</text>
+      <text x="135" y="83" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">Click scan button in dashboard</text>
+      <text x="135" y="101" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">Single section, immediate start</text>
+      <text x="135" y="119" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">Orchestrator guards duplicates</text>
+      <rect x="60" y="135" width="150" height="22" rx="4" fill="rgba(248,81,73,0.1)"/>
+      <text x="135" y="150" text-anchor="middle" fill="#f85149" font-family="Outfit" font-size="10" font-weight="600">P1 - USER IS WAITING</text>
+
+      <!-- P2: Startup Staggered -->
+      <rect x="280" y="35" width="250" height="140" rx="10" fill="#0c0f14" stroke="#e3b341" stroke-width="1.5"/>
+      <text x="405" y="60" text-anchor="middle" fill="#e3b341" font-family="Outfit" font-size="13" font-weight="700">Startup Staggered</text>
+      <text x="405" y="83" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">All 12 sections on service boot</text>
+      <text x="405" y="101" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">30s delay between each section</text>
+      <text x="405" y="119" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">Light &gt; heavy order (~6 min total)</text>
+      <rect x="330" y="135" width="150" height="22" rx="4" fill="rgba(227,179,65,0.1)"/>
+      <text x="405" y="150" text-anchor="middle" fill="#e3b341" font-family="Outfit" font-size="10" font-weight="600">P2 - CACHE WARMUP</text>
+
+      <!-- P3: Scheduled Daily -->
+      <rect x="550" y="35" width="250" height="140" rx="10" fill="#0c0f14" stroke="#a371f7" stroke-width="1.5"/>
+      <text x="675" y="60" text-anchor="middle" fill="#a371f7" font-family="Outfit" font-size="13" font-weight="700">Scheduled Daily</text>
+      <text x="675" y="83" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">Optional fixed time (e.g. 02:00)</text>
+      <text x="675" y="101" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">Configurable section list</text>
+      <text x="675" y="119" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">Runs if earlier than interval</text>
+      <rect x="600" y="135" width="150" height="22" rx="4" fill="rgba(163,113,247,0.1)"/>
+      <text x="675" y="150" text-anchor="middle" fill="#a371f7" font-family="Outfit" font-size="10" font-weight="600">P3 - DAILY BASELINE</text>
+
+      <!-- P4: Interval Recurring -->
+      <rect x="820" y="35" width="250" height="140" rx="10" fill="#0c0f14" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="945" y="60" text-anchor="middle" fill="#58a6ff" font-family="Outfit" font-size="13" font-weight="700">Interval Recurring</text>
+      <text x="945" y="83" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">Every scan_interval_hours (default 6)</text>
+      <text x="945" y="101" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">All sections, staggered</text>
+      <text x="945" y="119" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">Keeps cache fresh automatically</text>
+      <rect x="870" y="135" width="150" height="22" rx="4" fill="rgba(56,139,253,0.1)"/>
+      <text x="945" y="150" text-anchor="middle" fill="#58a6ff" font-family="Outfit" font-size="10" font-weight="600">P4 - BACKGROUND REFRESH</text>
+
+      <!-- Priority bar -->
+      <rect x="10" y="192" width="1060" height="30" rx="6" fill="#0c0f14" stroke="#21262d" stroke-width="1"/>
+      <text x="80" y="212" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="10" font-weight="600">PRIORITY:</text>
+      <text x="230" y="212" text-anchor="middle" fill="#f85149" font-family="Outfit" font-size="10" font-weight="600">P1 User On-Demand</text>
+      <text x="340" y="212" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="10">&gt;</text>
+      <text x="450" y="212" text-anchor="middle" fill="#e3b341" font-family="Outfit" font-size="10" font-weight="600">P2 Startup Staggered</text>
+      <text x="575" y="212" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="10">&gt;</text>
+      <text x="680" y="212" text-anchor="middle" fill="#a371f7" font-family="Outfit" font-size="10" font-weight="600">P3 Scheduled Daily</text>
+      <text x="795" y="212" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="10">&gt;</text>
+      <text x="920" y="212" text-anchor="middle" fill="#58a6ff" font-family="Outfit" font-size="10" font-weight="600">P4 Interval Recurring</text>
+
+      <!-- Planned future modes -->
+      <text x="550" y="260" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="11" font-weight="600" letter-spacing="2">PLANNED - PHASE 4</text>
+
+      <rect x="200" y="275" width="300" height="80" rx="10" fill="#0c0f14" stroke="#30363d" stroke-width="1" stroke-dasharray="6,3"/>
+      <text x="350" y="300" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="13" font-weight="700">Sysmon Delta</text>
+      <text x="350" y="320" text-anchor="middle" fill="#30363d" font-family="Outfit" font-size="10">Real-time kernel file events / 5s debounce</text>
+      <text x="350" y="338" text-anchor="middle" fill="#30363d" font-family="Outfit" font-size="10">Single directory delta scan / Cache always current</text>
+
+      <rect x="560" y="275" width="300" height="80" rx="10" fill="#0c0f14" stroke="#30363d" stroke-width="1" stroke-dasharray="6,3"/>
+      <text x="710" y="300" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="13" font-weight="700">Targeted Area Scan</text>
+      <text x="710" y="320" text-anchor="middle" fill="#30363d" font-family="Outfit" font-size="10">User picks a folder / Scans one subtree</text>
+      <text x="710" y="338" text-anchor="middle" fill="#30363d" font-family="Outfit" font-size="10">All applicable sections / Results in seconds</text>
+
+      <text x="550" y="375" text-anchor="middle" fill="#30363d" font-family="Outfit" font-size="10">Duplicate guard: ScanOrchestrator.TryAdd() - if a section is already running, new requests are silently skipped</text>
+    </svg>
+    <p class="diagram-caption">Six scan modes &mdash; four active (P1-P4 priority order), two planned for Phase 4</p>
+  </div>
+
+  <md-html src="arch/scan-modes.md" title="Scan Modes - Technical Details"></md-html>
+</section>
+
+<!-- 05 - SERVICE DETAILS -->
+<section id="service">
+  <div class="section-head">
+    <span class="section-num">05</span>
+    <h2>DiskCleanUp.Service</h2>
+  </div>
+  <md-html src="arch/service-engine.md" title="Service Engine - Full Specification" open></md-html>
+</section>
+
+<!-- 06 - TRAY APP -->
+<section id="tray">
+  <div class="section-head">
+    <span class="section-num">06</span>
+    <h2>DiskCleanUp.Tray</h2>
+  </div>
+  <md-html src="arch/tray-app.md" title="System Tray App - Full Specification" open></md-html>
+</section>
+
+<!-- 07 - MIGRATION -->
+<section id="migration">
+  <div class="section-head">
+    <span class="section-num">07</span>
+    <h2>Migration Plan</h2>
+  </div>
+
+  <div class="cards">
+    <div class="card blue">
+      <div class="icon">&#128193;</div>
+      <h3>Phase 1: Restructure</h3>
+      <p>New solution structure, same behavior. Split Program.cs, move to %ProgramData%, data migration script. Test gate: 148 tests pass.</p>
+    </div>
+    <div class="card green">
+      <div class="icon">&#9881;</div>
+      <h3>Phase 2: Windows Service</h3>
+      <p>UseWindowsService(), CLI install flags, EventLog logging, recovery policy. Test gate: starts on boot, scans run in background.</p>
+    </div>
+    <div class="card purple">
+      <div class="icon">&#128276;</div>
+      <h3>Phase 3: Tray App</h3>
+      <p>WinForms NotifyIcon, health polling, service controls, auto-start on login. Test gate: tray shows status, controls work.</p>
+    </div>
+    <div class="card red">
+      <div class="icon">&#9889;</div>
+      <h3>Phase 4: Sysmon + Polish</h3>
+      <p>SysmonWatcher, delta scans, activity feed, targeted area scans, toast notifications, installer. Test gate: real-time cache updates.</p>
+    </div>
+  </div>
+
+  <md-html src="arch/migration-plan.md" title="Migration Plan - Full Details"></md-html>
+</section>
+
+<!-- 08 - DECISIONS -->
+<section id="decisions">
+  <div class="section-head">
+    <span class="section-num">08</span>
+    <h2>Decision Log</h2>
+  </div>
+
+  <table class="dec-table">
+    <thead>
+      <tr><th>Decision</th><th>Choice</th><th>Rationale</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Architecture</td><td>Two-process (service + tray)</td><td>Independent lifecycles, clean separation</td></tr>
+      <tr><td>Service framework</td><td>ASP.NET Core 8 + UseWindowsService</td><td>Minimal migration from existing code</td></tr>
+      <tr><td>Real-time monitoring</td><td>Sysmon ETW with FSW fallback</td><td>Kernel-level reliability, graceful degradation</td></tr>
+      <tr><td>Dashboard delivery</td><td>Static files from service Kestrel</td><td>No CORS, single port, zero frontend changes</td></tr>
+      <tr><td>Tray framework</td><td>WinForms NotifyIcon</td><td>Lightest weight, no XAML overhead</td></tr>
+      <tr><td>Data directory</td><td>%ProgramData%\DiskCleanUp</td><td>Writable by SYSTEM, survives updates</td></tr>
+      <tr><td>Service port</td><td>5100</td><td>Avoids conflict with dev port 5000</td></tr>
+      <tr><td>Service account</td><td>LocalSystem</td><td>Full disk access, localhost-only binding</td></tr>
+      <tr><td>IPC protocol</td><td>HTTP + WebSocket (existing)</td><td>Zero rewrite of frontend, proven pipeline</td></tr>
+      <tr><td>Scan strategy</td><td>6-mode layered (on-demand + startup + daily + interval + sysmon delta + targeted area)</td><td>P1-P4 active today, Sysmon + Targeted planned for Phase 4</td></tr>
+    </tbody>
+  </table>
+
+  <div class="cards" style="margin-top:32px">
+    <div class="card amber">
+      <div class="icon">&#128274;</div>
+      <h3>Security</h3>
+      <p>Kestrel binds localhost only &mdash; zero external attack surface. Path validation via AllRoots(cfg) prevents arbitrary file ops. No auth needed for localhost IPC.</p>
+    </div>
+    <div class="card blue">
+      <div class="icon">&#128230;</div>
+      <h3>Deployment</h3>
+      <p>Phase 1-3: zip + PowerShell install script. Phase 4: MSI/MSIX installer with proper ACLs, registry entries, and service registration.</p>
+    </div>
+    <div class="card green">
+      <div class="icon">&#128302;</div>
+      <h3>Future</h3>
+      <p>Named Pipes for local IPC. Toast notifications. Scheduled scan profiles. OneDrive/Google Drive integration. Multi-user dashboards. Remote LAN access with auth.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<div class="footer">
+  DiskCleanUp Service Architecture v2.1 &middot; Cielo Vista Software &middot; 2026
+</div>
+
+</div><!-- .page -->
+
+<!-- MD-HTML WEB COMPONENT -->
+<script>
+class MdHtml extends HTMLElement {
+  static get observedAttributes() { return ['src', 'title', 'open']; }
+
+  constructor() {
+    super();
+    this._loaded = false;
+  }
+
+  connectedCallback() {
+    const title = this.getAttribute('title') || 'Technical Details';
+    const file  = this.getAttribute('src') || '';
+    const isOpen = this.hasAttribute('open');
+
+    this.innerHTML = `
+      <div class="md-header">
+        <span class="md-title">${title}</span>
+        <span style="display:flex;align-items:center;gap:10px">
+          ${file ? `<span class="md-file">${file.split('/').pop()}</span>` : ''}
+          <span class="md-chevron">&#9660;</span>
+        </span>
+      </div>
+      <div class="md-body">
+        <div class="md-loading">Loading markdown...</div>
+      </div>
+    `;
+
+    this.querySelector('.md-header').addEventListener('click', () => this._toggle());
+
+    if (isOpen) {
+      this.setAttribute('open', '');
+      this._load();
+    }
+  }
+
+  _toggle() {
+    if (this.hasAttribute('open')) {
+      this.removeAttribute('open');
+    } else {
+      this.setAttribute('open', '');
+      if (!this._loaded) this._load();
+    }
+  }
+
+  async _load() {
+    const src = this.getAttribute('src');
+    if (!src) return;
+
+    const body = this.querySelector('.md-body');
+    try {
+      const res  = await fetch(src);
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+      const md   = await res.text();
+      const html = marked.parse(md, {
+        gfm: true,
+        breaks: false,
+        headerIds: false,
+        mangle: false
+      });
+      body.innerHTML = `<div class="md-content">${html}</div>`;
+      this._loaded = true;
+    } catch (e) {
+      body.innerHTML = `<div class="md-loading" style="color:#f85149">
+        Failed to load ${src}: ${e.message}<br>
+        <small style="color:#484f58">Make sure the .md file is in wwwroot/ and the server is running.</small>
+      </div>`;
+    }
+  }
+}
+
+customElements.define('md-html', MdHtml);
+</script>
+
+</body>
+</html>
