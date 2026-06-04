@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DiskCleanUp.Shared")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1c8a739bc5ab5075dd1ad70fc91d8a83de2b40a3")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6445aeb327117d54afca0915b4ae641a236a3c68")]
 [assembly: System.Reflection.AssemblyProductAttribute("DiskCleanUp.Shared")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DiskCleanUp.Shared")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
