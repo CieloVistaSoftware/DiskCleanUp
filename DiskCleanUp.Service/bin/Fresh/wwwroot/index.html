@@ -1,0 +1,541 @@
+<!-- ═══════════════════════════════════════════════════════════════════════
+     wwwroot/index.html
+     Main dashboard for the DiskCleanUp Windows Service. Entry point for all
+     12 scan sections (duplicates, stale, large, node-modules, etc.). Hosts
+     the status bars, toolbars, result containers, and settings panel.
+     Served by the ASP.NET Core service at http://localhost:5100 (service
+     mode) or http://localhost:5000 (--console / dev mode).
+     ═══════════════════════════════════════════════════════════════════════ -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>Disk Cleanup Dashboard</title>
+<script>
+// Enable trace logging globally
+window._T = (tag, msg) => {
+  console.log(`[${tag}] ${msg}`);
+  // Also send to trace endpoint if not a high-frequency tag
+  if (!['HB', 'WF'].includes(tag)) {
+    try {
+      const ms = performance.now() | 0;
+      navigator.sendBeacon('/api/trace', `+${ms}ms [${tag}] ${msg}`);
+    } catch {}
+  }
+};
+</script>
+<link rel="stylesheet" href="/css/dashboard.css">
+<link rel="stylesheet" href="/css/index.css">
+<link rel="stylesheet" href="/lib/wb-core/css/error-logger.css">
+<link rel="stylesheet" href="/lib/wb-core/css/grid-shell.css">
+<link rel="stylesheet" href="/lib/wb-core/css/status-bar.css">
+<link rel="stylesheet" href="/lib/wb-core/css/filter-bar.css">
+<link rel="stylesheet" href="/lib/wb-core/css/toolbar.css">
+<link rel="stylesheet" href="/lib/wb-core/css/row-actions.css">
+</head>
+<body>
+
+<header>
+  <h1>🧹 Disk Cleanup Dashboard</h1>
+  <span id="rootDisplay" title="Click to change root folder" class="root-display-editable"></span><input id="rootEditInput" class="root-edit-input hidden" type="text" placeholder="New root path..." list="folderChoicesList"><button id="rootOpenBtn" class="btn muted btn-xs hidden" title="Open root folder in Explorer" onclick="fetch('/api/open-folder',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:document.getElementById('rootDisplay').textContent.trim()})}).catch(()=>{})">📂</button>
+  <datalist id="folderChoicesList"></datalist>
+  <a id="connStatus" class="disconnected" href="/ws-diagram.html" target="_blank" title="WebSocket status. ⚡ Live = real-time events are flowing from the service. If stuck on Connecting, check that the service is running on port 5000 (dev) or 5100 (service). The dashboard auto-reconnects every 3 s. Click to open the WebSocket architecture diagram.">⚡ Connecting…</a>
+  <button id="diagBtn" class="btn muted" title="Run connection diagnostics. Tests: WebSocket handshake, HTTP /api/config, and scan cache files. Use when the dashboard appears stuck, shows stale data, or WebSocket is perpetually Connecting. Results are shown in a popup overlay." onclick="window._runDiagnostics()">🔍 Diagnose</button>
+
+  <span id="totalSaved" title="Total disk space freed by sending files to the Recycle Bin. Accumulated from all sections across sessions. Sourced from C:\ProgramData\DiskCleanUp\savings_log.jsonl. Click GC → to force .NET garbage collection and free server heap memory."></span>
+  <span id="queueBadge" title="Files staged for deletion but not yet sent to the Recycle Bin. These rows are highlighted in result grids. Use Delete Selected or Delete All in any section's Commands menu to process the queue. Queue resets after each delete action.">🗑 0 queued</span>
+  <span id="keepBadgeBtn" title="Keep List — paths excluded from all future scans. The number shows how many items are currently protected. Click to open the Keep List manager. Kept paths are saved to C:\ProgramData\DiskCleanUp\keep-list.json and survive service restarts.">🔒 <span id="keepCountBadge" class="keep-badge hidden">0</span></span>
+  <a id="traceLogBtn" href="/trace-viewer.html" target="_blank" title="Open the live trace log viewer in a new tab. Shows real-time breadcrumbs from the dashboard JS (page loads, WebSocket events, scan progress, errors) and service-side API calls. Breadcrumbs stored in C:\ProgramData\DiskCleanUp\trace.jsonl. Use to debug stuck scans or connection issues.">📜 Trace</a>
+   <button id="copyGithubChatBtn" class="btn muted" title="Copy a complete dashboard snapshot to clipboard for pasting into GitHub Copilot Chat. Captures: section statuses, scan result counts, current root, server CPU/memory, uptime, active errors, and WebSocket state. Use when filing a bug report or asking Copilot for help.">📋 Copy for Chat</button>
+  <div id="metricsBar">
+    <span>CPU</span><canvas id="cpuCanvas" width="80" height="22" title="Real-time CPU usage graph (system-wide). Sampled every 5 s by MetricsService via Win32 PerformanceCounter. High CPU during scans is expected — the SHA-256 hasher and directory walker are CPU-intensive."></canvas><span id="cpuVal" class="metric-val">—</span>
+    <span>MEM</span><canvas id="memCanvas" width="80" height="22" title="Real-time memory usage graph (dotnet process heap). Sampled every 5 s. The orange warning banner appears when server memory exceeds 80%. Use GC → in the banner to force a garbage collection and reclaim heap."></canvas><span id="memVal" class="metric-val">—</span>
+    <span class="metrics-sep">|</span>
+    <span id="threadVal" title="Current thread count for the DiskCleanUp.Service process. High values (>50) during active scans are normal — each section scan runs on the .NET thread pool. Monitored by MetricsService.">— threads</span>
+    <span class="metrics-sep">|</span>
+    <span id="uptimePulse" class="pulse-dot green" title="Service heartbeat indicator. Pulses every second when the backend is alive and the WebSocket is connected. A flat/dim dot means the connection is lost — check the ⚡ Live status indicator."></span>
+    <span id="uptimeVal" class="metric-val" title="Time elapsed since this browser tab was loaded. Resets on page refresh. This is dashboard uptime, not service uptime — the service may have been running longer.">0:00</span>
+  </div>
+</header>
+
+<nav id="mainNav">
+  <select id="sectionMenu" class="filter-select" title="Jump to a scan section. Each section targets a different category of cleanup candidate. The active section is highlighted in the nav row. Your last-visited section is restored on reload.">
+    <option value="duplicates" title="Find exact duplicate files. Uses SHA-256 hashing to compare content byte-for-byte across all files under the root. Groups matches — keep the original, delete the copies. Works on all file types. Scans the full directory tree recursively.">Duplicates</option>
+    <option value="smart-dedup" title="Detect auto-numbered copies like 'report (1).pdf' or 'photo (2).jpg'. Uses filename pattern matching — no hashing. Keeps the cleanest-named original and flags numbered variants for removal. Very fast. Best used on Downloads and Desktop folders.">Smart Dedup</option>
+    <option value="stale" title="Find files not modified in over N days (default 90 days, configurable in Settings → Stale Days). Sorted oldest-first. Great for clearing Downloads, temp folders, and forgotten project files. The age threshold is compared against the file's LastWriteTime.">Stale Files</option>
+    <option value="large" title="List files exceeding the size threshold (default 10 MB, set in Settings → Large File Min Size). Sorted by size descending. Quickly spot disk hogs: ISOs, videos, crash dumps, archives, and log files. Delete directly from the row actions or select multiple and use Delete Selected.">Large Files</option>
+    <option value="node-modules" title="Find node_modules folders anywhere under the root. These can be safely deleted and recreated with 'npm install'. Typically 100 MB–2 GB each. Sorted by total folder size. Deletes only the node_modules directory — your package.json and source files are untouched.">node_modules</option>
+    <option value="venvs" title="Find Python virtual environment folders (venv, .venv, env, .env patterns). Safe to delete and recreate with 'python -m venv'. Often 300 MB–1 GB each. Sorted by size. Only the venv folder is removed — your Python source files are not touched.">Venvs</option>
+    <option value="empty" title="Find completely empty folders (zero files, no subfolders) anywhere under the root. Common leftover artifacts from uninstalls, git operations, or build tools. Very fast scan — no file content reading. Safe to bulk-delete all results.">Empty Folders</option>
+    <option value="images" title="Find visually similar or duplicate images using perceptual hashing (pHash). Catches near-identical images even if resized, cropped, or lightly re-saved. More CPU-intensive than SHA-256. Groups matches by similarity — keep one, send duplicates to Recycle Bin. Best for Photos and Downloads.">Dup Images</option>
+    <option value="backups" title="Find backup and archive folders matching patterns like '_backup', '_bak', 'archive', 'old', and compressed archives (.zip, .7z, .tar). Sorted by size. These are often manual backup copies that pile up over time. Review carefully before deleting — contents are not previewed.">Backup Folders</option>
+    <option value="tiny-files" title="Find very small files under N bytes (default 1 KB, set in Settings → Tiny File Max Size). Often placeholder files, empty configs, leftover build artifacts, and zero-byte temp files. Sorted by size ascending. Safe to bulk-delete results that look like build noise.">Tiny Files</option>
+    <option value="html-files" title="Find all HTML files under the root. Useful for cleaning up saved web pages, documentation exports, leftover build output, and Playwright report files. Each row shows path and size. Row actions include Open in Browser.">HTML Files</option>
+    <option value="css-files" title="Find all CSS files under the root. Useful for auditing generated stylesheets, old build outputs, and orphaned style files from removed projects. Sorted by size.">CSS Files</option>
+    <option value="ext-search" title="Find files by extension fragment — type 'log', 'tmp', 'bak', 'cs', etc. Uses its own root field (separate from the global root) so you can target a specific folder. Scans as you type (debounced). Results stream via WebSocket. Use Commands menu to delete or keep all matches.">Extension Finder</option>
+    <option value="tasks" title="View all currently running background scan tasks. Shows task name, start time, elapsed time, and status. Use Cancel to stop a stuck or long-running scan. Tasks are managed by BackgroundScanService and the ScanOrchestrator channel pipeline.">Tasks</option>
+    <option value="savings" title="Review cumulative cleanup history. Shows every file sent to the Recycle Bin: timestamp, path, size, and which scan section triggered it. Sourced from C:\ProgramData\DiskCleanUp\savings_log.jsonl. Useful for auditing what was cleaned and when.">Savings Log</option>
+    <option value="docs-audit" title="Shows orphaned documentation files — docs not linked from any index. Sourced from the most recent docs/audit-orphans-*.md file in the repository.">Docs Audit</option>
+    <option value="settings" title="Configure scan behavior: root folders, file size thresholds, stale days, scheduled scan time, and recurring scan interval. Changes are saved to C:\ProgramData\DiskCleanUp\config.json and take effect immediately — no service restart needed.">Settings</option>
+  </select>
+</nav>
+
+<main>
+
+<!-- DUPLICATES -->
+<div id="section-duplicates">
+  <div class="panel">
+    <h2>🔁 Exact Duplicates</h2>
+    <p class="section-desc">Finds files with identical content (byte-for-byte matches) using SHA-256 hashing. Groups duplicates together — keep the original, delete the copies. Click <b>Scan</b> to search your root folder.</p>
+    <div id="sb-duplicates" class="section-sb">
+      <div class="sb-seg status-seg"><span class="label">STATUS</span>&nbsp;<span class="value" id="sbv-duplicates-status">Idle</span></div>
+      <div class="sb-seg"><span class="label">FILES</span>&nbsp;<span class="value" id="sbv-duplicates-files">—</span></div>
+      <div class="sb-seg"><span class="label">DUPES</span>&nbsp;<span class="value" id="sbv-duplicates-results">—</span></div>
+      <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-duplicates-rows">0</span></div>
+      <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-duplicates-time">—</span></div>
+      <div class="sb-folder" id="sbf-duplicates"><span class="sb-scan-hint" data-action="scan" data-section="duplicates">▶ Click to Scan</span></div>
+    </div>
+    <div id="toolbar-duplicates"></div>
+    <div id="dupResult"></div>
+  </div>
+</div>
+
+<!-- SMART DEDUP -->
+<div id="section-smart-dedup">
+  <div class="panel">
+    <h2>🧠 Smart Dedup — Numbered Copies</h2>
+    <p class="section-desc">Detects auto-numbered copies like <code>report (1).pdf</code>, <code>photo (2).jpg</code>. Keeps the cleanest-named original and flags the numbered copies for removal. Click <b>Scan</b>, then <b>Apply All</b> to clean up.</p>
+    <div id="sb-smart-dedup" class="section-sb">
+      <div class="sb-seg status-seg"><span class="label">STATUS</span>&nbsp;<span class="value" id="sbv-smart-dedup-status">Idle</span></div>
+      <div class="sb-seg"><span class="label">FILES</span>&nbsp;<span class="value" id="sbv-smart-dedup-files">—</span></div>
+      <div class="sb-seg"><span class="label">GROUPS</span>&nbsp;<span class="value" id="sbv-smart-dedup-results">—</span></div>
+      <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-smart-dedup-rows">0</span></div>
+      <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-smart-dedup-time">—</span></div>
+      <div class="sb-folder" id="sbf-smart-dedup"><span class="sb-scan-hint" data-action="scan" data-section="smart-dedup">▶ Click to Scan</span></div>
+    </div>
+    <div id="toolbar-smart-dedup"></div>
+    <div id="smartResult"></div>
+  </div>
+</div>
+
+<!-- STALE -->
+<div id="section-stale">
+  <div class="panel">
+    <h2>🕰 Stale Files</h2>
+    <p class="section-desc">Finds files not modified in over <b>N days</b> (configurable in Settings). Great for clearing out old downloads, temp files, and forgotten projects. Click <b>Scan</b> to find stale files, then select and delete.</p>
+    <div id="sb-stale" class="section-sb">
+      <div class="sb-seg status-seg"><span class="label">STATUS</span>&nbsp;<span class="value" id="sbv-stale-status">Idle</span></div>
+      <div class="sb-seg"><span class="label">FILES</span>&nbsp;<span class="value" id="sbv-stale-files">—</span></div>
+      <div class="sb-seg"><span class="label">STALE</span>&nbsp;<span class="value" id="sbv-stale-results">—</span></div>
+      <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-stale-rows">0</span></div>
+      <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-stale-time">—</span></div>
+      <div class="sb-folder" id="sbf-stale"><span class="sb-scan-hint" data-action="scan" data-section="stale">▶ Click to Scan</span></div>
+    </div>
+    <div id="toolbar-stale"></div>
+    <div id="staleResult"></div>
+  </div>
+</div>
+
+<!-- LARGE -->
+<div id="section-large">
+  <div class="panel">
+    <h2>📦 Large Files</h2>
+    <p class="section-desc">Lists files exceeding the size threshold (default 10 MB, configurable in Settings). Quickly spot disk hogs — ISOs, videos, archives, logs. Click <b>Scan</b> to find them, sorted by size.</p>
+    <div id="sb-large" class="section-sb">
+      <div class="sb-seg status-seg"><span class="label">STATUS</span>&nbsp;<span class="value" id="sbv-large-status">Idle</span></div>
+      <div class="sb-seg"><span class="label">FILES</span>&nbsp;<span class="value" id="sbv-large-files">—</span></div>
+      <div class="sb-seg"><span class="label">LARGE</span>&nbsp;<span class="value" id="sbv-large-results">—</span></div>
+      <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-large-rows">0</span></div>
+      <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-large-time">—</span></div>
+      <div class="sb-folder" id="sbf-large"><span class="sb-scan-hint" data-action="scan" data-section="large">▶ Click to Scan</span></div>
+    </div>
+    <div id="toolbar-large"></div>
+    <div id="largeResult"></div>
+  </div>
+</div>
+
+<!-- NODE MODULES -->
+<div id="section-node-modules">
+  <div class="panel">
+    <h2>⬡ node_modules Cleaner</h2>
+    <p class="section-desc">Scans for <code>node_modules</code> folders which can consume gigabytes. Safe to delete — just run <code>npm install</code> to restore. Click <b>Scan</b> to find them, then delete to reclaim space.</p>
+    <div id="sb-node-modules" class="section-sb">
+      <div class="sb-seg status-seg"><span class="label">STATUS</span>&nbsp;<span class="value" id="sbv-node-modules-status">Idle</span></div>
+      <div class="sb-seg"><span class="label">FOUND</span>&nbsp;<span class="value" id="sbv-node-modules-results">—</span></div>
+      <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-node-modules-rows">0</span></div>
+      <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-node-modules-time">—</span></div>
+      <div class="sb-folder" id="sbf-node-modules"><span class="sb-scan-hint" data-action="scan" data-section="node-modules">▶ Click to Scan</span></div>
+    </div>
+    <div id="toolbar-node-modules"></div>
+    <div id="nmResult"></div>
+  </div>
+</div>
+
+<!-- VENVS -->
+<div id="section-venvs">
+  <div class="panel">
+    <h2>🐍 Python Venvs</h2>
+    <p class="section-desc">Finds Python virtual environments (<code>venv</code>, <code>.venv</code>, <code>env</code>) that can grow large with cached packages. Safe to delete — recreate with <code>python -m venv</code>. Click <b>Scan</b> to locate them.</p>
+    <div id="sb-venvs" class="section-sb">
+      <div class="sb-seg status-seg"><span class="label">STATUS</span>&nbsp;<span class="value" id="sbv-venvs-status">Idle</span></div>
+      <div class="sb-seg"><span class="label">VENVS</span>&nbsp;<span class="value" id="sbv-venvs-results">—</span></div>
+      <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-venvs-rows">0</span></div>
+      <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-venvs-time">—</span></div>
+      <div class="sb-folder" id="sbf-venvs"><span class="sb-scan-hint" data-action="scan" data-section="venvs">▶ Click to Scan</span></div>
+    </div>
+    <div id="toolbar-venvs"></div>
+    <div id="venvResult"></div>
+  </div>
+</div>
+
+<!-- EMPTY FOLDERS -->
+<div id="section-empty">
+  <div class="panel">
+    <h2>📂 Empty Folders</h2>
+    <p class="section-desc">Finds folders that contain no files — leftover from deleted projects, failed extractions, or uninstalled apps. Click <b>Scan</b> to find them, then select and delete to tidy up your folder tree.</p>
+    <div id="sb-empty" class="section-sb">
+      <div class="sb-seg status-seg"><span class="label">STATUS</span>&nbsp;<span class="value" id="sbv-empty-status">Idle</span></div>
+      <div class="sb-seg"><span class="label">SCANNED</span>&nbsp;<span class="value" id="sbv-empty-files">—</span></div>
+      <div class="sb-seg"><span class="label">EMPTY</span>&nbsp;<span class="value" id="sbv-empty-results">—</span></div>
+      <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-empty-rows">0</span></div>
+      <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-empty-time">—</span></div>
+      <div class="sb-folder" id="sbf-empty"><span class="sb-scan-hint" data-action="scan" data-section="empty">▶ Click to Scan</span></div>
+    </div>
+    <div id="toolbar-empty"></div>
+    <div id="emptyResult"></div>
+  </div>
+</div>
+
+<!-- DUPLICATE IMAGES -->
+<div id="section-images">
+  <div class="panel">
+    <h2>🖼 Duplicate Images</h2>
+    <p class="section-desc">Groups duplicate images by visual hash (PNG, JPG, GIF, WebP, SVG). Previews each group so you can pick the best copy. Click <b>Scan</b> to find them, then delete copies individually or use <b>Delete All Copies</b>.</p>
+    <div id="sb-images" class="section-sb">
+      <div class="sb-seg status-seg"><span class="label">STATUS</span>&nbsp;<span class="value" id="sbv-images-status">Idle</span></div>
+      <div class="sb-seg"><span class="label">GROUPS</span>&nbsp;<span class="value" id="sbv-images-results">—</span></div>
+      <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-images-rows">0</span></div>
+      <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-images-time">—</span></div>
+      <div class="sb-folder" id="sbf-images"><span class="sb-scan-hint" data-action="scan" data-section="images">▶ Click to Scan</span></div>
+    </div>
+    <div id="toolbar-images"></div>
+    <div id="imageResult"></div>
+  </div>
+</div>
+
+<!-- BACKUP FOLDERS -->
+<div id="section-backups">
+  <div class="panel">
+    <h2>📦 Backup Folders</h2>
+    <p class="section-desc">Finds folders named <code>backup</code>, <code>bak</code>, <code>old</code>, <code>archive</code>, <code>copy</code> and similar patterns. Shows folder size and file count. Click <b>Scan</b> to discover forgotten backup clutter.</p>
+    <div id="sb-backups" class="section-sb">
+      <div class="sb-seg status-seg"><span class="label">STATUS</span>&nbsp;<span class="value" id="sbv-backups-status">Idle</span></div>
+      <div class="sb-seg"><span class="label">SCANNED</span>&nbsp;<span class="value" id="sbv-backups-files">&mdash;</span></div>
+      <div class="sb-seg"><span class="label">FOUND</span>&nbsp;<span class="value" id="sbv-backups-results">&mdash;</span></div>
+      <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-backups-rows">0</span></div>
+      <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-backups-time">&mdash;</span></div>
+      <div class="sb-folder" id="sbf-backups"><span class="sb-scan-hint" data-action="scan" data-section="backups">▶ Click to Scan</span></div>
+    </div>
+    <div id="toolbar-backups"></div>
+    <div id="backupsResult"></div>
+  </div>
+</div>
+
+<!-- TINY FILES (≤1KB) -->
+<div id="section-tiny-files">
+  <div class="panel">
+    <h2>🔬 Tiny Files (≤1 KB)</h2>
+    <p class="section-desc">Lists files 1 KB or smaller — empty configs, placeholder files, leftover locks, <code>.gitkeep</code> stubs. Use the extension filter to focus on specific types. Click <b>Scan</b> to find them.</p>
+    <div id="sb-tiny-files" class="section-sb">
+      <div class="sb-seg status-seg"><span class="label">STATUS</span>&nbsp;<span class="value" id="sbv-tiny-files-status">Idle</span></div>
+      <div class="sb-seg"><span class="label">FILES</span>&nbsp;<span class="value" id="sbv-tiny-files-files">&mdash;</span></div>
+      <div class="sb-seg"><span class="label">TINY</span>&nbsp;<span class="value" id="sbv-tiny-files-results">&mdash;</span></div>
+      <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-tiny-files-rows">0</span></div>
+      <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-tiny-files-time">&mdash;</span></div>
+      <div class="sb-folder" id="sbf-tiny-files"><span class="sb-scan-hint" data-action="scan" data-section="tiny-files">▶ Click to Scan</span></div>
+    </div>
+    <div id="toolbar-tiny-files"></div>
+    <div id="tinyResult"></div>
+  </div>
+</div>
+
+<!-- HTML FILES -->
+<div id="section-html-files">
+  <div class="panel">
+    <h2>🌐 HTML Files</h2>
+    <p class="section-desc">Scans for HTML and HTM files — saved web pages, generated docs, exported content. Use the filter bar to narrow by path or extension. Click <b>Scan</b> to list them, then delete or keep as needed.</p>
+    <div id="sb-html-files" class="section-sb">
+      <div class="sb-seg status-seg"><span class="label">STATUS</span>&nbsp;<span class="value" id="sbv-html-files-status">Idle</span></div>
+      <div class="sb-seg"><span class="label">FILES</span>&nbsp;<span class="value" id="sbv-html-files-files">&mdash;</span></div>
+      <div class="sb-seg"><span class="label">HTML</span>&nbsp;<span class="value" id="sbv-html-files-results">&mdash;</span></div>
+      <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-html-files-rows">0</span></div>
+      <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-html-files-time">&mdash;</span></div>
+      <div class="sb-folder" id="sbf-html-files"><span class="sb-scan-hint" data-action="scan" data-section="html-files">▶ Click to Scan</span></div>
+    </div>
+    <div id="toolbar-html-files"></div>
+    <div id="htmlResult"></div>
+  </div>
+</div>
+
+<!-- CSS FILES -->
+<div id="section-css-files">
+  <div class="panel">
+    <h2>🎨 CSS Files</h2>
+    <p class="section-desc">Scans for stylesheets — CSS, SCSS, SASS, and LESS files. Useful for finding orphaned styles from old projects or AI-generated prototypes. Click <b>Scan</b> to list them all.</p>
+    <div id="sb-css-files" class="section-sb">
+      <div class="sb-seg status-seg"><span class="label">STATUS</span>&nbsp;<span class="value" id="sbv-css-files-status">Idle</span></div>
+      <div class="sb-seg"><span class="label">FILES</span>&nbsp;<span class="value" id="sbv-css-files-files">&mdash;</span></div>
+      <div class="sb-seg"><span class="label">CSS</span>&nbsp;<span class="value" id="sbv-css-files-results">&mdash;</span></div>
+      <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-css-files-rows">0</span></div>
+      <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-css-files-time">&mdash;</span></div>
+      <div class="sb-folder" id="sbf-css-files"><span class="sb-scan-hint" data-action="scan" data-section="css-files">▶ Click to Scan</span></div>
+    </div>
+    <div id="toolbar-css-files"></div>
+    <div id="cssResult"></div>
+  </div>
+</div>
+
+<!-- EXTENSION FINDER -->
+<div id="section-ext-search">
+  <div class="panel">
+    <h2>🔎 Extension Finder</h2>
+    <p class="section-desc">Type extension characters (for example <code>cs</code>, <code>log</code>, <code>tmp</code>) and matching files are located immediately. You can delete one file from a row action, or delete all matches with one click.</p>
+    <div id="sb-ext-search" class="section-sb">
+      <div class="sb-seg status-seg"><span class="label">STATUS</span>&nbsp;<span class="value" id="sbv-ext-search-status">Idle</span></div>
+      <div class="sb-seg"><span class="label">FILES</span>&nbsp;<span class="value" id="sbv-ext-search-files">&mdash;</span></div>
+      <div class="sb-seg"><span class="label">MATCHES</span>&nbsp;<span class="value" id="sbv-ext-search-results">&mdash;</span></div>
+      <div class="sb-seg"><span class="label">ROWS</span>&nbsp;<span class="value" id="sbv-ext-search-rows">0</span></div>
+      <div class="sb-seg"><span class="label">TIME</span>&nbsp;<span class="value" id="sbv-ext-search-time">&mdash;</span></div>
+      <div class="sb-folder" id="sbf-ext-search">Type extension characters to start</div>
+    </div>
+    <div class="toolbar">
+      <label for="extSearchRootInput" style="font-size:12px;color:#9aa3b2;white-space:nowrap;">Root:</label>
+      <input type="text" id="extSearchRootInput" class="filter-input" placeholder="Scan root path..." list="folderChoicesList" style="min-width:320px;" title="Root folder for Extension Finder scans. Overrides the global root shown in the header — so you can search a specific folder (e.g. C:\Users\jwpmi\Downloads) without changing the global setting. Saved to localStorage and restored on your next visit. Leave blank to fall back to the global config root.">
+      <button class="btn muted" id="extSearchPickFolderBtn" type="button" title="Open a folder picker to choose the Extension Finder scan root. The selected path is filled into the Root field and saved automatically. Only affects Extension Finder — the global root in the header is not changed.">📁 Pick Folder</button>
+      <input type="text" id="extSearchInput" class="filter-input" placeholder="Type extension chars... (example: js, cs, log, tmp)" title="Extension fragment to search for. Type 'log' to find all .log files, 'tmp' for .tmp, 'bak' for .bak, etc. Leading dots are stripped automatically. The scan starts as you type (debounced ~400 ms). Results stream in via WebSocket from the service.">
+      <label for="extCommandMenu" style="font-size:12px;color:#9aa3b2;white-space:nowrap;">Commands:</label>
+      <select id="extCommandMenu" title="Commands for the current Extension Finder results. Scan re-runs the search manually. Cancel stops an in-progress scan. Delete Selected / Delete All send files to the Recycle Bin (no permanent deletion). Keep Selected adds files to the Keep List, excluding them from future scans." style="display:inline-block !important; min-width:220px; height:34px; padding:6px 8px; border:1px solid #3a3f5a; border-radius:6px; background:#1e1e2e; color:#e0e0e0;">
+        <option value="" title="Choose a command to apply to the current Extension Finder results.">Commands...</option>
+        <option value="scan" title="Manually re-run the extension search with the current query and root. Useful if you changed the root or want to refresh results.">Scan</option>
+        <option value="cancel" title="Cancel the currently running Extension Finder scan. Results collected so far remain visible.">Cancel</option>
+        <option value="delete-selected" title="Send the checked/selected rows to the Windows Recycle Bin. Files can be restored from the Recycle Bin if needed. Nothing is permanently deleted.">Delete Selected</option>
+        <option value="keep-selected" title="Add selected file paths to the Keep List. Kept files are excluded from all future Extension Finder scans. Saved to keep-list.json.">Keep Selected</option>
+        <option value="delete-all" title="Send all matching rows to the Windows Recycle Bin in one operation. Use with care — all files matching the current extension query will be recycled.">Delete All Matches</option>
+      </select>
+      <span id="extSearchHint" class="td-muted" title="Extension Finder scans automatically as you type after a short debounce delay (~400 ms). You can also trigger a scan manually via Commands → Scan.">Scans automatically as you type</span>
+    </div>
+    <div id="extResult"></div>
+  </div>
+</div>
+
+<!-- TASKS -->
+<div id="section-tasks">
+  <div class="panel">
+    <h2>📋 Running Tasks</h2>
+    <p class="section-desc">Shows all Windows processes with safety classification. <b>🟢 Safe</b> = user apps, ok to kill. <b>🟡 Caution</b> = services/drivers, may break functionality. <b>🔴 Critical</b> = OS core, killing causes BSOD. Toggle <b>Safe Only</b> to filter.</p>
+    <div class="toolbar">
+      <input type="text" placeholder="Filter by name, path, or company…" id="taskFilter" class="filter-input" oninput="window._taskMgr?.filter()">
+      <select id="taskSafetyFilter" class="filter-select" onchange="window._taskMgr?.filter()">
+        <option value="">All Processes</option>
+        <option value="safe">🟢 Safe to Kill</option>
+        <option value="caution">🟡 Caution</option>
+        <option value="critical">🔴 Critical / System</option>
+      </select>
+      <button class="btn" onclick="window._taskMgr?.load()">🔄 Refresh</button>
+      <button class="btn danger" onclick="window._taskMgr?.killSelected()">☠️ Kill Selected</button>
+      <span id="taskCount" class="td-muted"></span>
+    </div>
+    <div id="taskResult"></div>
+  </div>
+</div>
+
+<!-- SAVINGS LOG -->
+<div id="section-savings">
+  <div class="panel">
+    <h2>💰 Savings Log</h2>
+    <div class="toolbar">
+      <span id="sessionBadge">Session —</span>
+      <button class="btn" data-action="load-savings">🔄 Refresh</button>
+      <button class="btn muted" data-action="export-savings">📤 Export JSON</button>
+      <button class="btn orange" data-action="new-session">🆕 New Session</button>
+      <button class="btn muted" id="recycleBinBtn" onclick="window.loadRecycleBin()">♻️ Recycle Bin</button>
+    </div>
+    <div class="toolbar">
+      <input type="text" placeholder="Filter by path or action…" id="savingsFilter" class="filter-input" oninput="window.filterSavings()">
+      <select id="savingsActionFilter" class="filter-select" onchange="window.filterSavings()">
+        <option value="">All Actions</option>
+        <option value="trash">trash</option>
+        <option value="delete">delete</option>
+        <option value="smart-dedup">smart-dedup</option>
+      </select>
+      <button class="btn muted" onclick="window.savingsSelectAll()">Select All</button>
+      <button class="btn muted" onclick="window.savingsSelectNone()">Select None</button>
+      <button class="btn green" onclick="window.restoreSavingsSelected()">↩️ Restore Selected</button>
+      <button class="btn muted" id="binAuditBtn" onclick="window.auditBinStatus()" title="Check which trashed files are still in the Recycle Bin">🗑 Bin Status</button>
+      <span id="savingsSelCount" class="savings-meta"></span>
+      <span id="savingsFilterStatus" class="savings-meta"></span>
+    </div>
+    <div class="grid2" id="savingsStats"></div>
+    <div id="savingsLog"></div>
+  </div>
+  <div class="panel hidden" id="recycleBinPanel">
+    <h2>♻️ Recycle Bin Contents</h2>
+    <div class="toolbar">
+      <input type="text" placeholder="Filter by name or path…" id="rbFilter" class="filter-input" oninput="window.filterRecycleBin()">
+      <select id="rbTypeFilter" class="filter-select" onchange="window.filterRecycleBin()"><option value="">All Types</option></select>
+      <button class="btn muted" onclick="window.rbSelectAll()">Select All</button>
+      <button class="btn muted" onclick="window.rbSelectNone()">Select None</button>
+      <button class="btn green" onclick="window.restoreSelected()">↩️ Restore Selected</button>
+      <button class="btn muted" onclick="document.getElementById('recycleBinPanel').classList.add('hidden')">✖ Close</button>
+      <span id="rbStatus" class="savings-meta"></span>
+    </div>
+    <div id="rbResult"></div>
+  </div>
+</div>
+
+<!-- DOCS AUDIT -->
+<div id="section-docs-audit">
+  <div class="panel">
+    <h2>📄 Orphaned Docs Audit <span id="docsAuditCount" class="section-count"></span></h2>
+    <div class="toolbar">
+      <button class="btn" onclick="window.loadDocsAudit()">🔄 Refresh</button>
+    </div>
+    <div id="docsAuditSummary"><span class="muted">Click Refresh to load audit data.</span></div>
+    <div id="docsAuditList"></div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div id="section-settings">
+  <div class="panel">
+    <h2>⚙️ Settings</h2>
+    <div class="settings-split">
+    <div class="settings-form">
+      <div>
+        <label>Primary Root Folder</label>
+        <input type="text" id="cfgRoot" list="folderChoicesList">
+      </div>
+      <div>
+        <label>Extra Root Folders (one per line)</label>
+        <textarea id="cfgExtraRoots" rows="4"></textarea>
+      </div>
+      <div class="settings-row">
+        <div>
+          <label>Stale Threshold (days)</label>
+          <input type="number" id="cfgStaleDays">
+        </div>
+        <div>
+          <label>Large File Threshold (MB)</label>
+          <input type="number" id="cfgLargeMb">
+        </div>
+        <div>
+          <label>Max Parallelism</label>
+          <input type="number" id="cfgParallelism">
+        </div>
+      </div>
+      <div>
+        <label>Scheduled Daily Scan</label>
+        <div class="settings-row">
+          <div>
+            <label>Run Time (24h, e.g. 02:00)</label>
+            <input type="text" id="cfgScheduleTime" placeholder="02:00 (empty = disabled)">
+          </div>
+          <div>
+            <label>Sections</label>
+            <input type="text" id="cfgScheduleSections" placeholder="duplicates,backups,large,stale,empty">
+          </div>
+        </div>
+      </div>
+      <div>
+        <label>Diagnostics</label>
+        <div class="settings-row">
+          <label><input type="checkbox" id="cfgTrace"> Enable Trace Logging</label>
+        </div>
+      </div>
+      <div class="settings-actions">
+        <button class="btn green" data-action="save-settings">💾 Save Settings</button>
+        <button class="btn muted" onclick="window.open('/trace-viewer.html','_blank')">📜 View Trace Log</button>
+      </div>
+      <div id="settingsMsg"></div>
+    </div>
+    <div class="settings-help" id="settingsHelp">Loading help…</div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- ═══ TRACE SYSTEM ═══ -->
+<script>
+(function() {
+  const ENABLED = localStorage.getItem('dcu_trace') !== 'false';
+  const T0 = performance.now();
+  const BUFFER = [];
+  let hbN = 0, lastHbMs = 0, flushTimer = null;
+
+  function t(tag, msg) {
+    if (!ENABLED) return;
+    const ms = (performance.now() - T0).toFixed(0);
+    BUFFER.push(`+${ms}ms [${tag}] ${msg}`);
+    if (!flushTimer) flushTimer = setTimeout(flush, 300);
+  }
+
+  function flush() {
+    flushTimer = null;
+    if (!BUFFER.length) return;
+    const batch = BUFFER.splice(0, BUFFER.length).join('\n');
+    navigator.sendBeacon('/api/trace', batch);
+  }
+
+  if (ENABLED) {
+    setInterval(() => {
+      hbN++;
+      const ms = Math.round(performance.now() - T0);
+      const gap = ms - lastHbMs;
+      if (lastHbMs > 0 && gap > 800) {
+        t('FREEZE', `Main thread blocked for ${gap}ms!`);
+        const trail = window._crumbs?.dump(50);
+        if (trail) t('FREEZE-TRAIL', `Last 50 breadcrumbs before freeze:\n${trail}`);
+      }
+      lastHbMs = ms;
+      if (hbN % 10 === 0) t('HB', `#${hbN} +${ms}ms`);
+      if (hbN > 600) return;
+    }, 500);
+  }
+
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(); });
+  window.addEventListener('beforeunload', flush);
+  if (ENABLED) fetch('/api/trace', { method: 'DELETE' }).catch(() => {});
+
+  window._T        = t;
+  window._Tflush   = flush;
+  window._TENABLED = ENABLED;
+  t('PAGE', `Trace system loaded (enabled=${ENABLED})`);
+})();
+</script>
+
+<script src="/lib/marked.min.js" defer></script>
+<script type="module" src="/js/init.js?v=2"></script>
+
+<!-- Keep-List Viewer Modal -->
+<div id="keepListModal" class="kl-modal-overlay hidden" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="kl-modal">
+    <div class="kl-modal-header">
+      <h3>🔒 Kept Files</h3>
+      <span>These files are excluded from all scans</span>
+      <button class="btn muted btn-xs" onclick="document.getElementById('keepListModal').classList.add('hidden')" title="Close">&times;</button>
+    </div>
+    <div id="keepListBody" class="kl-modal-body">
+      <p class="muted">Loading…</p>
+    </div>
+    <div class="kl-modal-footer">
+      <button class="btn muted" onclick="window._keepListClearAll()">🗑 Clear All</button>
+      <button class="btn muted" onclick="window._keepListRemoveChecked()">↩ Un-keep Selected</button>
+      <button class="btn" onclick="document.getElementById('keepListModal').classList.add('hidden')">Close</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

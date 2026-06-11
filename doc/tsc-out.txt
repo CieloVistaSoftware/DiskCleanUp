@@ -1,0 +1,2 @@
+DiskCleanUp.Service/wwwroot/js/scan-grid.ts(87,1): error TS1128: Declaration or statement expected.
+DiskCleanUp.Service/wwwroot/js/scan-grid.ts(87,3): error TS1005: 'try' expected.

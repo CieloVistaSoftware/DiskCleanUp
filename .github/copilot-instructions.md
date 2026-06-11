@@ -3,9 +3,9 @@ dewey: 300.5
 id: copilot-instructions
 title: copilot instructions
 project: DiskCleanUp
-description: ASP.NET Core 8 Windows Service + vanilla HTML/JS dashboard for disk cleanup.
+description: ASP.NET Core 8 Worker Service (Generic Host) + vanilla HTML/JS dashboard for disk cleanup.
 status: active
-tags: [copilot, instructions, project]
+tags: [aspnet, coordination, copilot, core, dashboard, disk, diskcleanup, generic, github, host, html, instructions, project, service, vanilla, worker]
 category: 300.5 — AI Coordination
 created: 2026-02-21
 updated: 2026-04-27
@@ -16,7 +16,7 @@ relativepath: .github/copilot-instructions.md
 <!-- Workspace instructions for GitHub Copilot -->
 
 ## Project: DiskCleanUp
-ASP.NET Core 8 Windows Service + vanilla HTML/JS dashboard for disk cleanup.
+ASP.NET Core 8 Worker Service (Generic Host) + vanilla HTML/JS dashboard for disk cleanup.
 
 ## Key Rules
 - **ES modules only** in frontend (import/export, no CommonJS)

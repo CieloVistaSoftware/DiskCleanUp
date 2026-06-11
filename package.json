@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node scripts/start.js",
+    "browse": "node scripts/browse.js",
     "trace": "node scripts/kill-port.js 5001 && node scripts/trace-server.js",
     "extract:svg": "node scripts/extract-svg.js",
     "tray": "node scripts/tray.js",
@@ -14,18 +15,6 @@
     "test": "node scripts/test-startup.js",
     "audit:errors": "node scripts/js-error-audit.js",
     "audit:errors:ci": "node scripts/js-error-audit.js --ci",
-    "audit:fix": "node scripts/js-error-audit.js --fix",
-    "audit:mark-fixed": "node scripts/js-error-audit.js --fix --mark-fixed",
-    "fix:errors": "node scripts/js-error-fix.js",
-    "fix:errors:apply": "node scripts/js-error-fix.js --apply",
-    "fix:errors:commit": "node scripts/js-error-fix.js --apply --commit",
-    "fix:errors:status": "node scripts/js-error-fix.js --status",
-    "fix:errors:skip": "node scripts/js-error-fix.js --skip",
-    "fix:enrich": "node scripts/js-fix-enrich.js",
-    "fix:enrich:apply": "node scripts/js-fix-enrich.js --apply",
-    "fix:vscode": "powershell -ExecutionPolicy Bypass -File ./scripts/fix-vscode-insiders-health.ps1",
-    "fix:vscode:apply": "powershell -ExecutionPolicy Bypass -File ./scripts/fix-vscode-insiders-health.ps1 -Apply",
-    "fix:vscode:all": "powershell -ExecutionPolicy Bypass -File ./scripts/fix-vscode-insiders-health.ps1 -Apply -UninstallStaleExtensions",
     "lint:docs": "node scripts/lint-frontmatter.js"
   },
   "devDependencies": {

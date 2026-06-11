@@ -12,8 +12,13 @@
 //   • File move/delete       → sync. No native async delete in .NET.
 //     Wrapped in Task.Run for callers that need fire-and-forget.
 
+using System.IO.Hashing;
+using System.Numerics;
 using System.Security.Cryptography;
 using Microsoft.VisualBasic.FileIO;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 using DiskCleanup.Models;
 
 namespace DiskCleanup.Services;
@@ -42,6 +47,91 @@ public static class FileUtilities
         }
         catch { return string.Empty; }
     }
+
+    // ── Async XxHash64 (fast first-pass, non-cryptographic) ──────────────────
+    // Two-stage hashing: XxHash64 first (cheap) → SHA-256 only on candidates.
+    // 40KB buffer per read chunk — stays under LOH threshold.
+    public static async Task<string> XxHash64Async(string path, CancellationToken ct = default)
+    {
+        try
+        {
+            await using var fs = new FileStream(
+                path,
+                FileMode.Open, FileAccess.Read, FileShare.ReadWrite,
+                bufferSize: 4096,
+                options: FileOptions.Asynchronous | FileOptions.SequentialScan
+            );
+            var hasher = new XxHash64();
+            var buf    = new byte[40_960];  // 40 KB — under 85KB LOH cutoff
+            int read;
+            while ((read = await fs.ReadAsync(buf, ct)) > 0)
+                hasher.Append(buf.AsSpan(0, read));
+            return hasher.GetCurrentHashAsUInt64().ToString("x16");
+        }
+        catch { return string.Empty; }
+    }
+
+    // ── Async SHA-256 (confirmation pass only) ─────────────────────────────────
+    // Called only for duplicate candidates already grouped by XxHash64.
+    // Full crypto hash; 40KB buffer avoids LOH.
+    public static async Task<string> Sha256Async(string path, CancellationToken ct = default)
+    {
+        try
+        {
+            await using var fs = new FileStream(
+                path,
+                FileMode.Open, FileAccess.Read, FileShare.ReadWrite,
+                bufferSize: 4096,
+                options: FileOptions.Asynchronous | FileOptions.SequentialScan
+            );
+            using var sha = SHA256.Create();
+            var hash = await sha.ComputeHashAsync(fs, ct);
+            return Convert.ToHexString(hash).ToLowerInvariant();
+        }
+        catch { return string.Empty; }
+    }
+
+    // ── Perceptual hash (aHash — average hash) ─────────────────────────────
+    // Detects near-duplicate images: resized, re-compressed, slightly edited.
+    // Algorithm: resize to 8×8 → grayscale → compare each pixel to mean → 64-bit ulong.
+    // Returns 0UL on any error (unreadable/corrupt/unsupported format).
+    public static async Task<ulong> PHashAsync(string path, CancellationToken ct = default)
+    {
+        try
+        {
+            await using var fs = new FileStream(path,
+                FileMode.Open, FileAccess.Read, FileShare.ReadWrite,
+                bufferSize: 4096, options: FileOptions.Asynchronous);
+            using var img = await Image.LoadAsync<Rgba32>(fs, ct);
+            img.Mutate(x => x.Resize(8, 8).Grayscale());
+
+            var pixels = new byte[64];
+            img.ProcessPixelRows(acc =>
+            {
+                for (int y = 0; y < 8; y++)
+                {
+                    var row = acc.GetRowSpan(y);
+                    for (int x = 0; x < 8; x++)
+                        pixels[y * 8 + x] = row[x].R; // R=G=B after grayscale
+                }
+            });
+
+            int avg = 0;
+            foreach (var p in pixels) avg += p;
+            avg /= 64;
+
+            ulong hash = 0;
+            for (int i = 0; i < 64; i++)
+                if (pixels[i] >= avg)
+                    hash |= 1UL << i;
+
+            return hash;
+        }
+        catch { return 0UL; }
+    }
+
+    /// <summary>Number of bit positions where a and b differ (0–64).</summary>
+    public static int HammingDistance(ulong a, ulong b) => BitOperations.PopCount(a ^ b);
 
     // ── File Size (sync — just reads directory entry) ────────
     public static long FileSize(string path)

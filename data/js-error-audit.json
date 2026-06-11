@@ -1,0 +1,233 @@
+{
+  "violations": [],
+  "warnings": [
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/events.js",
+      "tryCatchCount": 3,
+      "hasErrLog": false,
+      "severity": "WARN",
+      "issues": [
+        "bare catch{} swallows errors silently",
+        "no ErrLog.log call — errors not reaching error log"
+      ]
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/metrics.js",
+      "tryCatchCount": 2,
+      "hasErrLog": false,
+      "severity": "WARN",
+      "issues": [
+        "no ErrLog.log call — errors not reaching error log"
+      ]
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/page-loader.js",
+      "tryCatchCount": 1,
+      "hasErrLog": false,
+      "severity": "WARN",
+      "issues": [
+        "no ErrLog.log call — errors not reaching error log"
+      ]
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/scan-filter.js",
+      "tryCatchCount": 3,
+      "hasErrLog": false,
+      "severity": "WARN",
+      "issues": [
+        "no ErrLog.log call — errors not reaching error log"
+      ]
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/settings.js",
+      "tryCatchCount": 4,
+      "hasErrLog": true,
+      "severity": "WARN",
+      "issues": [
+        "bare catch{} swallows errors silently"
+      ]
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/websocket.js",
+      "tryCatchCount": 10,
+      "hasErrLog": true,
+      "severity": "WARN",
+      "issues": [
+        "bare catch{} swallows errors silently"
+      ]
+    }
+  ],
+  "clean": [
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/actions.js",
+      "tryCatchCount": 2,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/breadcrumb.js",
+      "tryCatchCount": 1,
+      "note": "intentional-no-catch"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/column-controls.js",
+      "tryCatchCount": 1,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/data-grid.js",
+      "tryCatchCount": 12,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/data-store.js",
+      "tryCatchCount": 2,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/docs-audit.js",
+      "tryCatchCount": 1,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/error-logger.js",
+      "tryCatchCount": 0,
+      "note": "intentional-no-catch"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/event-queue.js",
+      "tryCatchCount": 3,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/ext-colors.js",
+      "tryCatchCount": 0,
+      "note": "intentional-no-catch"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/init.js",
+      "tryCatchCount": 6,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/keep-list.js",
+      "tryCatchCount": 5,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/recycle-bin.js",
+      "tryCatchCount": 2,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/savings.js",
+      "tryCatchCount": 6,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/scan-grid.js",
+      "tryCatchCount": 2,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/section-handlers.js",
+      "tryCatchCount": 1,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/status-bar.js",
+      "tryCatchCount": 7,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/table-utils.js",
+      "tryCatchCount": 8,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/task-manager.js",
+      "tryCatchCount": 5,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/trash-queue.js",
+      "tryCatchCount": 1,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/js/ui-utils.js",
+      "tryCatchCount": 3,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/models/duplicates-model.js",
+      "tryCatchCount": 3,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/models/large-model.js",
+      "tryCatchCount": 1,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/models/node-modules-model.js",
+      "tryCatchCount": 1,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/models/scan-toolbar-model.js",
+      "tryCatchCount": 1,
+      "note": "intentional-no-catch"
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/models/stale-model.js",
+      "tryCatchCount": 1,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/sections/duplicates.js",
+      "tryCatchCount": 2,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/sections/large-unified.js",
+      "tryCatchCount": 4,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/sections/node-modules-unified.js",
+      "tryCatchCount": 4,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/sections/stale-unified.js",
+      "tryCatchCount": 4,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/signalr.min.js",
+      "tryCatchCount": 35,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/viewmodels/scan-toolbar-vm.js",
+      "tryCatchCount": 6,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/viewmodels/section-vm.js",
+      "tryCatchCount": 2,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/views/grid-view.js",
+      "tryCatchCount": 4,
+      "hasErrLog": true
+    },
+    {
+      "file": "DiskCleanUp.Service/wwwroot/views/scan-toolbar-view.js",
+      "tryCatchCount": 3,
+      "hasErrLog": true
+    }
+  ],
+  "scannedAt": "2026-05-28T02:12:21.039Z"
+}

@@ -1,0 +1,90 @@
+<!-- ═══════════════════════════════════════════════════════════════════════
+     wwwroot/freeze-test.html
+     UI freeze / jank test page. Pumps large batches of DOM updates to
+     verify that the RAF-based flush in section-vm.js and grid-view.js does
+     not block the main thread. Dev diagnostic tool only.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Freeze Test</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #e0e0e0;
+         display: flex; flex-direction: column; align-items: center; justify-content: center;
+         height: 100vh; gap: 16px; }
+  h1  { color: #ff4444; font-size: 1.4rem; }
+  #status { font-size: 1.1rem; color: #ffa657; }
+  #bar-wrap { width: 320px; background: #333; border-radius: 4px; height: 12px; overflow: hidden; }
+  #bar { height: 12px; background: #ff4444; width: 0%; border-radius: 4px; }
+  p   { color: #888; font-size: .85rem; }
+  #log { font-family: monospace; font-size: .78rem; color: #7ee787; margin-top: 8px; }
+</style>
+</head>
+<body>
+<h1>⚠ Real Freeze Test</h1>
+<div id="status">Preparing...</div>
+<div id="bar-wrap"><div id="bar"></div></div>
+<p>Blocks the JS main thread. Freeze detector on this page will write to trace.</p>
+<div id="log"></div>
+
+<script>
+  const params    = new URLSearchParams(location.search);
+  const ms        = Math.min(parseInt(params.get('ms') || '5000', 10), 60000);
+  const statusEl  = document.getElementById('status');
+  const barEl     = document.getElementById('bar');
+  const logEl     = document.getElementById('log');
+  const TRACE_URL = '/api/trace';
+
+  // ── Freeze detector ─────────────────────────────────────────────────────
+  // Sends a heartbeat every 200ms. If the gap between heartbeats exceeds
+  // 500ms, the difference is a real main-thread freeze. Posts to /api/trace.
+  let _lastHb   = Date.now();
+  let _startMs  = Date.now();          // page load time reference
+
+  function sessionMs() { return Date.now() - _startMs; }
+
+  async function postTrace(line) {
+    try {
+      await fetch(TRACE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: line
+      });
+    } catch { /* best-effort */ }
+  }
+
+  // Heartbeat — runs every 200ms, detects gaps caused by main-thread blocks
+  setInterval(function() {
+    const now  = Date.now();
+    const gap  = now - _lastHb;
+    _lastHb    = now;
+
+    if (gap >= 500) {
+      const frozenMs = gap - 200;   // subtract expected interval
+      const t        = sessionMs();
+      const freeze   = '+' + t + 'ms [FREEZE] Main thread blocked for ' + frozenMs + 'ms!';
+      const trail    = '+' + t + 'ms [FREEZE-TRAIL] source=freeze-test.html | requested=' + ms + 'ms | actual=' + frozenMs + 'ms | url=' + location.href;
+      logEl.textContent = freeze;
+      postTrace(freeze + '\n' + trail);
+    }
+  }, 200);
+
+  // ── Run freeze ───────────────────────────────────────────────────────────
+  statusEl.textContent = 'Freezing in 2 seconds for ' + (ms / 1000) + 's...';
+
+  setTimeout(function() {
+    statusEl.textContent = '🧊 FROZEN for ' + (ms / 1000) + 's — main thread blocked!';
+    barEl.style.width = '100%';
+
+    // Hard spin
+    var start = Date.now();
+    while (Date.now() - start < ms) { /* intentional spin */ }
+
+    statusEl.textContent = '✔ Freeze complete (' + ms + 'ms). Check trace viewer.';
+    barEl.style.background = '#7ee787';
+  }, 2000);
+</script>
+</body>
+</html>

@@ -30,6 +30,12 @@ public static class DiagEndpoints
             catch { return Results.Ok(new { errors = Array.Empty<object>() }); }
         });
 
+        app.MapDelete("/api/errors", async (ConfigService cfgService) =>
+        {
+            try { await cfgService.ClearErrorsAsync(); return Results.Ok(new { ok = true }); }
+            catch { return Results.Ok(new { ok = true }); }
+        });
+
         app.MapGet("/api/errors/export", () =>
         {
             var path = Path.Combine(baseDir, "errors.jsonl");

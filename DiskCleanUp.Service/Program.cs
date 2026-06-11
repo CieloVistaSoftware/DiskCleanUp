@@ -14,6 +14,7 @@ using DiskCleanup;
 using DiskCleanup.Api;
 using DiskCleanup.Scanning;
 using DiskCleanup.Scanning.Rules;
+using DiskCleanup.Hubs;
 using DiskCleanup.Services;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
@@ -76,6 +77,7 @@ if (isScanMode)
             services.AddSingleton<IScanRule, ImagesRule>();
             services.AddSingleton<IScanRule, BackupsRule>();
             services.AddSingleton<IScanRule, ExtSearchRule>();
+            services.AddSingleton<IScanRule, DevCacheRule>();
             services.AddSingleton<ScanOrchestrator>();
             services.AddSingleton<AnswerArtifactService>();
             services.AddHostedService<MetricsService>();
@@ -131,11 +133,13 @@ builder.Services.AddSingleton<IScanRule, VenvsRule>();
 builder.Services.AddSingleton<IScanRule, ImagesRule>();
 builder.Services.AddSingleton<IScanRule, BackupsRule>();
 builder.Services.AddSingleton<IScanRule, ExtSearchRule>();
+builder.Services.AddSingleton<IScanRule, DevCacheRule>();
 builder.Services.AddSingleton<ScanOrchestrator>();
 builder.Services.AddSingleton<DiagService>(_ => new DiagService(dataDir));
 builder.Services.AddSingleton<AnswerArtifactService>();
 builder.Services.AddSingleton<RollingFileLogger>(_ =>
     new RollingFileLogger(Path.Combine(logDir, "service.log")));
+builder.Services.AddSignalR();
 
 // Background scan services — only in console (dev) mode
 if (isConsoleMode)
@@ -191,13 +195,17 @@ app.MapAiEndpoints();
 app.MapAnswersEndpoints(dataDir);
 app.MapKeepListEndpoints();
 app.MapTrashEndpoints();
+app.MapSymlinkEndpoints();
 app.MapRecycleBinEndpoints();
 app.MapDiagEndpoints(dataDir);
 app.MapMetricsEndpoints();
 app.MapFileEndpoints();
 app.MapHtmlUtilityEndpoints();
+app.MapCssMergeAnalyzerEndpoints();
+app.MapIssueFileEndpoints();
 app.MapTaskEndpoints();
 app.MapScanLogEndpoints();
+app.MapHub<ScanHub>("/scanhub");
 
 app.MapGet("/api/service/info", () => Results.Ok(new
 {

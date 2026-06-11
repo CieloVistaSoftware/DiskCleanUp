@@ -1,0 +1,1671 @@
+{
+  "metadata": {
+    "description": "DiskCleanUp runtime error and bug registry — tracks observed errors, root causes, and their resolutions.",
+    "updated": "2026-02-21T00:00:00.000Z",
+    "project": "DiskCleanUp",
+    "resolutionTypes": {
+      "code-change": "Fix applied by modifying source code.",
+      "config-change": "Fix applied by changing configuration.",
+      "ignore": "Known benign issue — no action needed.",
+      "workaround": "Temporary workaround applied, proper fix still needed.",
+      "external": "Caused by external dependency — no fix available."
+    }
+  },
+  "fixes": [
+    {
+      "id": "DCU-002",
+      "source": "websocket.js / ScanOrchestrator.cs",
+      "title": "Fake 10s scan timeout causing false SCAN_TIMEOUT errors on large drives",
+      "problem": "A 10-second client-side timer fired if no batch-ready arrived within 10s of 'started'. On large drives, backups/empty scanners enumerate hundreds of thousands of directories before finding any results. The timer fired before the first result, cancelling a perfectly healthy scan. Progress pings were added as a workaround but this was wrong design for a reactive system.",
+      "fix": "Deleted _startScanTimer/_clearScanTimer entirely from websocket.js. The WebSocket itself is the liveness signal — if the server dies, onclose fires. Scans end via 'done' or 'error' events only. Also removed progress pings from ScanBackups and ScanEmpty in ScanOrchestrator.cs as they only existed to feed the dead timer.",
+      "category": "runtime",
+      "resolved": true,
+      "seenCount": 5,
+      "firstSeen": "2026-03-01T00:00:00.000Z",
+      "lastSeen": "2026-03-04T22:55:27.000Z",
+      "filesChanged": [
+        "wwwroot/js/websocket.js",
+        "Services/ScanOrchestrator.cs"
+      ],
+      "resolvedOn": "2026-03-04T00:00:00.000Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-003",
+      "source": "grid-shell.js",
+      "title": "TypeError: headerCells.forEach is not a function on grid init",
+      "problem": "grid.headerEl.children returns HTMLCollection which has no .forEach() method, causing 3 runtime errors on every page load.",
+      "fix": "Wrapped with Array.from() at line 477: const headerCells = Array.from(grid.headerEl.children)",
+      "category": "runtime",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-04T00:00:00.000Z",
+      "lastSeen": "2026-03-04T00:00:00.000Z",
+      "filesChanged": [
+        "wwwroot/lib/wb-core/components/grid-shell.js"
+      ],
+      "resolvedOn": "2026-03-04T00:00:00.000Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-004",
+      "source": "row-actions.css",
+      "title": "Action buttons wrapping to second line in narrow grid cells",
+      "problem": "flex-wrap: wrap on .sg-actions allowed action buttons to wrap to a second line when the cell was narrow, breaking row height consistency.",
+      "fix": "Changed to flex-wrap: nowrap and added white-space: nowrap on .sg-actions in row-actions.css.",
+      "category": "ui",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-04T00:00:00.000Z",
+      "lastSeen": "2026-03-04T00:00:00.000Z",
+      "filesChanged": [
+        "wwwroot/lib/wb-core/css/row-actions.css"
+      ],
+      "resolvedOn": "2026-03-04T00:00:00.000Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-005",
+      "source": "kill-port.js / Windows Service",
+      "title": "Service impossible to stop during dev — AUTO_START keeps restarting",
+      "problem": "DiskCleanUp was registered as an AUTO_START Windows Service. Every kill attempt via kill-port.js or sc stop was immediately undone by SCM restarting the process, locking the .exe and blocking dotnet build for the entire dev session.",
+      "fix": "One-time admin command: sc.exe config DiskCleanUp start= demand. Service now Manual — only starts explicitly. Dev workflow uses --console mode instead. Documented in CLAUDE.md DO NOT section.",
+      "category": "devops",
+      "resolved": true,
+      "seenCount": 5,
+      "firstSeen": "2026-03-01T00:00:00.000Z",
+      "lastSeen": "2026-03-04T00:00:00.000Z",
+      "filesChanged": [
+        "CLAUDE.md"
+      ],
+      "resolvedOn": "2026-03-04T00:00:00.000Z",
+      "resolution": {
+        "type": "config-change"
+      }
+    },
+    {
+      "id": "DCU-008",
+      "source": "wwwroot/js/scan-grid.js, wwwroot/css/dashboard.css",
+      "title": "Added Open in VS Code button to all scan grid action columns",
+      "problem": "No way to open a scanned file's folder directly in VS Code from the grid. The existing folder button opened Windows Explorer only.",
+      "fix": "Added </> button to every scan grid actions column. Calls _openFolderInVSCode() which strips the filename and fires window.location.href = vscode://file/{folder}. No backend endpoint needed. Hover style is VS Code blue (#0078d4). Actions column widened from 120px to 155px to fit 4 buttons.",
+      "category": "feature",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-04T00:00:00.000Z",
+      "lastSeen": "2026-03-04T00:00:00.000Z",
+      "filesChanged": [
+        "wwwroot/js/scan-grid.js",
+        "wwwroot/css/dashboard.css"
+      ],
+      "resolvedOn": "2026-03-04T00:00:00.000Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-007",
+      "source": "wwwroot/js/section-handlers.js",
+      "title": "STALE, LARGE, NODE-MODULES scan sections had no registered event handlers",
+      "problem": "All three sections were commented out with comments claiming they were migrated to *-unified.js files (stale-unified.js, large-unified.js, node-modules-unified.js). Those files never existed. As a result, scan results for these sections were silently discarded — rows never appeared, action buttons were inert, and the status bar never updated.",
+      "fix": "Uncommented all three _registerStandardSection() calls in section-handlers.js. Removed the false migration comments.",
+      "category": "runtime",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-04T00:00:00.000Z",
+      "lastSeen": "2026-03-04T00:00:00.000Z",
+      "filesChanged": [
+        "wwwroot/js/section-handlers.js"
+      ],
+      "resolvedOn": "2026-03-04T00:00:00.000Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-006",
+      "source": "wwwroot/css/dashboard.css",
+      "title": "All scan grid bodies had overflow:hidden — whole page scrolled instead of grid",
+      "problem": ".sg-body was set to max-height:70vh + overflow:hidden in dashboard.css. This killed the scrollbar entirely — the grid body could not scroll and all overflow rows caused the whole page to scroll instead.",
+      "fix": "Changed to max-height:60vh + overflow-y:auto + min-height:0. The scrollbar now lives inside the grid body. min-height:0 is required in a flex column context to allow the child to shrink below its content size.",
+      "category": "ui",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-04T00:00:00.000Z",
+      "lastSeen": "2026-03-04T00:00:00.000Z",
+      "filesChanged": [
+        "wwwroot/css/dashboard.css"
+      ],
+      "resolvedOn": "2026-03-04T00:00:00.000Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-001",
+      "source": "ConfigService.AppendSavingsAsync",
+      "title": "File lock on savings_log.jsonl — Windows OS-level conflict",
+      "problem": "File.AppendAllTextAsync opens with FileShare.None on Windows. The SemaphoreSlim lock protects against concurrent requests within the process, but an external OS process (Windows Search indexer, Defender, VS file watcher) can grab the file between requests, causing a System.IO.IOException that surfaces as an unhandled HTTP 500, crashing the trash/delete endpoint for that request.",
+      "fix": "Replace File.AppendAllTextAsync with a FileStream using FileMode.Append and FileShare.ReadWrite in ConfigService — apply to AppendSavingsAsync, AppendSavingsBatchAsync, and AppendErrorAsync. Also wrap all AppendSavingsAsync calls in Program.cs (trash, delete-permanent, smart-dedup/apply endpoints) in try-catch so a log failure never crashes a user-facing action.",
+      "category": "runtime",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-02-21T00:00:00.000Z",
+      "lastSeen": "2026-02-21T00:00:00.000Z",
+      "filesChanged": [
+        "ConfigService.cs",
+        "Program.cs",
+        "DiskCleanupDashboard.csproj"
+      ],
+      "resolvedOn": "2026-02-21T00:00:00.000Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-009",
+      "source": "wwwroot/js/init.js / Windows Service",
+      "title": "Windows Service holding port 5100 blocks console start — app unreachable for entire session",
+      "problem": "DiskCleanUp Windows Service was running in the background holding port 5100. Every console start via dotnet run or npm start crashed immediately with SocketException 10048 (address already in use). Browser opened to localhost:5100 but got no response because the service process was unhealthy (crashed mid-session). MCP runner lacks admin rights so sc.exe stop could not be automated.",
+      "fix": "User must run 'sc.exe stop DiskCleanUp' from an admin terminal before starting console mode. Service is already set to Manual start (DCU-005) so it will not auto-restart. Added note to CURRENT-STATUS.md startup checklist.",
+      "category": "devops",
+      "resolved": true,
+      "seenCount": 3,
+      "firstSeen": "2026-03-05T00:00:00.000Z",
+      "lastSeen": "2026-03-05T04:00:00.000Z",
+      "filesChanged": [],
+      "resolvedOn": "2026-03-05T00:00:00.000Z",
+      "resolution": {
+        "type": "workaround"
+      }
+    },
+    {
+      "id": "DCU-010",
+      "source": "wwwroot/js/init.js + sections/stale-unified.js + sections/large-unified.js + sections/node-modules-unified.js",
+      "title": "Phase 6 unified section files crash entire JS module graph on load — top-level DOM access before DOM ready",
+      "problem": "Three work-in-progress section files (stale-unified.js, large-unified.js, node-modules-unified.js) called GridShell.create() and StatusBar.create() at module top level — outside any function, executing before DOMContentLoaded. ES module imports are hoisted and run before any DOM exists. StatusBar.create() received a container ID string, getElementById returned null, and the code tried to set .className on a string, throwing immediately. Because init.js imported all three, the entire module graph failed to load. Result: blank page, no WS, no scan grids, nothing functional.",
+      "fix": "Commented out all three imports in init.js. section-handlers.js already handles stale, large, and node-modules correctly via the established _registerStandardSection() pattern. The three unified files remain on disk for future completion but must not be imported until all top-level component calls are moved inside onShow() or a DOMContentLoaded callback.",
+      "category": "runtime",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T00:00:00.000Z",
+      "lastSeen": "2026-03-05T04:00:00.000Z",
+      "filesChanged": [
+        "wwwroot/js/init.js"
+      ],
+      "resolvedOn": "2026-03-05T00:00:00.000Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-011",
+      "source": "wwwroot/js/init.js",
+      "title": "ai-panel.js imported in init.js but file does not exist — 404 kills entire module load",
+      "problem": "init.js had both a static import statement and a call to initAiPanel() referencing wwwroot/js/ai-panel.js. The file was never created. A 404 on a static ES module import causes the entire importing module to fail — init.js never executed, meaning no WS connect, no section registration, no cache restore, nothing.",
+      "fix": "Commented out the import and the initAiPanel() call in init.js. When ai-panel.js is eventually built, both lines can be uncommented.",
+      "category": "runtime",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T00:00:00.000Z",
+      "lastSeen": "2026-03-05T04:00:00.000Z",
+      "filesChanged": [
+        "wwwroot/js/init.js"
+      ],
+      "resolvedOn": "2026-03-05T00:00:00.000Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-012",
+      "source": "scripts/test-connected.js",
+      "title": "No automated test to verify WS connection — fixes were declared done without proof",
+      "problem": "No test existed that verified the browser would actually see a connected state. Startup fixes were declared complete based on server-side evidence only. Multiple rounds of 'it should work now' were wrong because the JS module graph was still broken and the WS handshake was never confirmed programmatically.",
+      "fix": "Created scripts/test-connected.js with 7 assertions: (1) HTTP /api/service/info returns 200, (2) index.html returns 200, (3) index.html contains connStatus element, (4) index.html has no ai-panel reference, (5) init.js has no active ai-panel import, (6) WebSocket connects (onopen fires), (7) WebSocket receives a valid JSON metrics message within 5 seconds. All 7 pass. Must be run before declaring any startup fix complete.",
+      "category": "testing",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T00:00:00.000Z",
+      "lastSeen": "2026-03-05T04:00:00.000Z",
+      "filesChanged": [
+        "scripts/test-connected.js"
+      ],
+      "resolvedOn": "2026-03-05T00:00:00.000Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-013",
+      "source": "scripts/test-resources.js",
+      "title": "No pre-flight check for missing JS resources — broken imports invisible until browser load",
+      "problem": "Broken imports (ai-panel.js, stale-unified.js etc.) were invisible until the browser actually tried to load them. No server-side or build-time check verified that every file referenced by init.js was actually served.",
+      "fix": "Created scripts/test-resources.js which probes 37 JS, HTML, and API paths against the running server and fails loudly if any return non-200. All 37 pass. Should be added to pre-deploy and pre-review checklist.",
+      "category": "testing",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T00:00:00.000Z",
+      "lastSeen": "2026-03-05T04:00:00.000Z",
+      "filesChanged": [
+        "scripts/test-resources.js"
+      ],
+      "resolvedOn": "2026-03-05T00:00:00.000Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-014",
+      "source": "DiskCleanUp.Service/wwwroot/js/column-controls.js",
+      "title": "Error handling: column-controls.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:18.464Z",
+      "lastSeen": "2026-03-05T21:32:18.464Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\js\\column-controls.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:18.464Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-015",
+      "source": "DiskCleanUp.Service/wwwroot/js/data-grid.js",
+      "title": "Error handling: data-grid.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:45.002Z",
+      "lastSeen": "2026-03-05T21:32:45.002Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\js\\data-grid.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:45.002Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-016",
+      "source": "DiskCleanUp.Service/wwwroot/js/error-logger.js",
+      "title": "Error handling: error-logger.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:45.142Z",
+      "lastSeen": "2026-03-05T21:32:45.142Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\js\\error-logger.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:45.142Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-017",
+      "source": "DiskCleanUp.Service/wwwroot/js/event-queue.js",
+      "title": "Error handling: event-queue.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:45.201Z",
+      "lastSeen": "2026-03-05T21:32:45.201Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\js\\event-queue.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:45.201Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-018",
+      "source": "DiskCleanUp.Service/wwwroot/js/events.js",
+      "title": "Error handling: events.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:45.262Z",
+      "lastSeen": "2026-03-05T21:32:45.262Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\js\\events.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:45.262Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-019",
+      "source": "DiskCleanUp.Service/wwwroot/js/section-handlers.js",
+      "title": "Error handling: section-handlers.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:45.327Z",
+      "lastSeen": "2026-03-05T21:32:45.327Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\js\\section-handlers.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:45.327Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-020",
+      "source": "DiskCleanUp.Service/wwwroot/js/status-bar.js",
+      "title": "Error handling: status-bar.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:45.386Z",
+      "lastSeen": "2026-03-05T21:32:45.386Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\js\\status-bar.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:45.386Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-021",
+      "source": "DiskCleanUp.Service/wwwroot/js/table-utils.js",
+      "title": "Error handling: table-utils.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:45.448Z",
+      "lastSeen": "2026-03-05T21:32:45.448Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\js\\table-utils.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:45.448Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-022",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/autocomplete.js",
+      "title": "Error handling: autocomplete.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:45.510Z",
+      "lastSeen": "2026-03-05T21:32:45.510Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\autocomplete.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:45.510Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-023",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/collapse.js",
+      "title": "Error handling: collapse.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:45.571Z",
+      "lastSeen": "2026-03-05T21:32:45.571Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\collapse.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:45.571Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-024",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/connection-badge.js",
+      "title": "Error handling: connection-badge.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:45.639Z",
+      "lastSeen": "2026-03-05T21:32:45.639Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\connection-badge.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:45.639Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-025",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/darkmode.js",
+      "title": "Error handling: darkmode.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:45.710Z",
+      "lastSeen": "2026-03-05T21:32:45.710Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\darkmode.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:45.710Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-026",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/draggable.js",
+      "title": "Error handling: draggable.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:45.772Z",
+      "lastSeen": "2026-03-05T21:32:45.772Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\draggable.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:45.772Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-027",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/dropdown.js",
+      "title": "Error handling: dropdown.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:45.863Z",
+      "lastSeen": "2026-03-05T21:32:45.863Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\dropdown.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:45.863Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-028",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/feedback.js",
+      "title": "Error handling: feedback.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:45.950Z",
+      "lastSeen": "2026-03-05T21:32:45.950Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\feedback.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:45.950Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-029",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/floatinglabel.js",
+      "title": "Error handling: floatinglabel.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:46.019Z",
+      "lastSeen": "2026-03-05T21:32:46.019Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\floatinglabel.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:46.019Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-030",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/layouts.js",
+      "title": "Error handling: layouts.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:46.082Z",
+      "lastSeen": "2026-03-05T21:32:46.082Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\layouts.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:46.082Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-031",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/masked.js",
+      "title": "Error handling: masked.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:46.188Z",
+      "lastSeen": "2026-03-05T21:32:46.188Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\masked.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:46.188Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-032",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/metrics-bar.js",
+      "title": "Error handling: metrics-bar.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:46.251Z",
+      "lastSeen": "2026-03-05T21:32:46.251Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\metrics-bar.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:46.251Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-033",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/overlay.js",
+      "title": "Error handling: overlay.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:46.308Z",
+      "lastSeen": "2026-03-05T21:32:46.308Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\overlay.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:46.308Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-034",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/password.js",
+      "title": "Error handling: password.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:46.369Z",
+      "lastSeen": "2026-03-05T21:32:46.369Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\password.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:46.369Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-035",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/progressbar.js",
+      "title": "Error handling: progressbar.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:46.425Z",
+      "lastSeen": "2026-03-05T21:32:46.425Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\progressbar.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:46.425Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-036",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/resizable.js",
+      "title": "Error handling: resizable.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:46.485Z",
+      "lastSeen": "2026-03-05T21:32:46.485Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\resizable.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:46.485Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-037",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/ripple.js",
+      "title": "Error handling: ripple.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:46.542Z",
+      "lastSeen": "2026-03-05T21:32:46.542Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\ripple.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:46.542Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-038",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/row-actions.js",
+      "title": "Error handling: row-actions.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:46.604Z",
+      "lastSeen": "2026-03-05T21:32:46.604Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\row-actions.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:46.604Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-039",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/search.js",
+      "title": "Error handling: search.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:46.662Z",
+      "lastSeen": "2026-03-05T21:32:46.662Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\search.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:46.662Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-040",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/slider.js",
+      "title": "Error handling: slider.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:46.720Z",
+      "lastSeen": "2026-03-05T21:32:46.720Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\slider.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:46.720Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-041",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/status-bar.js",
+      "title": "Error handling: status-bar.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:46.780Z",
+      "lastSeen": "2026-03-05T21:32:46.780Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\status-bar.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:46.780Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-042",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/stepper.js",
+      "title": "Error handling: stepper.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:46.845Z",
+      "lastSeen": "2026-03-05T21:32:46.845Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\stepper.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:46.845Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-043",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/sticky.js",
+      "title": "Error handling: sticky.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:46.919Z",
+      "lastSeen": "2026-03-05T21:32:46.919Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\sticky.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:46.919Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-044",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/summary-badges.js",
+      "title": "Error handling: summary-badges.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:46.996Z",
+      "lastSeen": "2026-03-05T21:32:46.996Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\summary-badges.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:46.996Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-045",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/tabs.js",
+      "title": "Error handling: tabs.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:47.097Z",
+      "lastSeen": "2026-03-05T21:32:47.097Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\tabs.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:47.097Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-046",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/tags.js",
+      "title": "Error handling: tags.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:47.168Z",
+      "lastSeen": "2026-03-05T21:32:47.168Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\tags.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:47.168Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-047",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/themecontrol.js",
+      "title": "Error handling: themecontrol.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:47.229Z",
+      "lastSeen": "2026-03-05T21:32:47.229Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\themecontrol.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:47.229Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-048",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/toggle.js",
+      "title": "Error handling: toggle.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:47.298Z",
+      "lastSeen": "2026-03-05T21:32:47.298Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\toggle.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:47.298Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-049",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/toolbar.js",
+      "title": "Error handling: toolbar.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:47.364Z",
+      "lastSeen": "2026-03-05T21:32:47.364Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\toolbar.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:47.364Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-050",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/tooltip.js",
+      "title": "Error handling: tooltip.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:47.437Z",
+      "lastSeen": "2026-03-05T21:32:47.437Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\tooltip.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:47.437Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-051",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/validator.js",
+      "title": "Error handling: validator.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:47.503Z",
+      "lastSeen": "2026-03-05T21:32:47.503Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\validator.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:47.503Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-052",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/index.js",
+      "title": "Error handling: index.js — try/catch + ErrLog wired",
+      "problem": "No try/catch blocks — any runtime exception crashes silently with no trace. No ErrLog.log() calls — exceptions never reached the error log.",
+      "fix": "Error handling added.",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:47.572Z",
+      "lastSeen": "2026-03-05T21:32:47.572Z",
+      "filesChanged": [
+        "wwwroot/lib/wb-core/index.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:47.572Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-053",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/utils/config.js",
+      "title": "Error handling: config.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:47.635Z",
+      "lastSeen": "2026-03-05T21:32:47.635Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\utils\\config.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:47.635Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-054",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/utils/format.js",
+      "title": "Error handling: format.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:47.703Z",
+      "lastSeen": "2026-03-05T21:32:47.703Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\utils\\format.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:47.703Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-055",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/utils/layout.js",
+      "title": "Error handling: layout.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:47.766Z",
+      "lastSeen": "2026-03-05T21:32:47.766Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\utils\\layout.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:47.766Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-056",
+      "source": "DiskCleanUp.Service/wwwroot/models/duplicates-model.js",
+      "title": "Error handling: duplicates-model.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:47.850Z",
+      "lastSeen": "2026-03-05T21:32:47.850Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\models\\duplicates-model.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:47.850Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-057",
+      "source": "DiskCleanUp.Service/wwwroot/models/large-model.js",
+      "title": "Error handling: large-model.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:47.913Z",
+      "lastSeen": "2026-03-05T21:32:47.913Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\models\\large-model.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:47.913Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-058",
+      "source": "DiskCleanUp.Service/wwwroot/models/node-modules-model.js",
+      "title": "Error handling: node-modules-model.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:47.971Z",
+      "lastSeen": "2026-03-05T21:32:47.971Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\models\\node-modules-model.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:47.971Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-059",
+      "source": "DiskCleanUp.Service/wwwroot/models/scan-toolbar-model.js",
+      "title": "Error handling: scan-toolbar-model.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:48.035Z",
+      "lastSeen": "2026-03-05T21:32:48.035Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\models\\scan-toolbar-model.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:48.035Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-060",
+      "source": "DiskCleanUp.Service/wwwroot/models/stale-model.js",
+      "title": "Error handling: stale-model.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:48.103Z",
+      "lastSeen": "2026-03-05T21:32:48.103Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\models\\stale-model.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:48.103Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-061",
+      "source": "DiskCleanUp.Service/wwwroot/viewmodels/scan-toolbar-vm.js",
+      "title": "Error handling: scan-toolbar-vm.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:48.188Z",
+      "lastSeen": "2026-03-05T21:32:48.188Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\viewmodels\\scan-toolbar-vm.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:48.188Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-062",
+      "source": "DiskCleanUp.Service/wwwroot/views/grid-view.js",
+      "title": "Error handling: grid-view.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:48.289Z",
+      "lastSeen": "2026-03-05T21:32:48.289Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\views\\grid-view.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:48.289Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-063",
+      "source": "DiskCleanUp.Service/wwwroot/views/scan-toolbar-view.js",
+      "title": "Error handling: scan-toolbar-view.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:48.365Z",
+      "lastSeen": "2026-03-05T21:32:48.365Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\views\\scan-toolbar-view.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:48.365Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-064",
+      "source": "DiskCleanUp.Service/wwwroot/js/data-store.js",
+      "title": "Error handling: data-store.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:48.424Z",
+      "lastSeen": "2026-03-05T21:32:48.424Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\js\\data-store.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:48.424Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-065",
+      "source": "DiskCleanUp.Service/wwwroot/js/metrics.js",
+      "title": "Error handling: metrics.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:48.494Z",
+      "lastSeen": "2026-03-05T21:32:48.494Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\js\\metrics.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:48.494Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-066",
+      "source": "DiskCleanUp.Service/wwwroot/js/page-loader.js",
+      "title": "Error handling: page-loader.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:48.554Z",
+      "lastSeen": "2026-03-05T21:32:48.554Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\js\\page-loader.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:48.554Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-067",
+      "source": "DiskCleanUp.Service/wwwroot/js/recycle-bin.js",
+      "title": "Error handling: recycle-bin.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:48.642Z",
+      "lastSeen": "2026-03-05T21:32:48.642Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\js\\recycle-bin.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:48.642Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-068",
+      "source": "DiskCleanUp.Service/wwwroot/js/savings.js",
+      "title": "Error handling: savings.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:48.707Z",
+      "lastSeen": "2026-03-05T21:32:48.707Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\js\\savings.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:48.707Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-069",
+      "source": "DiskCleanUp.Service/wwwroot/js/scan-filter.js",
+      "title": "Error handling: scan-filter.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:48.855Z",
+      "lastSeen": "2026-03-05T21:32:48.855Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\js\\scan-filter.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:48.855Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-070",
+      "source": "DiskCleanUp.Service/wwwroot/js/scan-grid.js",
+      "title": "Error handling: scan-grid.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:48.926Z",
+      "lastSeen": "2026-03-05T21:32:48.926Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\js\\scan-grid.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:48.926Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-071",
+      "source": "DiskCleanUp.Service/wwwroot/js/settings.js",
+      "title": "Error handling: settings.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:48.983Z",
+      "lastSeen": "2026-03-05T21:32:48.983Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\js\\settings.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:48.983Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-072",
+      "source": "DiskCleanUp.Service/wwwroot/js/task-manager.js",
+      "title": "Error handling: task-manager.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:49.049Z",
+      "lastSeen": "2026-03-05T21:32:49.049Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\js\\task-manager.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:49.049Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-073",
+      "source": "DiskCleanUp.Service/wwwroot/js/trash-queue.js",
+      "title": "Error handling: trash-queue.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:49.113Z",
+      "lastSeen": "2026-03-05T21:32:49.113Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\js\\trash-queue.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:49.113Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-074",
+      "source": "DiskCleanUp.Service/wwwroot/js/ui-utils.js",
+      "title": "Error handling: ui-utils.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:49.175Z",
+      "lastSeen": "2026-03-05T21:32:49.175Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\js\\ui-utils.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:49.175Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-075",
+      "source": "DiskCleanUp.Service/wwwroot/js/websocket.js",
+      "title": "Error handling: websocket.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:49.259Z",
+      "lastSeen": "2026-03-05T21:32:49.259Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\js\\websocket.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:49.259Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-076",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/behaviors/helpers.js",
+      "title": "Error handling: helpers.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:49.326Z",
+      "lastSeen": "2026-03-05T21:32:49.326Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\behaviors\\helpers.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:49.326Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-077",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/behaviors/table-resize.js",
+      "title": "Error handling: table-resize.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:49.395Z",
+      "lastSeen": "2026-03-05T21:32:49.395Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\behaviors\\table-resize.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:49.395Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-078",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/behaviors/table-sort.js",
+      "title": "Error handling: table-sort.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:49.460Z",
+      "lastSeen": "2026-03-05T21:32:49.460Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\behaviors\\table-sort.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:49.460Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-079",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/components/autosize.js",
+      "title": "Error handling: autosize.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:49.537Z",
+      "lastSeen": "2026-03-05T21:32:49.537Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\components\\autosize.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:49.537Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-080",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/utils/api-fetch.js",
+      "title": "Error handling: api-fetch.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:49.595Z",
+      "lastSeen": "2026-03-05T21:32:49.595Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\utils\\api-fetch.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:49.595Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-081",
+      "source": "DiskCleanUp.Service/wwwroot/lib/wb-core/utils/theme.js",
+      "title": "Error handling: theme.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:49.661Z",
+      "lastSeen": "2026-03-05T21:32:49.661Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\lib\\wb-core\\utils\\theme.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:49.661Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-082",
+      "source": "DiskCleanUp.Service/wwwroot/sections/duplicates.js",
+      "title": "Error handling: duplicates.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:49.725Z",
+      "lastSeen": "2026-03-05T21:32:49.725Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\sections\\duplicates.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:49.725Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-083",
+      "source": "DiskCleanUp.Service/wwwroot/sections/large-unified.js",
+      "title": "Error handling: large-unified.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:49.792Z",
+      "lastSeen": "2026-03-05T21:32:49.792Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\sections\\large-unified.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:49.792Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-084",
+      "source": "DiskCleanUp.Service/wwwroot/sections/node-modules-unified.js",
+      "title": "Error handling: node-modules-unified.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:49.855Z",
+      "lastSeen": "2026-03-05T21:32:49.855Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\sections\\node-modules-unified.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:49.855Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-085",
+      "source": "DiskCleanUp.Service/wwwroot/sections/stale-unified.js",
+      "title": "Error handling: stale-unified.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:49.915Z",
+      "lastSeen": "2026-03-05T21:32:49.915Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\sections\\stale-unified.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:49.915Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-086",
+      "source": "DiskCleanUp.Service/wwwroot/signalr.min.js",
+      "title": "Error handling: signalr.min.js — try/catch + ErrLog wired",
+      "problem": "4 bare catch{} blocks that swallowed exceptions without logging. No ErrLog.log() calls — exceptions never reached the error log. ErrLog not imported despite having catch blocks.",
+      "fix": "Added: import { ErrLog } from './error-logger.js' (or relative equivalent). Replaced 4 bare catch{} blocks with catch(ex){ ErrLog.log('[SIGNALR.MIN]', ex.message, ex.stack, 'CAUGHT_ERROR'); }. Wired ErrLog.log() into 35 existing catch blocks that previously had no logging. 30 ErrLog.log() calls added total.",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:49.986Z",
+      "lastSeen": "2026-03-05T21:32:49.986Z",
+      "filesChanged": [
+        "wwwroot/signalr.min.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:49.986Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    },
+    {
+      "id": "DCU-087",
+      "source": "DiskCleanUp.Service/wwwroot/viewmodels/section-vm.js",
+      "title": "Error handling: section-vm.js — try/catch + ErrLog wired",
+      "problem": "No .bak file found — original not available.",
+      "fix": "Error handling added (details unavailable — .bak missing).",
+      "category": "error-handling",
+      "resolved": true,
+      "seenCount": 1,
+      "firstSeen": "2026-03-05T21:32:50.051Z",
+      "lastSeen": "2026-03-05T21:32:50.051Z",
+      "filesChanged": [
+        "C:\\Users\\jwpmi\\source\\repos\\DiskCleanUp\\DiskCleanUp.Service\\wwwroot\\viewmodels\\section-vm.js"
+      ],
+      "resolvedOn": "2026-03-05T21:32:50.051Z",
+      "resolution": {
+        "type": "code-change"
+      }
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+<svg viewBox="0 0 1100 380" xmlns="http://www.w3.org/2000/svg">
+      <text x="550" y="20" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="11" font-weight="600" letter-spacing="2">CURRENT - IN PRIORITY ORDER</text>
+
+      <!-- P1: User On-Demand -->
+      <rect x="10" y="35" width="250" height="140" rx="10" fill="#0c0f14" stroke="#f85149" stroke-width="1.5"/>
+      <text x="135" y="60" text-anchor="middle" fill="#f85149" font-family="Outfit" font-size="13" font-weight="700">User On-Demand</text>
+      <text x="135" y="83" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">Click scan button in dashboard</text>
+      <text x="135" y="101" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">Single section, immediate start</text>
+      <text x="135" y="119" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">Orchestrator guards duplicates</text>
+      <rect x="60" y="135" width="150" height="22" rx="4" fill="rgba(248,81,73,0.1)"/>
+      <text x="135" y="150" text-anchor="middle" fill="#f85149" font-family="Outfit" font-size="10" font-weight="600">P1 - USER IS WAITING</text>
+
+      <!-- P2: Startup Staggered -->
+      <rect x="280" y="35" width="250" height="140" rx="10" fill="#0c0f14" stroke="#e3b341" stroke-width="1.5"/>
+      <text x="405" y="60" text-anchor="middle" fill="#e3b341" font-family="Outfit" font-size="13" font-weight="700">Startup Staggered</text>
+      <text x="405" y="83" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">All 12 sections on service boot</text>
+      <text x="405" y="101" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">30s delay between each section</text>
+      <text x="405" y="119" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">Light &gt; heavy order (~6 min total)</text>
+      <rect x="330" y="135" width="150" height="22" rx="4" fill="rgba(227,179,65,0.1)"/>
+      <text x="405" y="150" text-anchor="middle" fill="#e3b341" font-family="Outfit" font-size="10" font-weight="600">P2 - CACHE WARMUP</text>
+
+      <!-- P3: Scheduled Daily -->
+      <rect x="550" y="35" width="250" height="140" rx="10" fill="#0c0f14" stroke="#a371f7" stroke-width="1.5"/>
+      <text x="675" y="60" text-anchor="middle" fill="#a371f7" font-family="Outfit" font-size="13" font-weight="700">Scheduled Daily</text>
+      <text x="675" y="83" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">Optional fixed time (e.g. 02:00)</text>
+      <text x="675" y="101" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">Configurable section list</text>
+      <text x="675" y="119" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">Runs if earlier than interval</text>
+      <rect x="600" y="135" width="150" height="22" rx="4" fill="rgba(163,113,247,0.1)"/>
+      <text x="675" y="150" text-anchor="middle" fill="#a371f7" font-family="Outfit" font-size="10" font-weight="600">P3 - DAILY BASELINE</text>
+
+      <!-- P4: Interval Recurring -->
+      <rect x="820" y="35" width="250" height="140" rx="10" fill="#0c0f14" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="945" y="60" text-anchor="middle" fill="#58a6ff" font-family="Outfit" font-size="13" font-weight="700">Interval Recurring</text>
+      <text x="945" y="83" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">Every scan_interval_hours (default 6)</text>
+      <text x="945" y="101" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">All sections, staggered</text>
+      <text x="945" y="119" text-anchor="middle" fill="#7d8590" font-family="Outfit" font-size="10">Keeps cache fresh automatically</text>
+      <rect x="870" y="135" width="150" height="22" rx="4" fill="rgba(56,139,253,0.1)"/>
+      <text x="945" y="150" text-anchor="middle" fill="#58a6ff" font-family="Outfit" font-size="10" font-weight="600">P4 - BACKGROUND REFRESH</text>
+
+      <!-- Priority bar -->
+      <rect x="10" y="192" width="1060" height="30" rx="6" fill="#0c0f14" stroke="#21262d" stroke-width="1"/>
+      <text x="80" y="212" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="10" font-weight="600">PRIORITY:</text>
+      <text x="230" y="212" text-anchor="middle" fill="#f85149" font-family="Outfit" font-size="10" font-weight="600">P1 User On-Demand</text>
+      <text x="340" y="212" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="10">&gt;</text>
+      <text x="450" y="212" text-anchor="middle" fill="#e3b341" font-family="Outfit" font-size="10" font-weight="600">P2 Startup Staggered</text>
+      <text x="575" y="212" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="10">&gt;</text>
+      <text x="680" y="212" text-anchor="middle" fill="#a371f7" font-family="Outfit" font-size="10" font-weight="600">P3 Scheduled Daily</text>
+      <text x="795" y="212" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="10">&gt;</text>
+      <text x="920" y="212" text-anchor="middle" fill="#58a6ff" font-family="Outfit" font-size="10" font-weight="600">P4 Interval Recurring</text>
+
+      <!-- Planned future modes -->
+      <text x="550" y="260" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="11" font-weight="600" letter-spacing="2">PLANNED - PHASE 4</text>
+
+      <rect x="200" y="275" width="300" height="80" rx="10" fill="#0c0f14" stroke="#30363d" stroke-width="1" stroke-dasharray="6,3"/>
+      <text x="350" y="300" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="13" font-weight="700">Sysmon Delta</text>
+      <text x="350" y="320" text-anchor="middle" fill="#30363d" font-family="Outfit" font-size="10">Real-time kernel file events / 5s debounce</text>
+      <text x="350" y="338" text-anchor="middle" fill="#30363d" font-family="Outfit" font-size="10">Single directory delta scan / Cache always current</text>
+
+      <rect x="560" y="275" width="300" height="80" rx="10" fill="#0c0f14" stroke="#30363d" stroke-width="1" stroke-dasharray="6,3"/>
+      <text x="710" y="300" text-anchor="middle" fill="#484f58" font-family="Outfit" font-size="13" font-weight="700">Targeted Area Scan</text>
+      <text x="710" y="320" text-anchor="middle" fill="#30363d" font-family="Outfit" font-size="10">User picks a folder / Scans one subtree</text>
+      <text x="710" y="338" text-anchor="middle" fill="#30363d" font-family="Outfit" font-size="10">All applicable sections / Results in seconds</text>
+
+      <text x="550" y="375" text-anchor="middle" fill="#30363d" font-family="Outfit" font-size="10">Duplicate guard: ScanOrchestrator.TryAdd() - if a section is already running, new requests are silently skipped</text>
+    </svg>

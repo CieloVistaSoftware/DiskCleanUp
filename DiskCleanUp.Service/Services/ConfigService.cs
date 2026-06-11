@@ -235,6 +235,52 @@ public class ConfigService
         return result;
     }
 
+    /// <summary>
+    /// Paginated savings — returns newest entries first.
+    /// offset=0 → most recent `limit` entries.
+    /// </summary>
+    public async Task<(List<SavingsEntry> Entries, int Total)> ReadSavingsPagedAsync(int limit, int offset)
+    {
+        var all = await ReadSavingsAsync();
+        var total = all.Count;
+        // Reverse so newest comes first, then skip/take
+        var page = all
+            .AsEnumerable()
+            .Reverse()
+            .Skip(offset)
+            .Take(limit)
+            .ToList();
+        return (page, total);
+    }
+
+    /// <summary>
+    /// Totals only — streams the full log but returns no entry payloads.
+    /// Fast even on 13K+ entry files.
+    /// </summary>
+    public async Task<(long TotalBytes, int TotalCount)> ReadSavingsSummaryAsync()
+    {
+        if (!File.Exists(_logFile)) return (0L, 0);
+        long bytes = 0L;
+        int  count = 0;
+        await using var fs = new FileStream(_logFile, FileMode.Open, FileAccess.Read,
+            FileShare.ReadWrite, bufferSize: 4096);
+        using var sr = new StreamReader(fs, System.Text.Encoding.UTF8,
+            detectEncodingFromByteOrderMarks: false, bufferSize: 4096);
+        while (await sr.ReadLineAsync() is { } line)
+        {
+            if (string.IsNullOrWhiteSpace(line)) continue;
+            try
+            {
+                var e = JsonSerializer.Deserialize<SavingsEntry>(line, JsonCompact);
+                if (e is null) continue;
+                bytes += e.Bytes;
+                count++;
+            }
+            catch { }
+        }
+        return (bytes, count);
+    }
+
     // ── Error Log ────────────────────────────────────────────────
     // Append-only JSONL — one error per line. Same philosophy as
     // savings_log.jsonl: never truncated, never reset automatically.
@@ -269,6 +315,17 @@ public class ConfigService
             catch { }
         }
         return result;
+    }
+
+    public async Task ClearErrorsAsync()
+    {
+        await _lock.WaitAsync();
+        try
+        {
+            if (File.Exists(_errorLogFile))
+                File.Delete(_errorLogFile);
+        }
+        finally { _lock.Release(); }
     }
 
     // ── Scan Result Cache ────────────────────────────────────

@@ -1,0 +1,117 @@
+/* RowActions Styling */
+
+.sg-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.sg-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: #666;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.sg-action-btn:hover {
+  background: rgba(0, 123, 255, 0.1);
+  border-color: rgba(0, 123, 255, 0.3);
+  color: #007bff;
+}
+
+.sg-action-btn:active {
+  transform: scale(0.95);
+  background: rgba(0, 123, 255, 0.2);
+}
+
+/* Button variants */
+.sg-action-btn.btn-secondary {
+  color: #666;
+}
+
+.sg-action-btn.btn-secondary:hover {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #333;
+}
+
+.sg-action-btn.btn-danger {
+  color: #d32f2f;
+}
+
+.sg-action-btn.btn-danger:hover {
+  background: rgba(211, 47, 47, 0.1);
+  border-color: rgba(211, 47, 47, 0.3);
+  color: #d32f2f;
+}
+
+.sg-action-btn.btn-primary {
+  color: #007bff;
+}
+
+.sg-action-btn.btn-primary:hover {
+  background: rgba(0, 123, 255, 0.1);
+  border-color: rgba(0, 123, 255, 0.3);
+  color: #0056b3;
+}
+
+.sg-action-btn.btn-success {
+  color: #4caf50;
+}
+
+.sg-action-btn.btn-success:hover {
+  background: rgba(76, 175, 80, 0.1);
+  border-color: rgba(76, 175, 80, 0.3);
+  color: #388e3c;
+}
+
+.sg-action-btn.btn-warning {
+  color: #ff9800;
+}
+
+.sg-action-btn.btn-warning:hover {
+  background: rgba(255, 152, 0, 0.1);
+  border-color: rgba(255, 152, 0, 0.3);
+  color: #e65100;
+}
+
+/* Disabled state */
+.sg-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Small variant for inline sub-paths */
+.sg-action-btn.btn-xxs {
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+}
+
+/* Focus state for accessibility */
+.sg-action-btn:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 1px;
+}
+
+.sg-action-btn:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.sg-action-btn:focus-visible {
+  outline: 2px solid #007bff;
+  outline-offset: 1px;
+}
